@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2 style="margin-bottom: 16px;">Schedule a Lunch Meeting</h2>
+    <p style="color: #86868b; margin-bottom: 32px;">
+        Fill out the form below to schedule a lunch meeting between two people.
+    </p>
+    
+    <div class="actions">
+        <a href="{{ url_for('schedule') }}" class="btn">Start Scheduling</a>
+        <a href="{{ url_for('events') }}" class="btn btn-secondary">View Scheduled Events</a>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 40px; background: #fff3cd; border: 1px solid #ffc107;">
+    <h3 style="margin-bottom: 12px;">⚠️ Prototype Limitations</h3>
+    <p style="font-size: 14px; color: #856404;">
+        This is a <strong>deliberately basic</strong> prototype that demonstrates why plain forms don't work for Gatherly:
+    </p>
+    <ul style="margin: 16px 0 0 20px; color: #856404; font-size: 14px;">
+        <li>No conversational flow</li>
+        <li>Static form filling (not natural)</li>
+        <li>No calendar visualization</li>
+        <li>No intelligent suggestions</li>
+        <li>Feels detached from real scheduling</li>
+    </ul>
+</div>
+{% endblock %}
+

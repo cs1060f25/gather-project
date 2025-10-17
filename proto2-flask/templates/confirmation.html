@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Confirmed - Gatherly{% endblock %}
+
+{% block content %}
+<div class="success">
+    <h2 style="margin-bottom: 12px;">✅ Meeting Scheduled</h2>
+    <p>Your lunch meeting has been scheduled successfully.</p>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <h3 style="margin-bottom: 20px;">Meeting Details</h3>
+    
+    <dl class="event-details">
+        <dt>Attendees</dt>
+        <dd>{{ event.person1 }} and {{ event.person2 }}</dd>
+        
+        <dt>Date</dt>
+        <dd>{{ event.date }}</dd>
+        
+        <dt>Time</dt>
+        <dd>{{ event.time }}</dd>
+        
+        <dt>Location</dt>
+        <dd>{{ event.location }}</dd>
+        
+        <dt>Created At</dt>
+        <dd style="font-size: 14px; color: #86868b;">{{ event.created_at }}</dd>
+    </dl>
+    
+    <div class="actions">
+        <a href="{{ url_for('schedule') }}" class="btn">Schedule Another</a>
+        <a href="{{ url_for('events') }}" class="btn btn-secondary">View All Events</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Home</a>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px; padding: 20px; background: #fff3cd; border: 1px solid #ffc107;">
+    <h4 style="margin-bottom: 12px; color: #856404;">⚠️ What's Missing?</h4>
+    <p style="font-size: 14px; color: #856404;">
+        This confirmation works functionally, but it lacks:
+    </p>
+    <ul style="margin: 12px 0 0 20px; color: #856404; font-size: 14px; line-height: 1.8;">
+        <li><strong>Visual calendar integration</strong> - No calendar view showing the booked time</li>
+        <li><strong>Conversational context</strong> - Feels like a database record, not a social plan</li>
+        <li><strong>Location intelligence</strong> - No map, reviews, or suggestions</li>
+        <li><strong>Real-time updates</strong> - Static page, no live collaboration</li>
+        <li><strong>Personality & warmth</strong> - Cold, transactional confirmation</li>
+    </ul>
+</div>
+{% endblock %}
+

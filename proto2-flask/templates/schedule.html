@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule Meeting - Gatherly{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="margin-bottom: 24px;">Schedule Lunch Meeting</h2>
+    
+    {% if errors %}
+    <div class="error">
+        <strong>Please fix the following errors:</strong>
+        <ul>
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('schedule') }}">
+        <div class="form-group">
+            <label for="person1">Person 1 Name *</label>
+            <input type="text" id="person1" name="person1" placeholder="e.g., John" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="person2">Person 2 Name *</label>
+            <input type="text" id="person2" name="person2" placeholder="e.g., Ikenna" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">Meeting Date *</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="time_slot">Time Slot *</label>
+            <select id="time_slot" name="time_slot" required>
+                <option value="">Select a time...</option>
+                <option value="11:30 AM">11:30 AM</option>
+                <option value="12:00 PM">12:00 PM</option>
+                <option value="12:30 PM">12:30 PM</option>
+                <option value="1:00 PM">1:00 PM</option>
+                <option value="1:30 PM">1:30 PM</option>
+                <option value="2:00 PM">2:00 PM</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="location">Location (optional)</label>
+            <input type="text" id="location" name="location" placeholder="e.g., Joe's Pizza, Harvard Square">
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn">Schedule Meeting</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 24px; padding: 16px; background: #f5f5f7;">
+    <p style="font-size: 14px; color: #86868b; text-align: center;">
+        💡 Notice: This form-based approach lacks natural conversation and visual feedback
+    </p>
+</div>
+{% endblock %}
+
