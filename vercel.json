@@ -1,0 +1,6 @@
+{
+  "name": "proto4-framer-motion",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite"
+}
