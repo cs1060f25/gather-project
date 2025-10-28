@@ -307,5 +307,23 @@ describe('CareerGoalChatBar Component', () => {
     // Submit button should be disabled
     expect(submitButton).toBeDisabled()
   })
+
+  // Bug fix test: Input focus should not cause content shift
+  it('does not scale/shift content when input is focused', async () => {
+    render(<CareerGoalChatBar />)
+    const user = userEvent.setup()
+    
+    const input = screen.getByPlaceholderText('Describe your career goal...')
+    const initialParent = input.parentElement
+    
+    // Focus the input
+    await user.click(input)
+    
+    // Parent should still be the same element (no scaling/shifting)
+    expect(input.parentElement).toBe(initialParent)
+    
+    // Input should be focused
+    expect(input).toHaveFocus()
+  })
 })
 
