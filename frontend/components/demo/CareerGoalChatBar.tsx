@@ -59,8 +59,8 @@ export default function CareerGoalChatBar() {
       // TODO: Integrate Claude 4.5 Sonnet for advanced NLP parsing
       const goalData = parseGoalFromText(inputValue)
 
-      // Send POST request to backend API
-      const response = await fetch('/api/goal-matching', {
+      // Send POST request to backend API (using mock server for demo)
+      const response = await fetch('http://localhost:3001/api/goal-matching', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
