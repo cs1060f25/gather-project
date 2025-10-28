@@ -273,7 +273,16 @@ export async function handleGoalMatching(
     
     // Override with explicit parameters if provided
     if (location) parsedGoal.location = location
-    if (careerField) parsedGoal.careerField = careerField
+    if (careerField) {
+      // Validate careerField is a known value
+      const validFields = ['investment-banking', 'tech', 'consulting', 'general']
+      if (!validFields.includes(careerField)) {
+        console.warn(`Invalid careerField '${careerField}', defaulting to 'general'`)
+        parsedGoal.careerField = 'general'
+      } else {
+        parsedGoal.careerField = careerField
+      }
+    }
     
     // Step 2: Find matching professionals (mocked LinkedIn API)
     const matches = await findMatchingProfessionals(parsedGoal)

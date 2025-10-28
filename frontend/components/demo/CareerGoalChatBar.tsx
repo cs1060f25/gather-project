@@ -261,12 +261,11 @@ export default function CareerGoalChatBar() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <motion.div 
+          <div 
             className={`
               glass-panel p-4 transition-all duration-300
               ${isFocused ? 'ring-2 ring-system-blue/50 shadow-xl' : ''}
             `}
-            animate={isFocused ? { scale: 1.02 } : { scale: 1 }}
           >
             <div className="flex items-center space-x-4">
               <input
@@ -303,7 +302,7 @@ export default function CareerGoalChatBar() {
                 )}
               </motion.button>
             </div>
-          </motion.div>
+          </div>
         </motion.form>
 
         {/* Tips Section */}
