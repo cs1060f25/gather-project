@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gatherly - Meeting Preparation{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Gatherly</h1>
+                <div>
+                    <a href="{{ url_for('index') }}" class="px-4 py-2 hover:bg-blue-700 rounded">Home</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2023 Gatherly. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    {% block scripts %}{% endblock %}
+    <!-- Chat Widget -->
+    <div id="chatWidget" class="fixed bottom-0 right-0 w-80 bg-white shadow-xl rounded-t-lg flex flex-col" style="height: 500px; display: none;">
+        <div class="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center cursor-pointer" id="chatHeader">
+            <h3 class="font-semibold">Chat</h3>
+            <div class="flex space-x-2">
+                <button class="text-white hover:text-gray-200" id="minimizeChat">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="text-white hover:text-gray-200" id="closeChat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat content will be loaded here -->
+        <div id="chatContent" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Messages will be loaded here -->
+        </div>
+        
+        <!-- Message input -->
+        <div class="p-3 border-t">
+            <div class="flex space-x-2">
+                <input type="text" id="messageInput" placeholder="Type a message..." 
+                       class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="sendMessage" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Toggle Button -->
+    <button id="chatToggle" class="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-all">
+        <i class="fas fa-comment-dots text-xl"></i>
+        <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs" id="unreadCount" style="display: none;">0</span>
+    </button>
+</body>
+</html>
