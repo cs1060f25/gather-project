@@ -306,5 +306,33 @@ describe('Goal Matching API', () => {
       expect(result.reasoning).toContain('professionals')
     })
   })
+
+  describe('Bug Fixes', () => {
+    // Bug fix test: Invalid careerField should default to 'general'
+    it('handles invalid careerField gracefully by defaulting to general', async () => {
+      const result = await handleGoalMatching({
+        goal: 'I need career advice',
+        careerField: 'invalid-field-name' as any
+      })
+      
+      // Should return general matches instead of empty/error
+      expect(result.matches).toBeDefined()
+      expect(result.matches.length).toBeGreaterThan(0)
+    })
+
+    it('accepts all valid careerField values', async () => {
+      const validFields = ['investment-banking', 'tech', 'consulting', 'general']
+      
+      for (const field of validFields) {
+        const result = await handleGoalMatching({
+          goal: 'Test goal',
+          careerField: field
+        })
+        
+        expect(result.matches).toBeDefined()
+        expect(result.matches.length).toBeGreaterThan(0)
+      }
+    })
+  })
 })
 
