@@ -5,115 +5,139 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, 
   Send, 
-  User, 
-  Settings, 
-  Home,
-  Clock,
-  Users,
+  Plus,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Sparkles,
-  MessageCircle
+  Settings,
+  Bell,
+  Search
 } from 'lucide-react';
 import Link from 'next/link';
-import { format, addDays, startOfWeek, addWeeks, isSameDay, isSameMonth } from 'date-fns';
-
-interface Message {
-  id: number;
-  text: string;
-  sender: 'user' | 'assistant';
-  timestamp: Date;
-}
+import { format, addDays, startOfWeek, isSameDay, isSameMonth, startOfMonth, eachDayOfInterval } from 'date-fns';
 
 interface CalendarEvent {
   id: number;
   title: string;
   date: Date;
   time: string;
-  participants: number;
+  duration: string;
   color: string;
 }
 
-export default function Dashboard() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hi! I'm Gatherly, your intelligent scheduling assistant. How can I help you plan your next meeting or hangout?",
-      sender: 'assistant',
-      timestamp: new Date()
-    }
-  ]);
-  
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  
-  // Sample calendar events
-  const [events] = useState<CalendarEvent[]>([
-    { id: 1, title: 'Team Standup', date: new Date(), time: '10:00 AM', participants: 5, color: 'bg-blue-400' },
-    { id: 2, title: 'Coffee Chat', date: addDays(new Date(), 1), time: '2:00 PM', participants: 2, color: 'bg-green-400' },
-    { id: 3, title: 'Project Review', date: addDays(new Date(), 2), time: '3:30 PM', participants: 8, color: 'bg-purple-400' },
-    { id: 4, title: 'Study Group', date: addDays(new Date(), 3), time: '6:00 PM', participants: 4, color: 'bg-yellow-400' },
-  ]);
+const suggestions = [
+  "Schedule a team meeting next Tuesday at 2pm",
+  "Book a 1:1 with Sarah tomorrow at 10am", 
+  "Add coffee chat with John on Friday afternoon",
+  "Plan design review for next Wednesday at 3pm",
+  "Schedule weekly standup every Monday at 9am",
+  "Meet with the team tomorrow afternoon",
+  "Call with marketing on Thursday",
+  "Lunch meeting next week",
+  "Design sync on Friday at 3pm",
+  "Quick standup tomorrow morning"
+];
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+export default function Dashboard() {
+  const [inputValue, setInputValue] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [suggestion, setSuggestion] = useState('');
+  const [showSuggestion, setShowSuggestion] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [tempEvent, setTempEvent] = useState<CalendarEvent | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  
+  const [events, setEvents] = useState<CalendarEvent[]>([
+    { id: 1, title: 'Team Sync', date: new Date(), time: '9:00 AM', duration: '30 min', color: '#4a8fff' },
+    { id: 2, title: 'Product Review', date: new Date(), time: '2:00 PM', duration: '1 hr', color: '#a855f7' },
+    { id: 3, title: '1:1 with Sarah', date: addDays(new Date(), 1), time: '10:00 AM', duration: '45 min', color: '#10b981' },
+    { id: 4, title: 'Design Critique', date: addDays(new Date(), 2), time: '3:00 PM', duration: '1 hr', color: '#4a8fff' },
+    { id: 5, title: 'Weekly Planning', date: addDays(new Date(), 3), time: '11:00 AM', duration: '1 hr', color: '#10b981' },
+  ]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    window.scrollTo(0, 0);
+  }, []);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  useEffect(() => {
+    if (inputValue.length > 0 && !isAnimating) {
+      // Find a suggestion that starts with what the user is typing
+      let matchingSuggestion = suggestions.find(s => 
+        s.toLowerCase().startsWith(inputValue.toLowerCase())
+      );
+      
+      // If no exact match, use a consistent random suggestion
+      if (!matchingSuggestion) {
+        // Only pick a new random suggestion when starting fresh
+        if (inputValue.length === 1) {
+          const randomIndex = Math.floor(Math.random() * suggestions.length);
+          setCurrentSuggestionIndex(randomIndex);
+          matchingSuggestion = suggestions[randomIndex];
+        } else if (currentSuggestionIndex >= 0 && currentSuggestionIndex < suggestions.length) {
+          // Keep showing the same suggestion
+          matchingSuggestion = suggestions[currentSuggestionIndex];
+        } else {
+          // Fallback
+          matchingSuggestion = suggestions[0];
+        }
+      }
+      
+      setSuggestion(matchingSuggestion);
+      setShowSuggestion(true);
+    } else {
+      setShowSuggestion(false);
+      setSuggestion('');
+    }
+  }, [inputValue, isAnimating, currentSuggestionIndex]);
 
-    const newMessage: Message = {
-      id: messages.length + 1,
-      text: inputMessage,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, newMessage]);
-    setInputMessage('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const response: Message = {
-        id: messages.length + 2,
-        text: "I appreciate your interest in using Gatherly! This feature is currently under development and will be available soon. In the meantime, you can explore the calendar view and see how your scheduled meetings will appear.",
-        sender: 'assistant',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, response]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
       e.preventDefault();
-      handleSendMessage();
+      e.stopPropagation();
+      
+      if (showSuggestion && suggestion) {
+        // Replace the entire input with the exact suggestion shown
+        setInputValue(suggestion);
+        setShowSuggestion(false);
+        // Keep the suggestion in state so it doesn't change
+      }
+      return false;
+    } else if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
-  // Calendar functions
-  const getDaysInMonth = () => {
-    const start = startOfWeek(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1));
-    const days = [];
+  const handleSubmit = () => {
+    setIsAnimating(true);
     
-    for (let i = 0; i < 42; i++) {
-      days.push(addDays(start, i));
-    }
+    // Create temporary event
+    const newEvent: CalendarEvent = {
+      id: Date.now(),
+      title: inputValue.slice(0, 20),
+      date: addDays(new Date(), Math.floor(Math.random() * 7)),
+      time: '2:00 PM',
+      duration: '1hr',
+      color: '#4a8fff'
+    };
     
-    return days;
-  };
-
-  const getEventsForDay = (day: Date) => {
-    return events.filter(event => isSameDay(event.date, day));
+    setTempEvent(newEvent);
+    
+    // Add event with animation
+    setTimeout(() => {
+      setEvents(prev => [...prev, newEvent]);
+      setTempEvent(null);
+    }, 500);
+    
+    // Remove event after 2 seconds
+    setTimeout(() => {
+      setEvents(prev => prev.filter(e => e.id !== newEvent.id));
+      setIsAnimating(false);
+      setInputValue('');
+      setSuggestion('');
+      setShowSuggestion(false);
+    }, 2500);
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -128,312 +152,382 @@ export default function Dashboard() {
     });
   };
 
+  const getDaysInMonth = () => {
+    const start = startOfWeek(startOfMonth(currentDate));
+    const end = new Date(start);
+    end.setDate(end.getDate() + 41);
+    return eachDayOfInterval({ start, end }).slice(0, 42);
+  };
+
+  const getEventsForDay = (day: Date) => {
+    const dayEvents = events.filter(event => isSameDay(event.date, day));
+    if (tempEvent && isSameDay(tempEvent.date, day)) {
+      return [...dayEvents, tempEvent];
+    }
+    return dayEvents;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <div className="flex h-screen">
-        {/* Left Sidebar */}
-        <motion.div 
-          initial={{ x: -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="w-64 bg-white border-r border-gray-200 flex flex-col"
-        >
+    <div style={{ height: '100vh', backgroundColor: 'white', overflow: 'hidden', position: 'relative' }}>
+      {/* Notion Calendar Layout */}
+      <div style={{ display: 'flex', height: '100%' }}>
+        {/* Sidebar */}
+        <div style={{
+          width: '240px',
+          backgroundColor: '#fafafa',
+          borderRight: '1px solid #e5e7eb',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
           {/* Logo */}
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-8 w-8 text-green-500" />
-              <span className="text-2xl font-semibold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">
-                Gatherly
-              </span>
-            </div>
+          <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                backgroundColor: '#4a8fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Calendar style={{ height: '20px', width: '20px', color: 'white' }} />
+              </div>
+              <span style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>Gatherly</span>
+            </Link>
           </div>
 
-          {/* User Info */}
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-green-500 flex items-center justify-center">
-                <User className="h-6 w-6 text-white" />
+          {/* User */}
+          <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+            <button style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '8px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              cursor: 'pointer'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '9999px',
+                background: 'linear-gradient(135deg, #4a8fff 0%, #7ba3c8 100%)'
+              }} />
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <p style={{ fontSize: '14px', fontWeight: 500, margin: 0, color: '#111827' }}>John Doe</p>
+                <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>Pro Plan</p>
               </div>
-              <div>
-                <p className="font-medium text-gray-900">Guest User</p>
-                <p className="text-sm text-gray-500">Free Plan</p>
-              </div>
-            </div>
+            </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-2">
-              <Link href="/">
-                <div className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                  <Home className="h-5 w-5 text-gray-600" />
-                  <span className="text-gray-700">Home</span>
-                </div>
-              </Link>
-              
-              <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-green-50 text-green-600">
-                <MessageCircle className="h-5 w-5" />
-                <span className="font-medium">Chat</span>
-              </div>
-              
-              <div className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                <Calendar className="h-5 w-5 text-gray-600" />
-                <span className="text-gray-700">Calendar</span>
-              </div>
-              
-              <div className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                <Users className="h-5 w-5 text-gray-600" />
-                <span className="text-gray-700">Contacts</span>
-              </div>
-              
-              <div className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                <Settings className="h-5 w-5 text-gray-600" />
-                <span className="text-gray-700">Settings</span>
-              </div>
-            </div>
-          </nav>
-
-          {/* Quick Stats */}
-          <div className="p-4 m-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
-            <p className="text-sm font-medium text-green-800 mb-2">This Week</p>
-            <div className="space-y-1">
-              <p className="text-xs text-green-700">4 meetings scheduled</p>
-              <p className="text-xs text-green-700">12 hours saved</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Chat Header - Liquid Glass Effect */}
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="liquid-glass sticky top-0 z-10 px-6 py-4 border-b border-green-100/20"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <Sparkles className="h-6 w-6 text-green-600" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Gatherly Assistant</h2>
-                  <p className="text-sm text-gray-600">AI-powered scheduling</p>
-                </div>
-              </div>
-              
-              <button className="px-4 py-2 bg-white/50 backdrop-blur text-gray-700 rounded-full text-sm font-medium hover:bg-white/70 transition-all">
-                New Meeting
+          {/* Nav */}
+          <div style={{ flex: 1, padding: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <button style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(74, 143, 255, 0.1)',
+                color: '#4a8fff',
+                border: 'none',
+                cursor: 'pointer'
+              }}>
+                <Calendar style={{ height: '16px', width: '16px' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500 }}>Calendar</span>
+              </button>
+              <button style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'transparent',
+                color: '#6b7280',
+                border: 'none',
+                cursor: 'pointer'
+              }}>
+                <Bell style={{ height: '16px', width: '16px' }} />
+                <span style={{ fontSize: '14px' }}>Notifications</span>
+              </button>
+              <button style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'transparent',
+                color: '#6b7280',
+                border: 'none',
+                cursor: 'pointer'
+              }}>
+                <Settings style={{ height: '16px', width: '16px' }} />
+                <span style={{ fontSize: '14px' }}>Settings</span>
               </button>
             </div>
-          </motion.div>
+          </div>
 
-          <div className="flex-1 flex">
-            {/* Chat Area */}
-            <div className="flex-1 flex flex-col">
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-4">
-                <AnimatePresence>
-                  {messages.map((message, index) => (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-lg px-4 py-3 rounded-2xl ${
-                        message.sender === 'user' 
-                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        <p className="text-sm leading-relaxed">{message.text}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.sender === 'user' ? 'text-green-100' : 'text-gray-500'
-                        }`}>
-                          {format(message.timestamp, 'h:mm a')}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                
-                {isTyping && (
+          {/* Create */}
+          <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
+            <button style={{
+              width: '100%',
+              padding: '10px 16px',
+              backgroundColor: '#4a8fff',
+              color: 'white',
+              borderRadius: '8px',
+              fontWeight: 500,
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <Plus style={{ height: '16px', width: '16px' }} />
+              <span>New Event</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Calendar */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* Header with Liquid Glass Input Bar */}
+          <div style={{
+            padding: '20px 32px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '32px',
+            backgroundColor: 'white'
+          }}>
+            {/* Left: Month Navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: '#111827' }}>
+                {format(currentDate, 'MMMM yyyy')}
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button onClick={() => navigateMonth('prev')} style={{
+                  padding: '6px', borderRadius: '8px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer'
+                }}>
+                  <ChevronLeft style={{ height: '16px', width: '16px', color: '#6b7280' }} />
+                </button>
+                <button onClick={() => navigateMonth('next')} style={{
+                  padding: '6px', borderRadius: '8px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer'
+                }}>
+                  <ChevronRight style={{ height: '16px', width: '16px', color: '#6b7280' }} />
+                </button>
+                <button onClick={() => setCurrentDate(new Date())} style={{
+                  padding: '6px 12px', fontSize: '14px', fontWeight: 500, color: '#374151', borderRadius: '8px',
+                  border: 'none', backgroundColor: 'transparent', cursor: 'pointer', marginLeft: '8px'
+                }}>
+                  Today
+                </button>
+              </div>
+            </div>
+
+            {/* Center: Liquid Glass Chat Bar */}
+            <div style={{ flex: 1, maxWidth: '600px', position: 'relative' }}>
+              {/* Glow Effect when focused */}
+              <AnimatePresence>
+                {isFocused && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex justify-start mb-4"
-                  >
-                    <div className="bg-gray-100 px-4 py-3 rounded-2xl">
-                      <div className="flex space-x-2">
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                      </div>
-                    </div>
-                  </motion.div>
+                    exit={{ opacity: 0 }}
+                    style={{
+                      position: 'absolute',
+                      inset: '-8px',
+                      background: 'radial-gradient(circle, rgba(74, 143, 255, 0.25) 0%, transparent 70%)',
+                      filter: 'blur(16px)',
+                      borderRadius: '50px',
+                      pointerEvents: 'none',
+                      zIndex: -1
+                    }}
+                  />
                 )}
-                
-                <div ref={messagesEndRef} />
-              </div>
+              </AnimatePresence>
 
-              {/* Input Area */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="border-t border-gray-100 px-6 py-4"
-              >
-                <div className="flex items-end space-x-3">
-                  <div className="flex-1 relative">
-                    <textarea
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Ask me to schedule a meeting..."
-                      className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                      rows={1}
-                      style={{ minHeight: '48px', maxHeight: '120px' }}
+              {/* Main Input Container */}
+              <div style={{
+                position: 'relative',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '50px',
+                boxShadow: isFocused 
+                  ? '0 8px 24px rgba(74, 143, 255, 0.2), 0 0 0 1px rgba(74, 143, 255, 0.3)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+                border: isFocused ? '1px solid rgba(74, 143, 255, 0.3)' : '1px solid transparent',
+                transition: 'all 0.3s ease'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 6px 4px 18px' }}>
+                  {/* Input with suggestion overlay */}
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    {/* Suggestion text overlay */}
+                    {showSuggestion && suggestion && (
+                      <div style={{
+                        position: 'absolute',
+                        left: '2px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        pointerEvents: 'none',
+                        fontSize: '15px',
+                        fontFamily: "'Inter', sans-serif",
+                        whiteSpace: 'nowrap'
+                      }}>
+                        <span style={{ color: 'transparent' }}>{inputValue}</span>
+                        <span style={{ color: '#9ca3af' }}>
+                          {suggestion.slice(inputValue.length)}
+                        </span>
+                        <span style={{ marginLeft: '8px', fontSize: '11px', color: '#d1d5db' }}>Tab ↹</span>
+                      </div>
+                    )}
+                    
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      placeholder="Schedule something in plain English..."
+                      autoComplete="off"
+                      tabIndex={0}
+                      style={{
+                        width: '100%',
+                        padding: '10px 2px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '15px',
+                        fontFamily: "'Inter', sans-serif",
+                        color: '#111827',
+                        position: 'relative',
+                        zIndex: 2
+                      }}
                     />
-                    <button className="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                      <Plus className="h-5 w-5" />
-                    </button>
                   </div>
-                  
+
+                  {/* Send button */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={handleSendMessage}
-                    className="p-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
+                    onClick={handleSubmit}
+                    disabled={!inputValue.trim() || isAnimating}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      backgroundColor: inputValue.trim() && !isAnimating ? '#4a8fff' : '#e5e7eb',
+                      color: inputValue.trim() && !isAnimating ? 'white' : '#9ca3af',
+                      border: 'none',
+                      cursor: inputValue.trim() && !isAnimating ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                      flexShrink: 0
+                    }}
                   >
-                    <Send className="h-5 w-5" />
+                    <Send style={{ height: '16px', width: '16px' }} />
                   </motion.button>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Right Panel - Calendar */}
-            <motion.div 
-              initial={{ x: 100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              className="w-96 border-l border-gray-200 bg-white p-6 overflow-y-auto"
-            >
-              {/* Calendar Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {format(currentDate, 'MMMM yyyy')}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => navigateMonth('prev')}
-                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <ChevronLeft className="h-5 w-5 text-gray-600" />
-                  </button>
-                  <button 
-                    onClick={() => navigateMonth('next')}
-                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <ChevronRight className="h-5 w-5 text-gray-600" />
-                  </button>
-                </div>
+            {/* Right: View Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              <button style={{ padding: '8px', borderRadius: '8px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer' }}>
+                <Search style={{ height: '16px', width: '16px', color: '#6b7280' }} />
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+                <button style={{ padding: '6px 12px', fontSize: '14px', fontWeight: 500, backgroundColor: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>Month</button>
+                <button style={{ padding: '6px 12px', fontSize: '14px', color: '#6b7280', backgroundColor: 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Week</button>
+                <button style={{ padding: '6px 12px', fontSize: '14px', color: '#6b7280', backgroundColor: 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Day</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid */}
+          <div style={{ flex: 1, padding: '24px', overflowY: 'auto', backgroundColor: '#fafafa' }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+              {/* Days */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #e5e7eb' }}>
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#374151', textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
+                    {day}
+                  </div>
+                ))}
               </div>
 
-              {/* Calendar Grid */}
-              <div className="mb-6">
-                {/* Day Headers */}
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Calendar Days */}
-                <div className="grid grid-cols-7 gap-1">
-                  {getDaysInMonth().map((day, index) => {
-                    const dayEvents = getEventsForDay(day);
-                    const isCurrentMonth = isSameMonth(day, currentDate);
-                    const isToday = isSameDay(day, new Date());
-                    
-                    return (
-                      <motion.div
-                        key={index}
-                        whileHover={{ scale: 1.05 }}
-                        className={`
-                          aspect-square p-1 rounded-lg cursor-pointer transition-all
-                          ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                          ${isToday ? 'bg-green-50 ring-2 ring-green-500' : 'hover:bg-gray-50'}
-                        `}
-                      >
-                        <div className="text-center">
-                          <p className="text-xs font-medium">{format(day, 'd')}</p>
-                          {dayEvents.length > 0 && (
-                            <div className="mt-1 flex justify-center space-x-1">
-                              {dayEvents.slice(0, 2).map(event => (
-                                <span
-                                  key={event.id}
-                                  className={`w-1 h-1 rounded-full ${event.color}`}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Upcoming Events */}
-              <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Upcoming Events</h4>
-                <div className="space-y-3">
-                  {events.slice(0, 4).map((event, index) => (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-1.5 ${event.color}`} />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                          <div className="flex items-center space-x-3 mt-1">
-                            <span className="text-xs text-gray-500 flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {event.time}
-                            </span>
-                            <span className="text-xs text-gray-500 flex items-center">
-                              <Users className="h-3 w-3 mr-1" />
-                              {event.participants}
-                            </span>
-                          </div>
-                        </div>
+              {/* Dates */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(6, 1fr)' }}>
+                {getDaysInMonth().map((day, index) => {
+                  const dayEvents = getEventsForDay(day);
+                  const isCurrentMonth = isSameMonth(day, currentDate);
+                  const isToday = isSameDay(day, new Date());
+                  
+                  return (
+                    <div key={index} style={{
+                      minHeight: '100px', padding: '8px',
+                      borderRight: index % 7 !== 6 ? '1px solid #e5e7eb' : 'none',
+                      borderBottom: index < 35 ? '1px solid #e5e7eb' : 'none',
+                      backgroundColor: !isCurrentMonth ? '#fafafa' : (isToday ? '#eff6ff' : 'white'),
+                      cursor: 'pointer', transition: 'background-color 0.2s'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                        <span style={{
+                          fontSize: '14px', fontWeight: 500,
+                          color: !isCurrentMonth ? '#9ca3af' : (isToday ? '#2563eb' : '#374151')
+                        }}>{format(day, 'd')}</span>
+                        {isToday && (
+                          <span style={{ fontSize: '12px', backgroundColor: '#4a8fff', color: 'white', padding: '2px 8px', borderRadius: '9999px' }}>
+                            Today
+                          </span>
+                        )}
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <AnimatePresence>
+                          {dayEvents.slice(0, 2).map(event => (
+                            <motion.div
+                              key={event.id}
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0.8, opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              style={{
+                                fontSize: '12px', padding: '4px 6px', borderRadius: '4px',
+                                backgroundColor: event.color, color: 'white',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer'
+                              }}
+                            >
+                              <span style={{ fontWeight: 500 }}>{event.time}</span> {event.title}
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                        {dayEvents.length > 2 && (
+                          <span style={{ fontSize: '12px', color: '#6b7280', padding: '0 4px' }}>
+                            +{dayEvents.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-
-              {/* Quick Actions */}
-              <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
-                <p className="text-sm font-medium text-green-800 mb-3">Quick Actions</p>
-                <div className="space-y-2">
-                  <button className="w-full text-left text-sm text-green-700 hover:text-green-900 transition-colors">
-                    → Schedule a new meeting
-                  </button>
-                  <button className="w-full text-left text-sm text-green-700 hover:text-green-900 transition-colors">
-                    → Find common availability
-                  </button>
-                  <button className="w-full text-left text-sm text-green-700 hover:text-green-900 transition-colors">
-                    → Send calendar invite
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
