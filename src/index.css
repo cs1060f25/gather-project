@@ -2,94 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --system-blue: 0, 122, 255;
-    --system-gray-1: 142, 142, 147;
-    --system-gray-2: 174, 174, 178;
-    --system-gray-3: 199, 199, 204;
-    --system-gray-4: 209, 209, 214;
-    --system-gray-5: 229, 229, 234;
-    --system-gray-6: 242, 242, 247;
-  }
-
-
-  html {
-    @apply scroll-smooth;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
-
-  body {
-    @apply bg-[#f8f9fb] font-sf-pro text-gray-900;
-    overflow-x: hidden;
-  }
-
-  /* Hide scrollbar but keep functionality */
-  ::-webkit-scrollbar {
-    width: 0px;
-    background: transparent;
-  }
-
-  * {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-}
-
+/* Custom styles */
 @layer components {
-  .glass-panel {
-    @apply bg-glass backdrop-blur-xl rounded-2xl border border-white/20 shadow-glass;
+  .btn-primary {
+    @apply inline-flex items-center rounded-md border border-transparent bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
-
-  .glass-panel-dark {
-    @apply bg-glass-dark backdrop-blur-xl rounded-2xl border border-white/10 shadow-glass;
-  }
-
-  .message-bubble {
-    @apply px-4 py-2.5 rounded-[20px] max-w-[280px] shadow-bubble;
-  }
-
-  .message-bubble-sent {
-    @apply bg-system-blue text-white ml-auto;
-  }
-
-  .message-bubble-received {
-    @apply bg-system-gray-6 text-gray-900;
-  }
-
-  .time-option {
-    @apply px-4 py-3 rounded-xl bg-white/80 backdrop-blur border border-gray-200/50 
-           hover:bg-white hover:border-system-blue/30 transition-all duration-200 cursor-pointer
-           hover:shadow-md active:scale-[0.98];
-  }
-
-  .calendar-widget {
-    @apply bg-white rounded-2xl p-5 shadow-apple border border-gray-200/50;
-  }
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .gradient-orb {
-    background: radial-gradient(circle at center, 
-      rgba(0, 122, 255, 0.15) 0%, 
-      rgba(0, 122, 255, 0.05) 40%, 
-      transparent 70%);
-  }
-
-  .gradient-glow {
-    background: radial-gradient(circle at center,
-      rgba(147, 197, 253, 0.3) 0%,
-      rgba(196, 181, 253, 0.2) 35%,
-      transparent 70%);
+  .input-field {
+    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm;
   }
 }
