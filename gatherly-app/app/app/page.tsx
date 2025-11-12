@@ -10,10 +10,14 @@ import {
   ChevronRight,
   Settings,
   Bell,
-  Search
+  Search,
+  Database,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, addDays, startOfWeek, isSameDay, isSameMonth, startOfMonth, eachDayOfInterval } from 'date-fns';
+import { getUserService, getEventSessionService, getMessageService } from '@/lib/db/services/client-safe';
 
 interface CalendarEvent {
   id: number;
@@ -37,6 +41,14 @@ const suggestions = [
   "Quick standup tomorrow morning"
 ];
 
+// Add spin animation CSS
+const spinStyle = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
 export default function Dashboard() {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -47,6 +59,9 @@ export default function Dashboard() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [testMessage, setTestMessage] = useState('');
+  const [showTestResult, setShowTestResult] = useState(false);
   
   const [events, setEvents] = useState<CalendarEvent[]>([
     { id: 1, title: 'Team Sync', date: new Date(), time: '9:00 AM', duration: '30 min', color: '#4a8fff' },
@@ -168,7 +183,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ height: '100vh', backgroundColor: 'white', overflow: 'hidden', position: 'relative' }}>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: spinStyle }} />
+      <div style={{ height: '100vh', backgroundColor: 'white', overflow: 'hidden', position: 'relative' }}>
       {/* Notion Calendar Layout */}
       <div style={{ display: 'flex', height: '100%' }}>
         {/* Sidebar */}
@@ -448,6 +465,85 @@ export default function Dashboard() {
 
             {/* Right: View Controls */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              {/* Test DB Button */}
+              <button
+                onClick={async () => {
+                  setTestStatus('loading');
+                  setShowTestResult(true);
+                  setTestMessage('Testing Firebase connection...');
+                  
+                  try {
+                    // Test Firebase connection
+                    const userService = getUserService();
+                    const testUser = await userService.createUser({
+                      email: `test-${Date.now()}@gatherly.dev`,
+                      name: 'Test User',
+                      timezone: 'America/Los_Angeles',
+                    });
+                    
+                    setTestMessage(`✅ Created test user: ${testUser.email}`);
+                    
+                    // Create test session
+                    const sessionService = getEventSessionService();
+                    const testSession = await sessionService.createSession({
+                      hostUserId: testUser.id,
+                      inviteeIds: ['test-invitee'],
+                      title: 'Test Meeting',
+                      duration: 30,
+                      status: 'pending',
+                    });
+                    
+                    setTestMessage(prev => `${prev}\n✅ Created test session: ${testSession.id}`);
+                    setTestStatus('success');
+                    
+                    // Auto-hide after 5 seconds
+                    setTimeout(() => setShowTestResult(false), 5000);
+                  } catch (error) {
+                    setTestStatus('error');
+                    setTestMessage(`❌ Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  }
+                }}
+                disabled={testStatus === 'loading'}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: testStatus === 'loading' ? '#fbbf24' : 
+                                   testStatus === 'success' ? '#10b981' :
+                                   testStatus === 'error' ? '#ef4444' : '#8b5cf6',
+                  color: 'white',
+                  cursor: testStatus === 'loading' ? 'not-allowed' : 'pointer',
+                  fontWeight: 500,
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {testStatus === 'loading' ? (
+                  <>
+                    <Database style={{ height: '16px', width: '16px', animation: 'spin 1s linear infinite' }} />
+                    Testing...
+                  </>
+                ) : testStatus === 'success' ? (
+                  <>
+                    <CheckCircle style={{ height: '16px', width: '16px' }} />
+                    Success!
+                  </>
+                ) : testStatus === 'error' ? (
+                  <>
+                    <AlertCircle style={{ height: '16px', width: '16px' }} />
+                    Failed
+                  </>
+                ) : (
+                  <>
+                    <Database style={{ height: '16px', width: '16px' }} />
+                    Test DB
+                  </>
+                )}
+              </button>
+              
               <button style={{ padding: '8px', borderRadius: '8px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer' }}>
                 <Search style={{ height: '16px', width: '16px', color: '#6b7280' }} />
               </button>
@@ -458,6 +554,52 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Test Result Message */}
+          <AnimatePresence>
+            {showTestResult && testMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                style={{
+                  padding: '16px 32px',
+                  backgroundColor: testStatus === 'success' ? '#dcfce7' :
+                                   testStatus === 'error' ? '#fee2e2' : '#fef3c7',
+                  borderBottom: '1px solid',
+                  borderColor: testStatus === 'success' ? '#86efac' :
+                               testStatus === 'error' ? '#fca5a5' : '#fde68a'
+                }}
+              >
+                <pre style={{
+                  fontFamily: 'monospace',
+                  fontSize: '13px',
+                  color: testStatus === 'success' ? '#166534' :
+                         testStatus === 'error' ? '#991b1b' : '#92400e',
+                  margin: 0,
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {testMessage}
+                </pre>
+                {testStatus === 'success' && (
+                  <div style={{ marginTop: '8px' }}>
+                    <a
+                      href="https://console.firebase.google.com/project/gatherly-mvp/firestore"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: '#059669',
+                        textDecoration: 'underline',
+                        fontSize: '13px'
+                      }}
+                    >
+                      View in Firebase Console →
+                    </a>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Grid */}
           <div style={{ flex: 1, padding: '24px', overflowY: 'auto', backgroundColor: '#fafafa' }}>
@@ -532,5 +674,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }

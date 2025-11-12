@@ -146,8 +146,8 @@ export default function LandingPage() {
                   Natural language scheduling that works like magic.
                   <br />
                   Just tell Gatherly what you need.
-                </p>
-              </div>
+          </p>
+        </div>
               
               <div style={{ marginTop: '32px' }}>
                 {/* Button */}
@@ -192,9 +192,9 @@ export default function LandingPage() {
                 </p>
               </motion.div>
             </motion.div>
-          </div>
+        </div>
         </section>
-      </div>
+    </div>
     </>
   );
 }
