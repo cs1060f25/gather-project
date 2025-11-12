@@ -9,11 +9,14 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:setup": "ts-node scripts/setup-db.ts",
+    "db:test": "ts-node scripts/test-db.ts",
+    "db:seed": "ts-node scripts/seed-test-data.ts"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
-    "firebase": "^11.2.0",
+    "firebase": "^11.10.0",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
