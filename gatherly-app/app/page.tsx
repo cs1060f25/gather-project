@@ -188,7 +188,7 @@ export default function LandingPage() {
                   fontSize: 'clamp(16px, 1.5vw, 24px)',
                   fontWeight: 500
                 }}>
-                  Gatherly {'>'} When2Meet
+                  Gatherly {'>'} When2Meet ✨
                 </p>
               </motion.div>
             </motion.div>
