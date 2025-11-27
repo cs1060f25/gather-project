@@ -1,12 +1,11 @@
 import os
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from config import config
+from extensions import db, socketio
 
 # Initialize extensions
-db = SQLAlchemy()
-socketio = SocketIO()
+# db and socketio are initialized in extensions.py
 
 def create_app(config_name='default'):
     """Create and configure the Flask application."""

@@ -78,4 +78,22 @@ def init_routes(app, socketio, db):
             'is_available': r.is_available
         } for r in responses])
 
+    @app.route('/api/events/batch', methods=['POST'])
+    def get_events_batch():
+        data = request.get_json()
+        event_ids = data.get('event_ids', [])
+        
+        if not event_ids:
+            return jsonify([])
+            
+        events = Event.query.filter(Event.id.in_(event_ids)).all()
+        
+        return jsonify([{
+            'id': e.id,
+            'title': e.title,
+            'created_at': e.created_at.isoformat(),
+            'response_count': len(e.responses),
+            'status': 'In Progress'
+        } for e in events])
+
     return app
