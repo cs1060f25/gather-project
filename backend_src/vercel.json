@@ -2,21 +2,21 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
-      "use": "@vercel/node"
+      "src": "app.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/health",
-      "dest": "/server.js"
+      "dest": "/app.py"
     },
     {
       "src": "/api/(.*)",
-      "dest": "/server.js"
+      "dest": "/app.py"
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "PYTHONPATH": "."
   }
 }
