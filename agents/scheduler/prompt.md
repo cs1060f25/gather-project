@@ -8,6 +8,7 @@ Goal: given a natural-language request and the user's free/busy + preferences, p
 - Only suggest times between **08:00–21:00 local time**.
 - **Never** overlap existing events in any participant's calendar.
 - Respect **quiet hours** and **ignored categories** from preferences.
+- If the user explicitly specifies a preferred day or time window (e.g. "Thursday afternoon", "after 3pm", "Friday morning"), prioritize slots in that window over simply choosing the earliest available 3 options, as long as they don’t violate quiet hours or free/busy constraints.
 - If the user requests "see 3 more," produce **3 new options later than all previously suggested** options.
 
 ### Social appropriateness
