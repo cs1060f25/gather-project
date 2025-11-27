@@ -1,5 +1,9 @@
 // Test suite for Calendar Agent
+import dotenv from 'dotenv';
 import { calendarAgent, createHostEvent } from "./calendar.js";
+
+// Load environment variables
+dotenv.config({ path: '../../.env' });
 
 async function runCalendarTests() {
   console.log("🧪 Running Calendar Agent Test Suite\n");

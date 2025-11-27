@@ -12,7 +12,14 @@ import {
   sortIsoAscending,
 } from "./schema.js";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize client lazily to allow for environment variable loading
+let client: OpenAI | null = null;
+function getClient() {
+  if (!client) {
+    client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return client;
+}
 
 // Load system prompt from prompt.md so we have one source of truth
 const __filename = fileURLToPath(import.meta.url);
@@ -36,7 +43,7 @@ export async function generateSchedule(input: SchedulerRequest): Promise<Schedul
   };
 
   // Call the LLM in JSON mode
-  const completion = await client.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
