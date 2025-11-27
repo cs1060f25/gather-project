@@ -1,0 +1,7 @@
+Flask==3.1.2
+Flask-SQLAlchemy==3.1.1
+Flask-SocketIO==5.5.1
+python-dotenv==1.2.1
+python-engineio==4.12.3
+python-socketio==5.15.0
+Werkzeug==3.1.3

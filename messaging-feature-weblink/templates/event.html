@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - Gatherly{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ event.title }}</h1>
+        {% if event.description %}
+        <p class="text-gray-600 mb-6">{{ event.description }}</p>
+        {% endif %}
+        
+        <div class="mt-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Select your availability</h2>
+            
+            <form id="responseForm" class="space-y-4">
+                <input type="hidden" name="name" id="respondentName" required>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Slot</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Not Available</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for slot in event.time_slots %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ slot.start_time.strftime('%A, %B %d, %Y') }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ slot.start_time.strftime('%I:%M %p') }} - {{ slot.end_time.strftime('%I:%M %p') }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <input type="radio" name="time_slot_{{ slot.id }}" value="true" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <input type="radio" name="time_slot_{{ slot.id }}" value="false" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500" checked>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-6">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Your Name</label>
+                    <input type="text" id="name" name="name" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Submit Response
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="responsesContainer" class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Responses</h2>
+        <div id="responsesList" class="space-y-4">
+            <!-- Responses will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Get the event ID from the URL
+const pathParts = window.location.pathname.split('/');
+const eventId = pathParts[pathParts.length - 1];
+
+// Connect to Socket.IO
+const socket = io();
+
+// Load initial responses
+async function loadResponses() {
+    try {
+        const response = await fetch(`/api/event/${eventId}/responses`);
+        const responses = await response.json();
+        updateResponsesUI(responses);
+    } catch (error) {
+        console.error('Error loading responses:', error);
+    }
+}
+
+// Update the UI with responses
+function updateResponsesUI(responses) {
+    const container = document.getElementById('responsesList');
+    
+    if (responses.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No responses yet.</p>';
+        return;
+    }
+    
+    // Group responses by time slot
+    const responsesBySlot = {};
+    responses.forEach(response => {
+        if (!responsesBySlot[response.time_slot_id]) {
+            responsesBySlot[response.time_slot_id] = {
+                available: [],
+                unavailable: []
+            };
+        }
+        
+        if (response.is_available) {
+            responsesBySlot[response.time_slot_id].available.push(response.respondent_name);
+        } else {
+            responsesBySlot[response.time_slot_id].unavailable.push(response.respondent_name);
+        }
+    });
+    
+    // Update the UI
+    container.innerHTML = Object.entries(responsesBySlot).map(([slotId, data]) => `
+        <div class="border-b border-gray-200 pb-4 mb-4">
+            <h3 class="font-medium text-gray-900 mb-2">Time Slot ${slotId}</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-green-50 p-3 rounded-md">
+                    <h4 class="text-sm font-medium text-green-800 mb-1">Available (${data.available.length})</h4>
+                    ${data.available.length > 0 
+                        ? `<ul class="text-sm text-green-700">
+                            ${data.available.map(name => `<li>${name}</li>`).join('')}
+                          </ul>`
+                        : '<p class="text-sm text-green-700">No one available</p>'
+                    }
+                </div>
+                
+                <div class="bg-red-50 p-3 rounded-md">
+                    <h4 class="text-sm font-medium text-red-800 mb-1">Not Available (${data.unavailable.length})</h4>
+                    ${data.unavailable.length > 0 
+                        ? `<ul class="text-sm text-red-700">
+                            ${data.unavailable.map(name => `<li>${name}</li>`).join('')}
+                          </ul>`
+                        : '<p class="text-sm text-red-700">No responses yet</p>'
+                    }
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Handle form submission
+document.getElementById('responseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const name = formData.get('name');
+    
+    // Store the name for future responses
+    localStorage.setItem('respondentName', name);
+    
+    // Prepare the data to send
+    const data = new FormData();
+    data.append('name', name);
+    
+    // Add time slot responses
+    document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+        data.append(radio.name, radio.value);
+    });
+    
+    try {
+        const response = await fetch(`/event/${eventId}/response`, {
+            method: 'POST',
+            body: data
+        });
+        
+        if (response.ok) {
+            // Reload responses to show the new one
+            loadResponses();
+            
+            // Show success message
+            alert('Your response has been recorded!');
+        } else {
+            throw new Error('Failed to submit response');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+
+// Listen for new responses
+socket.on('new_response', (data) => {
+    if (data.event_id === eventId) {
+        loadResponses();
+    }
+});
+
+// Load responses when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Load saved name if exists
+    const savedName = localStorage.getItem('respondentName');
+    if (savedName) {
+        document.getElementById('name').value = savedName;
+    }
+    
+    // Load initial responses
+    loadResponses();
+});
+</script>
+{% endblock %}
