@@ -1,0 +1,10 @@
+flask==2.3.3
+flask-socketio==5.3.5
+flask-wtf==1.2.1
+python-dotenv==1.0.0
+twilio==8.9.0
+python-engineio==4.6.1
+python-socketio==5.8.0
+eventlet==0.33.3
+Werkzeug==2.3.7
+dnspython==2.4.2

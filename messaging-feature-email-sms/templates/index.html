@@ -1,0 +1,301 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Email-to-SMS Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0b1020;
+      --bg-secondary: #111737;
+      --bg-input: #0f1530;
+      --border: #1f2a5a;
+      --text-primary: #eef2ff;
+      --text-secondary: #b6c1ff;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --error: #ef4444;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    
+    h1 { 
+      margin: 0 0 24px; 
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .grid { 
+      display: grid; 
+      grid-template-columns: 1fr 2fr; 
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .card { 
+      background: var(--bg-secondary); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 24px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .card h2 {
+      margin: 0 0 20px;
+      font-size: 18px;
+      color: var(--text-secondary);
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    label { 
+      display: block; 
+      font-size: 13px; 
+      color: var(--text-secondary); 
+      margin-bottom: 6px; 
+      font-weight: 500;
+    }
+    
+    input, select, textarea { 
+      width: 100%; 
+      padding: 10px 14px; 
+      border-radius: 8px; 
+      border: 1px solid var(--border); 
+      background: var(--bg-input); 
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    button { 
+      background: var(--accent); 
+      color: white; 
+      border: none; 
+      padding: 12px 20px; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-weight: 600;
+      font-size: 14px;
+      width: 100%;
+      margin-top: 8px;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background: var(--accent-hover);
+    }
+    
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    
+    .messages-container {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .table-container {
+      flex: 1;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    
+    table { 
+      width: 100%; 
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    
+    th, td { 
+      text-align: left; 
+      padding: 12px 16px; 
+      border-bottom: 1px solid var(--border); 
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    
+    th { 
+      color: var(--text-secondary); 
+      font-weight: 600;
+      background: rgba(31, 42, 90, 0.5);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    tbody tr:hover {
+      background: rgba(79, 70, 229, 0.1);
+    }
+    
+    .status-cell {
+      font-weight: 500;
+    }
+    
+    .status-sent {
+      color: #60a5fa;
+    }
+    
+    .status-delivered {
+      color: #34d399;
+    }
+    
+    .status-failed {
+      color: #f87171;
+    }
+    
+    .status-responded {
+      color: #a78bfa;
+    }
+    
+    @media (max-width: 1024px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .card {
+        min-height: 400px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+      }
+      
+      .card {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Email-to-SMS Dashboard</h1>
+    
+    <div class="grid">
+      <!-- Send Message Card -->
+      <div class="card">
+        <h2>Send New Message</h2>
+        <form id="messageForm">
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              placeholder="+18665551234"
+              required
+              pattern="^\+?[0-9\s\-()]{10,}$"
+              title="Please enter a valid phone number"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="carrier">Carrier</label>
+            <select id="carrier" required>
+              <option value="">Select Carrier</option>
+              <option value="verizon">Verizon</option>
+              <option value="att">AT&T</option>
+              <option value="tmobile">T-Mobile</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea 
+              id="message" 
+              rows="4" 
+              placeholder="Type your message..."
+              required
+              minlength="1"
+              maxlength="160"
+            ></textarea>
+            <div style="font-size: 12px; color: var(--text-secondary); text-align: right; margin-top: 4px;">
+              <span id="charCount">0</span>/160
+            </div>
+          </div>
+          
+          <button type="submit" id="send">
+            <span class="button-text">Send Message</span>
+            <span class="button-loader" style="display: none;">Sending...</span>
+          </button>
+        </form>
+      </div>
+      
+      <!-- Messages Table Card -->
+      <div class="card">
+        <h2>Message History</h2>
+        <div class="messages-container">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Phone</th>
+                  <th>Carrier</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Response</th>
+                </tr>
+              </thead>
+              <tbody id="rows">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-secondary);">
+                    No messages sent yet
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-DkkWeEOcik9pcnRHCTJk7U9QmRk9mbZz4lcmL80sObB5Q3xKyi2Ubs6y6qqpGqv3" crossorigin="anonymous"></script>
+  <script src="/static/js/app.js"></script>
+  <script>
+    // Character counter for the message textarea
+    const messageEl = document.getElementById('message');
+    const charCountEl = document.getElementById('charCount');
+    
+    if (messageEl && charCountEl) {
+      messageEl.addEventListener('input', (e) => {
+        charCountEl.textContent = e.target.value.length;
+      });
+    }
+  </script>
+</body>
+</html>

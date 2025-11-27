@@ -1,0 +1,7 @@
+curl -X POST "https://api.twilio.com/2010-04-01/Accounts/ACe3d4bdb8a97babcf4853fab41e885b9f/Messages.json" \
+  --data-urlencode "Body=Are you available at 3pm tomorrow? Reply YES or NO." \
+  --data-urlencode "To=+18777804236” \
+  --data-urlencode "From=+18666554012" \
+  -u “ACe3d4bdb8a97babcf4853fab41e885b9f:bee09ea9f9a530af9ec1377fae343682"
+
+  ngrok http 5000
