@@ -2,6 +2,13 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
 
+// Recurrence schema
+export const RecurrenceSchema = z.object({
+  frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY']),
+  count: z.number().int().positive(),
+  interval: z.number().int().positive().optional(),
+});
+
 // Calendar request schema - matches team contracts CalendarService interface
 export const CalendarRequestSchema = z.object({
   hostId: z.string().min(1),
@@ -11,6 +18,8 @@ export const CalendarRequestSchema = z.object({
   description: z.string().optional(),
   durationMinutes: z.number().int().positive().default(60),
   inviteeEmails: z.array(z.string().email()).optional(),
+  recurrence: RecurrenceSchema.optional(),
+  timeZone: z.string().optional().default('UTC'),
 });
 
 export type CalendarRequest = z.infer<typeof CalendarRequestSchema>;
@@ -22,6 +31,18 @@ export const CalendarResponseSchema = z.object({
 });
 
 export type CalendarResponse = z.infer<typeof CalendarResponseSchema>;
+
+// Error types
+export class CalendarError extends Error {
+  constructor(
+    message: string,
+    public code: 'VALIDATION' | 'AUTH' | 'QUOTA' | 'CONFLICT' | 'API',
+    public originalError?: unknown
+  ) {
+    super(message);
+    this.name = 'CalendarError';
+  }
+}
 
 // Busy period schema for free/busy queries
 export interface BusyPeriod {
@@ -92,7 +113,11 @@ export class CalendarAgent {
       }));
     } catch (error) {
       console.error('Error fetching busy periods:', error);
-      throw new Error(`Failed to fetch busy periods for host ${hostId}: ${error}`);
+      throw new CalendarError(
+        `Failed to fetch busy periods for host ${hostId}`,
+        'API',
+        error
+      );
     }
   }
 
@@ -119,17 +144,17 @@ export class CalendarAgent {
       const attendees = inviteeEmails?.map((email: string) => ({ email })) || [];
 
       // Create calendar event
-      const eventResource = {
+      const eventResource: any = {
         summary: title,
         description: description || `Scheduled via Gatherly`,
         location: location || undefined,
         start: {
           dateTime: startTime.toISOString(),
-          timeZone: 'UTC', // TODO: Use user's timezone from preferences
+          timeZone: input.timeZone || 'UTC',
         },
         end: {
           dateTime: endTime.toISOString(),
-          timeZone: 'UTC',
+          timeZone: input.timeZone || 'UTC',
         },
         attendees,
         reminders: {
@@ -139,6 +164,14 @@ export class CalendarAgent {
         sendUpdates: 'all',
       };
 
+      // Add recurrence if specified
+      if (input.recurrence) {
+        const { frequency, count, interval } = input.recurrence;
+        eventResource.recurrence = [
+          `RRULE:FREQ=${frequency};COUNT=${count}${interval ? `;INTERVAL=${interval}` : ''}`
+        ];
+      }
+
       const response = await this.calendar.events.insert({
         calendarId: 'primary',
         requestBody: eventResource,
@@ -147,7 +180,10 @@ export class CalendarAgent {
 
       const calendarEventId = response.data.id;
       if (!calendarEventId) {
-        throw new Error('Failed to create calendar event - no event ID returned');
+        throw new CalendarError(
+          'Failed to create calendar event - no event ID returned',
+          'API'
+        );
       }
 
       // Generate internal event ID
@@ -164,7 +200,11 @@ export class CalendarAgent {
       };
     } catch (error) {
       console.error('Error creating calendar event:', error);
-      throw new Error(`Failed to create calendar event: ${error}`);
+      throw new CalendarError(
+        `Failed to create calendar event`,
+        'API',
+        error
+      );
     }
   }
 
