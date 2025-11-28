@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import Header from '../components/common/Header';
 
 interface AppLayoutProps {
@@ -7,11 +7,11 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const location = useLocation();
+  const router = useRouter();
   const isPublicRoute = [
     '/onboarding',
     '/response'
-  ].some(route => location.pathname.startsWith(route));
+  ].some(route => router.pathname.startsWith(route));
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">

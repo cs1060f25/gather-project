@@ -1,10 +1,11 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { useRouter } from 'next/router'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 
 export default function AttendeeResponse() {
-  const { id } = useParams()
+  const router = useRouter();
+  const { responseId } = router.query;
 
   return (
     <div className="max-w-md mx-auto">

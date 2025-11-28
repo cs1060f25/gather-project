@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/router'
 import OnboardingCard from '../components/onboarding/OnboardingCard'
 import StepIndicator from '../components/onboarding/StepIndicator'
 import SignupForm from '../components/onboarding/SignupForm'
@@ -23,7 +23,7 @@ const ONBOARDING_STEPS = [
 ];
 
 export default function Onboarding() {
-  const navigate = useNavigate()
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
@@ -90,7 +90,7 @@ export default function Onboarding() {
     try {
       // TODO: Call backend to save preferences
       await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-      navigate('/')
+      router.push('/dashboard');
     } catch (error) {
       console.error('Failed to save preferences:', error)
       setError('Failed to save preferences. Please try again.')
