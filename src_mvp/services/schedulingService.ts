@@ -79,11 +79,46 @@ export class SchedulingService {
     // Add user message to conversation history
     this.conversationHistory.push({ role: 'user', content: userMessage });
 
-    // TEMPORARY: Mock response for deployment testing
-    // This will be replaced with real API later
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    
-    // Simple mock logic
+    // If no API URL configured, use mock
+    if (!this.apiKey) {
+      return this.getMockResponse(userMessage);
+    }
+
+    try {
+      // Call Next.js API route
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: this.conversationHistory
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const schedulingResponse: SchedulingResponse = await response.json();
+      
+      // Add assistant response to history
+      if (schedulingResponse.status) {
+        const responseText = schedulingResponse.nextQuestion || 
+                           (schedulingResponse.reviewCard ? 'Review the meeting details above.' : 'Processing...');
+        this.conversationHistory.push({ role: 'assistant', content: responseText });
+      }
+      
+      return schedulingResponse;
+    } catch (error) {
+      console.error('Error calling backend API:', error);
+      // Fallback to mock if API fails
+      return this.getMockResponse(userMessage);
+    }
+  }
+
+  private getMockResponse(userMessage: string): SchedulingResponse {
+    // Simple mock logic for testing
     const lowerMessage = userMessage.toLowerCase();
     
     if (lowerMessage.includes('coffee') && lowerMessage.includes('tomorrow')) {
@@ -113,7 +148,6 @@ export class SchedulingService {
       };
     }
     
-    // Default incomplete response
     return {
       status: 'incomplete',
       extracted: {
