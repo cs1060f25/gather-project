@@ -2,7 +2,7 @@
   "name": "gatherly-mvp",
   "private": true,
   "description": "Gatherly MVP - AI-powered meeting scheduler (Next.js)",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
