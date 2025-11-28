@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - Organizer Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ event.title }}</h1>
+                {% if event.description %}
+                <p class="text-gray-600 mb-6">{{ event.description }}</p>
+                {% endif %}
+            </div>
+            <div class="bg-indigo-50 px-4 py-2 rounded-md">
+                <p class="text-sm text-indigo-700 font-medium">Organizer View</p>
+            </div>
+        </div>
+
+        <div class="mt-6 p-4 bg-gray-50 rounded-md border border-gray-200">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Share this link with respondents:</h3>
+            <div class="flex items-center space-x-2">
+                <input type="text" readonly
+                    value="{{ url_for('event_response_page', event_id=event.id, _external=True) }}"
+                    class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-500"
+                    onclick="this.select()">
+                <button
+                    onclick="navigator.clipboard.writeText('{{ url_for('event_response_page', event_id=event.id, _external=True) }}')"
+                    class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Copy
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="responsesContainer" class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Responses</h2>
+        <div id="responsesList" class="space-y-4">
+            {% for response in responses %}
+            <div class="border-b border-gray-200 pb-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-medium text-gray-900">{{ response.responder_name }}</h3>
+                    <span class="text-sm text-gray-500">{{ response.submitted_at }}</span>
+                </div>
+                <div class="mt-2 grid grid-cols-3 gap-2">
+                    <div
+                        class="p-2 rounded text-center {{ 'bg-green-100 text-green-800' if response.available1 else 'bg-gray-100 text-gray-500' }}">
+                        {{ time_slots[0] }}
+                    </div>
+                    <div
+                        class="p-2 rounded text-center {{ 'bg-green-100 text-green-800' if response.available2 else 'bg-gray-100 text-gray-500' }}">
+                        {{ time_slots[1] }}
+                    </div>
+                    <div
+                        class="p-2 rounded text-center {{ 'bg-green-100 text-green-800' if response.available3 else 'bg-gray-100 text-gray-500' }}">
+                        {{ time_slots[2] }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Get the event ID from the URL
+    const pathParts = window.location.pathname.split('/');
+    const eventId = pathParts[pathParts.length - 1];
+
+    // Connect to Socket.IO
+    const socket = io();
+
+    // Join the room for this event
+    socket.emit('join', { event_id: eventId });
+
+    // Listen for new responses from other users
+    socket.on('update_responses', (data) => {
+        if (data.event_id === eventId) {
+            loadResponses();
+        }
+    });
+
+    // Load initial responses
+    async function loadResponses() {
+        try {
+            const response = await fetch(`/api/event/${eventId}/responses`);
+            if (!response.ok) {
+                throw new Error('Failed to load responses');
+            }
+            const responses = await response.json();
+            updateResponsesUI(responses);
+        } catch (error) {
+            console.error('Error loading responses:', error);
+            document.getElementById('responsesList').innerHTML = `
+                <div class="text-red-600 p-4 bg-red-50 rounded">
+                    Error loading responses. Please refresh the page.
+                </div>`;
+        }
+    }
+
+    // Update the UI with responses
+    function updateResponsesUI(responses) {
+        const container = document.getElementById('responsesList');
+
+        if (responses.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 p-4">No responses yet.</p>';
+            return;
+        }
+
+        // Create a list of responses
+        container.innerHTML = responses.map(response => `
+            <div class="border-b border-gray-200 py-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-medium text-gray-900">${response.responder_name}</h3>
+                    <span class="text-sm text-gray-500">${new Date(response.submitted_at).toLocaleString()}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <div class="p-2 rounded text-center ${response.available1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}">
+                        {{ time_slots[0] }}
+                    </div>
+                    <div class="p-2 rounded text-center ${response.available2 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}">
+                        {{ time_slots[1] }}
+                    </div>
+                    <div class="p-2 rounded text-center ${response.available3 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}">
+                        {{ time_slots[2] }}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Load responses when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        loadResponses();
+    });
+</script>
+{% endblock %}

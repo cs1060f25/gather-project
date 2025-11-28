@@ -1,37 +1,25 @@
-import os
 from flask import Flask
-from flask_socketio import SocketIO
 from config import config
 from extensions import db, socketio
+from routes import init_routes
 
-# Initialize extensions
-# db and socketio are initialized in extensions.py
 
-def create_app(config_name='default'):
-    """Create and configure the Flask application."""
+def create_app(config_name: str = "default") -> Flask:
+    """Application factory for the Gatherly messaging-feature-weblink app."""
     app = Flask(__name__)
-    
-    # Load configuration
     app.config.from_object(config[config_name])
-    
-    # Initialize extensions
+
+    # Initialise extensions
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins="*")
-    
-    # Import models after db initialization to avoid circular imports
-    with app.app_context():
-        # Import models here to ensure they're registered with SQLAlchemy
-        from models import Event, TimeSlot, Response
-        # Create database tables
-        db.create_all()
-    
-    # Import and register routes
-    from routes import init_routes
+
+    # Register routes / blueprints
     init_routes(app, socketio, db)
-    
+
     return app
 
-# Only create app instance when this file is run directly
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = create_app()
-    socketio.run(app, debug=True, port=5001)
+    # Use socketio.run so Socket.IO works properly
+    socketio.run(app, host="0.0.0.0", port=5001, debug=True)

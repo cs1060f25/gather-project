@@ -1,6 +1,6 @@
 # manage_db.py (in messaging-feature-weblink/)
 from app import create_app, db
-from models import Event, TimeSlot, Response
+from models import Event, Response
 
 app = create_app()
 

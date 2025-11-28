@@ -23,27 +23,32 @@
             <div class="space-y-4">
                 <h2 class="text-lg font-medium text-gray-900">Proposed Time Slots</h2>
 
-                {% for i in range(1, 4) %}
                 <div class="border border-gray-200 rounded-md p-4">
-                    <h3 class="text-md font-medium text-gray-700 mb-3">Time Slot {{ i }}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="time_slot_{{ i }}_start" class="block text-sm font-medium text-gray-700">Start
-                                Time</label>
-                            <input type="datetime-local" id="time_slot_{{ i }}_start" name="time_slot_{{ i }}_start"
-                                required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label for="time_slot_{{ i }}_end" class="block text-sm font-medium text-gray-700">End
-                                Time</label>
-                            <input type="datetime-local" id="time_slot_{{ i }}_end" name="time_slot_{{ i }}_end"
-                                required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
+                    <h3 class="text-md font-medium text-gray-700 mb-3">Time Slot 1</h3>
+                    <div>
+                        <label for="time1" class="block text-sm font-medium text-gray-700">Date & Time</label>
+                        <input type="datetime-local" id="time1" name="time1" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                 </div>
-                {% endfor %}
+
+                <div class="border border-gray-200 rounded-md p-4">
+                    <h3 class="text-md font-medium text-gray-700 mb-3">Time Slot 2</h3>
+                    <div>
+                        <label for="time2" class="block text-sm font-medium text-gray-700">Date & Time</label>
+                        <input type="datetime-local" id="time2" name="time2" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-md p-4">
+                    <h3 class="text-md font-medium text-gray-700 mb-3">Time Slot 3</h3>
+                    <div>
+                        <label for="time3" class="block text-sm font-medium text-gray-700">Date & Time</label>
+                        <input type="datetime-local" id="time3" name="time3" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                </div>
             </div>
 
             <div class="flex justify-end">
@@ -76,15 +81,28 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
+    // Connect to Socket.IO for real-time updates
+    const socket = io();
+
+    // Listen for new responses
+    socket.on('new_response', (data) => {
+        // Reload the events list to update response counts
+        loadEvents();
+    });
+
     // Load events on page load
     document.addEventListener('DOMContentLoaded', loadEvents);
 
     async function loadEvents() {
-        const eventIds = JSON.parse(localStorage.getItem('myEvents') || '[]');
+        const myEvents = JSON.parse(localStorage.getItem('myEvents') || '[]');
+        const container = document.getElementById('eventsList');
 
-        if (eventIds.length === 0) {
+        if (myEvents.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">You haven\'t created any events yet.</p>';
             return;
         }
 
@@ -94,13 +112,21 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ event_ids: eventIds })
+                body: JSON.stringify({ event_ids: myEvents.map(e => e.id) })
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to load events');
+            }
 
             const events = await response.json();
             renderEvents(events);
         } catch (error) {
             console.error('Error loading events:', error);
+            container.innerHTML = `
+                <div class="text-red-600 p-4 bg-red-50 rounded">
+                    Error loading events. Please refresh the page.
+                </div>`;
         }
     }
 
@@ -112,37 +138,63 @@
             return;
         }
 
-        // Sort by created_at desc
+        // Sort by created_at desc (newest first)
         events.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         container.innerHTML = events.map(event => `
-        <div class="border border-gray-200 rounded-md p-4 hover:bg-gray-50 transition duration-150">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg font-medium text-indigo-600">
-                        <a href="/event/${event.id}" class="hover:underline">${event.title}</a>
-                    </h3>
-                    <p class="text-sm text-gray-500">Created on ${new Date(event.created_at).toLocaleDateString()}</p>
-                </div>
-                <div class="text-right">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        ${event.status}
-                    </span>
-                    <p class="text-sm text-gray-500 mt-1">${event.response_count} response${event.response_count !== 1 ? 's' : ''}</p>
+            <div class="border border-gray-200 rounded-md p-4 hover:bg-gray-50 transition duration-150 mb-4">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-medium text-indigo-600">
+                            <a href="/event/${event.id}" class="hover:underline">${event.title || 'Untitled Event'}</a>
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">
+                            Created on ${new Date(event.created_at).toLocaleDateString()}
+                        </p>
+                        <div class="mt-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ${event.status || 'Active'}
+                            </span>
+                            <span class="ml-2 text-sm text-gray-600">
+                                ${event.response_count || 0} response${event.response_count !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <a href="/event/${event.id}" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            View Details
+                        </a>
+                        <button onclick="copyEventLink('${event.id}')" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Copy Link
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="mt-3 flex space-x-3">
-                <a href="/event/${event.id}" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">View Details</a>
-                <button onclick="copyEventLink('${event.id}')" class="text-sm text-gray-600 hover:text-gray-900">Copy Link</button>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
     }
 
     function copyEventLink(eventId) {
         const url = `${window.location.origin}/event/${eventId}`;
         navigator.clipboard.writeText(url).then(() => {
-            alert('Link copied to clipboard!');
+            // Show a small toast notification instead of an alert
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-md shadow-lg text-sm flex items-center';
+            toast.innerHTML = `
+                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                Link copied to clipboard!
+            `;
+            document.body.appendChild(toast);
+
+            // Remove the toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Failed to copy link. Please try again.');
         });
     }
 
@@ -158,33 +210,41 @@
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: new URLSearchParams(data)
+                body: new URLSearchParams(data).toString()
             });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to create event');
+            }
 
             const result = await response.json();
 
-            if (response.ok) {
-                // Save to localStorage
-                const eventIds = JSON.parse(localStorage.getItem('myEvents') || '[]');
-                eventIds.push(result.event_id);
-                localStorage.setItem('myEvents', JSON.stringify(eventIds));
+            // Save the event ID to local storage
+            const myEvents = JSON.parse(localStorage.getItem('myEvents') || '[]');
+            myEvents.unshift({
+                id: result.event_id,
+                title: data.title,
+                created_at: new Date().toISOString(),
+                token: result.token
+            });
+            localStorage.setItem('myEvents', JSON.stringify(myEvents));
 
-                // Show success message and event URL
-                document.getElementById('eventCreated').classList.remove('hidden');
-                document.getElementById('eventUrl').value = result.url;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Show success message and copy link
+            document.getElementById('eventForm').reset();
+            const eventCreated = document.getElementById('eventCreated');
+            eventCreated.classList.remove('hidden');
+            document.getElementById('eventUrl').value = result.url;
 
-                // Reload events list
-                loadEvents();
+            // Scroll to show the success message
+            eventCreated.scrollIntoView({ behavior: 'smooth' });
 
-                // Reset form
-                e.target.reset();
-            } else {
-                alert('Failed to create event. Please try again.');
-            }
+            // Reload events list
+            loadEvents();
+
         } catch (error) {
+            alert(error.message || 'An error occurred while creating the event');
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
         }
     });
 
