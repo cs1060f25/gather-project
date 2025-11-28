@@ -145,7 +145,7 @@ async function runTests() {
       freeBusy: [
         { start: "2025-11-12T08:00:00Z", end: "2025-11-12T21:00:00Z" }, // Fully booked
       ],
-      preferences: {},
+      preferences: { duration_minutes: 60 },
     });
     console.log(JSON.stringify(result6, null, 2));
     console.log(`Slot count: ${result6.slots.length}`);
@@ -162,7 +162,7 @@ async function runTests() {
     const result7 = await generateSchedule({
       text: "Grab lunch with Jamie at the Spangler Cafe on Tuesday",
       freeBusy: [],
-      preferences: {},
+      preferences: { duration_minutes: 60 },
     });
     console.log(JSON.stringify(result7, null, 2));
     
@@ -190,7 +190,7 @@ async function runTests() {
       freeBusy: [
         { start: "2025-11-13T09:00:00Z", end: "2025-11-13T18:00:00Z" }, // Busy 9-6
       ],
-      preferences: {},
+      preferences: { duration_minutes: 60 },
     });
     console.log(JSON.stringify(result8, null, 2));
     

@@ -10,7 +10,9 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "build:agents": "cd agents && tsc",
+    "test:agents": "npm run build:agents && node agents/dist/scheduler/calendar-test.js"
   },
   "dependencies": {
     "clsx": "^2.1.0",
@@ -26,7 +28,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^22.0.0",
+    "@types/express": "^5.0.5",
+    "@types/node": "^22.19.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -37,8 +40,9 @@
     "jsdom": "^27.0.1",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.5.3",
+    "typescript": "^5.9.3",
     "vite": "^5.3.3",
     "vitest": "^4.0.4"
   }

@@ -125,26 +125,31 @@ async function runCalendarTests() {
   console.log("Test 6: Error Handling - Invalid Token");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   try {
-    // Temporarily override access token to trigger error
-    const originalToken = process.env.GOOGLE_ACCESS_TOKEN;
-    process.env.GOOGLE_ACCESS_TOKEN = 'invalid_token';
+    let originalToken: string | undefined;
+    try {
+      // Temporarily override access token to trigger error
+      originalToken = process.env.GOOGLE_ACCESS_TOKEN;
+      process.env.GOOGLE_ACCESS_TOKEN = 'invalid_token';
 
-    await createHostEvent({
-      timeZone: 'UTC',
-      hostId: "user404",
-      slot: "2025-12-01T10:00:00Z",
-      title: "Should Fail",
-      durationMinutes: 30,
-    });
+      await createHostEvent({
+        timeZone: 'UTC',
+        hostId: "user404",
+        slot: "2025-12-01T10:00:00Z",
+        title: "Should Fail",
+        durationMinutes: 30,
+      });
 
-    console.log("❌ FAIL: Should have thrown error");
-    // Restore token
-    process.env.GOOGLE_ACCESS_TOKEN = originalToken;
+      console.log("❌ FAIL: Should have thrown error");
+    } catch (e: unknown) {
+      const error = e as Error;
+      console.log("✅ PASS - Caught expected error:", error.message);
+    } finally {
+      // Restore token
+      process.env.GOOGLE_ACCESS_TOKEN = originalToken;
+    }
   } catch (e: unknown) {
     const error = e as Error;
-    console.log("✅ PASS - Caught expected error:", error.message);
-    // Restore token
-    process.env.GOOGLE_ACCESS_TOKEN = originalToken;
+    console.log("❌ Unexpected error:", error.message);
   }
 
   // Test 7: Input Validation
