@@ -79,50 +79,54 @@ export class SchedulingService {
     // Add user message to conversation history
     this.conversationHistory.push({ role: 'user', content: userMessage });
 
-    try {
-      // Call our backend API instead of OpenAI directly
-      const response = await fetch(`${this.apiKey}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: this.conversationHistory
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const schedulingResponse: SchedulingResponse = await response.json();
-      
-      // Add assistant response to history if we got a valid response
-      if (schedulingResponse.status) {
-        const responseText = schedulingResponse.nextQuestion || 
-                           (schedulingResponse.reviewCard ? 'Review the meeting details above.' : 'Processing...');
-        this.conversationHistory.push({ role: 'assistant', content: responseText });
-      }
-      
-      return schedulingResponse;
-    } catch (error) {
-      console.error('Error processing scheduling request:', error);
-      
-      // Fallback response
+    // TEMPORARY: Mock response for deployment testing
+    // This will be replaced with real API later
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+    
+    // Simple mock logic
+    const lowerMessage = userMessage.toLowerCase();
+    
+    if (lowerMessage.includes('coffee') && lowerMessage.includes('tomorrow')) {
       return {
-        status: 'incomplete',
+        status: 'complete',
         extracted: {
-          attendees: null,
-          duration: null,
-          method: null,
-          location: null,
-          timePreferences: null
+          attendees: ['Sarah'],
+          duration: 30,
+          method: 'In-person',
+          location: 'Local Coffee Shop',
+          timePreferences: 'Tomorrow afternoon'
         },
-        missing: ['attendees', 'duration', 'method', 'location', 'timePreferences'],
-        nextQuestion: 'I had trouble understanding your request. Could you tell me who you want to meet with?',
-        reviewCard: null
+        missing: [],
+        nextQuestion: null,
+        reviewCard: {
+          attendees: ['Sarah'],
+          duration: 30,
+          method: 'In-person',
+          location: 'Local Coffee Shop',
+          constraints: 'Tomorrow afternoon',
+          proposedSlots: [
+            'Tomorrow at 2:00 PM',
+            'Tomorrow at 3:00 PM', 
+            'Tomorrow at 4:00 PM'
+          ]
+        }
       };
     }
+    
+    // Default incomplete response
+    return {
+      status: 'incomplete',
+      extracted: {
+        attendees: null,
+        duration: null,
+        method: null,
+        location: null,
+        timePreferences: null
+      },
+      missing: ['attendees', 'duration', 'method', 'location', 'timePreferences'],
+      nextQuestion: 'Who would you like to meet with? (Try: "Coffee with Sarah tomorrow")',
+      reviewCard: null
+    };
   }
 
   // Reset conversation for new scheduling session
