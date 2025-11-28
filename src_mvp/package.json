@@ -1,7 +1,8 @@
 {
   "name": "gatherly-mvp",
   "private": true,
-  "version": "0.1.0",
+  "description": "Gatherly MVP - AI-powered meeting scheduler (v1.0)",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
