@@ -1,93 +1,114 @@
-# Gatherly
+# Gatherly MVP - AI-Powered Meeting Scheduler
 
-Gatherly is an intelligent scheduling agent that automates the process of planning social hangouts — it finds mutual availability, coordinates details, and seamlessly books time in everyone's calendars.
+A production-ready MVP for scheduling meetings using natural language processing with OpenAI GPT-4.
 
-**Team**: Milan Naropanth, Talha Minhas, Ikenna Ogbogu
+## Features
 
-[Project Folder on Google Drive](https://drive.google.com/drive/folders/1wtmj0lfHxuVh9DfK9A5iHQziRVMTfHD-?usp=sharing)
+- 🤖 **AI-Powered Extraction** - Natural language processing for meeting details
+- 📋 **Structured Review** - Human-verifiable meeting summaries before confirmation
+- 🔄 **Conversational Flow** - Smart follow-up questions for missing information
+- 📱 **Apple-Inspired UI** - Clean, modern interface with smooth interactions
+- ✅ **Multi-Step Onboarding** - Account creation, calendar connection, preferences
 
----
+## Tech Stack
 
-## 🤖 Smart Scheduling Demo
+- **Frontend**: React 18 + TypeScript + Vite
+- **AI**: OpenAI GPT-4 API
+- **Styling**: Inline styles with Apple design system
+- **Deployment**: Vercel
 
-An ultra-realistic, auto-playing product demo showcasing Gatherly's intelligent scheduling capabilities, including:
-- iMessage-style conversation interfaces
-- AI-powered calendar coordination
-- Career goal matching and professional networking (NEW!)
+## Getting Started
 
-### ✨ Features
+### Prerequisites
+- Node.js 18+
+- OpenAI API key
 
-- **5 Cinematic Scenes**: Auto-playing storytelling with Apple-grade animations (25 seconds total)
-- **Liquid Glass UI**: Glassmorphism effects with backdrop blur and translucency
-- **iMessage Integration**: Realistic chat interface with live typing animations
-- **Smart Calendar Sync**: Visual representation of AI-powered scheduling intelligence
-- **Career Goal Chat Bar**: AI assistant for career matching and professional connections
-- **iOS-Native Widgets**: Calendar cards that feel native to iOS
+### Installation
 
-### 🚀 Getting Started
-
-#### Prerequisites
-
-- Node.js 16+ and npm/yarn/pnpm
-- Modern browser with support for CSS backdrop-filter
-
-#### Installation
-
+1. Clone and navigate to the MVP directory:
 ```bash
-# Install dependencies
+cd src_mvp
 npm install
+```
 
-# Start the development server
+2. Set up environment variables:
+```bash
+cp .env.example .env.local
+# Add your OpenAI API key to .env.local
+```
+
+3. Start development server:
+```bash
 npm run dev
-
-# Run tests
-npm test
 ```
 
-#### Available Demos
+## Deployment
 
-```
-http://localhost:5173                   # Full interactive demo
-http://localhost:5173/career-demo.html  # Career goal chat bar demo
-http://localhost:5173/?visual           # Clean UI workflow
-http://localhost:5173/?summary          # Presentation summary slide
-```
+### Deploy to Vercel
 
-### 🛠 Tech Stack
-
-- **React 18** with TypeScript
-- **Framer Motion** for auto-play animations
-- **Tailwind CSS** for styling
-- **Vite** for development
-- **Vitest** for testing
-
-### 🎬 Demo Experience
-
-The demo **automatically plays** when you visit the website:
-
-1. **Intent** - John types his lunch request to Gatherly
-2. **Conversation** - Ikenna receives options with location suggestions
-3. **Intelligence** - AI analyzes both calendars in real-time
-4. **Widget** - iOS-native calendar widget confirmation
-5. **Magic** - Dual calendar view with synchronized meeting
-
-### 📦 Project Structure
-
-```
-/frontend/components/demo/  # Demo components (Career Goal Chat Bar)
-/backend/api/              # API endpoints (goal matching)
-/src/components/           # Main app components
+1. **Install Vercel CLI:**
+```bash
+npm i -g vercel
 ```
 
-### 🍎 Design Principles
+2. **Deploy:**
+```bash
+vercel --prod
+```
 
-Following Apple's design philosophy:
-- **Clarity**: Clean, focused interface
-- **Deference**: Content-first approach
-- **Depth**: Layered visual hierarchy
-- **Simplicity**: Intuitive interactions
-- **Consistency**: Native iOS patterns
+3. **Set Environment Variables in Vercel Dashboard:**
+   - `VITE_OPENAI_API_KEY` - Your OpenAI API key
 
----
+### Environment Variables
 
-Built with precision and attention to detail, featuring Apple-grade animations and UX patterns. ✨
+- `VITE_OPENAI_API_KEY` - OpenAI API key for GPT-4 integration
+- `VITE_API_BASE_URL` - Backend API URL (when ready)
+
+## Usage
+
+1. **Onboarding Flow:**
+   - Create account or sign in
+   - Connect Google Calendar
+   - Set preferences (working hours, timezone)
+
+2. **Scheduling:**
+   - Use natural language: "Schedule lunch with Sarah tomorrow at 1pm"
+   - Review extracted details in structured card
+   - Confirm to send invitations
+
+## Architecture
+
+```
+src_mvp/
+├── components/           # Reusable UI components
+│   ├── common/          # Button, Input, Card, etc.
+│   └── onboarding/      # Onboarding-specific components
+├── services/            # API integrations
+│   └── schedulingService.ts  # OpenAI integration
+├── prompts/             # System prompts for AI
+├── styles/              # CSS theme and utilities
+└── App.tsx              # Main application component
+```
+
+## API Integration
+
+The app uses OpenAI GPT-4 with a structured system prompt to:
+1. Extract meeting details from natural language
+2. Identify missing required information
+3. Generate conversational follow-up questions
+4. Create structured review cards for confirmation
+
+## Production Considerations
+
+- ✅ Environment variable management
+- ✅ Error handling and fallbacks
+- ✅ TypeScript for type safety
+- ✅ Responsive design
+- ✅ SEO-friendly meta tags
+- 🔄 Backend integration (planned)
+- 🔄 User authentication (planned)
+- 🔄 Database persistence (planned)
+
+## License
+
+MIT
