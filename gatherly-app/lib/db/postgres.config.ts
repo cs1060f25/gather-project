@@ -5,7 +5,7 @@
  * Sets up PostgreSQL connection for analytics and preference profiles
  */
 
-import { Pool, PoolClient, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
 // PostgreSQL connection configuration
 const postgresConfig = {
@@ -56,7 +56,7 @@ export function getPostgresPool(): Pool {
 /**
  * Execute a query with the pool
  */
-export async function query<T = any>(
+export async function query<T extends QueryResultRow = any>(
   text: string,
   params?: any[]
 ): Promise<QueryResult<T>> {

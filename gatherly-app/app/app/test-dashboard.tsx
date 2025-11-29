@@ -128,7 +128,7 @@ export default function TestDashboard() {
         setTestResults(prev => 
           prev.map(t => 
             t.name === test.name 
-              ? { ...t, status: 'success', message: result.message, data: result.data }
+              ? { ...t, status: 'success', message: result.message, data: (result as any).data }
               : t
           )
         );
