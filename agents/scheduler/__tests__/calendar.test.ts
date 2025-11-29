@@ -1,7 +1,7 @@
 // Test suite for Calendar Agent
 import dotenv from 'dotenv';
-import { calendarAgent, createHostEvent, type CalendarError } from "../calendar.js";
-import type { CalendarRequest } from "../calendar.js";
+import { calendarAgent, createHostEvent, type CalendarError } from "../calendar.ts";
+import type { CalendarRequest } from "../calendar.ts";
 
 // Load environment variables
 dotenv.config({ path: '../../.env' });
