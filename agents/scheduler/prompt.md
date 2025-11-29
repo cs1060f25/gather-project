@@ -35,6 +35,25 @@ Goal: given a natural-language request and the user's free/busy + preferences, p
 - If `where` isn't clear, return `null`.
 - Use `freeBusy` to compute **open** windows; then snap to common durations (e.g., 30–60 minutes).
 - If `previous` exists, all new `slots` must be **strictly later** than every timestamp in `previous`.
-- If there's truly not enough space, return fewer than 3 slots (but never 0—pick the best available even if only 1).
+
+### Handling Fully Booked Days (CRITICAL)
+- You **MUST** return exactly 3 slots in ALL cases.
+- If a day is fully booked, **automatically look at the next day** and suggest slots there.
+- Never return fewer than 3 slots or an empty array—this will cause system failure.
+- Example: If "tomorrow" is requested but fully booked, suggest 3 slots for the day after tomorrow.
+
+### Examples
+Input: "Coffee tomorrow" with freeBusy blocking 8AM-9PM tomorrow
+Output:
+{
+  "title": "Coffee",
+  "who": [],
+  "where": null,
+  "slots": [
+    "2023-10-11T09:00:00Z",  // Day after tomorrow, since tomorrow is full
+    "2023-10-11T10:00:00Z",
+    "2023-10-11T11:00:00Z"
+  ]
+}
 
 Return only the JSON object. No markdown. No explanation.
