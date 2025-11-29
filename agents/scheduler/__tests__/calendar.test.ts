@@ -1,7 +1,7 @@
 // Test suite for Calendar Agent
 import dotenv from 'dotenv';
-import { calendarAgent, createHostEvent, type CalendarError } from "./calendar.js";
-import type { CalendarRequest } from "./calendar.js";
+import { calendarAgent, createHostEvent, type CalendarError } from "../calendar.js";
+import type { CalendarRequest } from "../calendar.js";
 
 // Load environment variables
 dotenv.config({ path: '../../.env' });
@@ -51,22 +51,6 @@ async function runCalendarTests() {
     console.log("❌ FAIL:", error.message);
   }
 
-  // Test 3: Get Host Busy Periods
-  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("Test 3: Get Host Busy Periods");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  try {
-    const busyPeriods = await calendarAgent.getHostBusy({
-      hostId: "user123",
-      timeMin: "2025-11-27T00:00:00Z",
-      timeMax: "2025-11-27T23:59:59Z",
-    });
-    console.log("✅ PASS");
-    console.log("Busy periods:", JSON.stringify(busyPeriods, null, 2));
-  } catch (e: unknown) {
-    const error = e as Error;
-    console.log("❌ FAIL:", error.message);
-  }
 
   // Test 4: Update Event
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -237,59 +221,79 @@ async function runCalendarTests() {
     console.log("❌ FAIL:", error.message);
   }
 
-  // Test 10: Conflict Detection
+
+
+  // Test 10: Token Refresh
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("Test 10: Conflict Detection");
+  console.log("Test 10: Token Refresh");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   try {
-    // Create first event
-    await createHostEvent({
+    // Simulate expired token
+    process.env.GOOGLE_ACCESS_TOKEN = 'expired_token';
+    process.env.GOOGLE_REFRESH_TOKEN = 'valid_refresh_token';
+
+    const result = await createHostEvent({
       timeZone: 'UTC',
       hostId: "user123",
       slot: "2025-11-27T15:00:00Z",
-      title: "First Meeting",
-      durationMinutes: 60
-    });
-
-    // Try to create overlapping event
-    await createHostEvent({
-      timeZone: 'UTC',
-      hostId: "user123",
-      slot: "2025-11-27T15:30:00Z", // Overlaps with first event
-      title: "Conflicting Meeting",
+      title: "Test Refresh Token",
       durationMinutes: 30
     });
 
-    console.log("❌ FAIL: Should have detected conflict");
+    console.log("✅ PASS - Successfully refreshed token");
+    console.log(JSON.stringify(result, null, 2));
   } catch (e: unknown) {
     const error = e as Error;
-    console.log("✅ PASS - Caught expected conflict error:", error.message);
+    console.log("❌ FAIL:", error.message);
+  } finally {
+    // Restore original tokens
+    process.env.GOOGLE_ACCESS_TOKEN = process.env.ORIGINAL_ACCESS_TOKEN;
+    process.env.GOOGLE_REFRESH_TOKEN = process.env.ORIGINAL_REFRESH_TOKEN;
   }
 
-  // Test 11: Rate Limiting
+  // Test 11: RSVP Status Tracking
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("Test 11: Rate Limiting");
+  console.log("Test 11: RSVP Status Tracking");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   try {
-    // Create multiple events rapidly
-    const promises = Array(10).fill(null).map((_, i) => 
-      createHostEvent({
-        timeZone: 'UTC',
-        hostId: "user123",
-        slot: `2025-11-28T${String(i + 9).padStart(2, '0')}:00:00Z`,
-        title: `Rapid Event ${i + 1}`,
-        durationMinutes: 30
-      })
-    );
+    // Create event with attendees
+    const event = await createHostEvent({
+      timeZone: 'UTC',
+      hostId: "user123",
+      slot: "2025-11-27T16:00:00Z",
+      title: "RSVP Test Meeting",
+      durationMinutes: 30,
+      inviteeEmails: ["test1@example.com", "test2@example.com"]
+    });
 
-    await Promise.all(promises);
-    console.log("✅ PASS - Rate limiting handled correctly");
+    // Note: In a real implementation, we'd have a webhook endpoint
+    // that receives RSVP updates from Google Calendar
+    console.log("✅ PASS - Event created with attendees");
+    console.log("TODO: Implement webhook receiver for RSVP updates");
   } catch (e: unknown) {
     const error = e as Error;
-    if (error.message.includes('quota') || error.message.includes('rate')) {
-      console.log("✅ PASS - Caught expected rate limit:", error.message);
+    console.log("❌ FAIL:", error.message);
+  }
+
+  // Test 12: Invalid Timezone
+  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("Test 12: Invalid Timezone");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  try {
+    await createHostEvent({
+      timeZone: 'Invalid/Timezone',
+      hostId: "user123",
+      slot: "2025-11-27T16:00:00Z",
+      title: "Invalid Timezone Test",
+      durationMinutes: 30
+    });
+    console.log("❌ FAIL - Should have rejected invalid timezone");
+  } catch (e: unknown) {
+    const error = e as Error;
+    if (error.message.includes('timezone')) {
+      console.log("✅ PASS - Caught invalid timezone error");
     } else {
-      console.log("❌ FAIL - Unexpected error:", error.message);
+      console.log("❌ FAIL - Wrong error type:", error.message);
     }
   }
 

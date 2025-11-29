@@ -2,7 +2,7 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-import { generateSchedule } from "./index.ts";
+import { generateSchedule } from "../index.js";
 
 async function runTests() {
   console.log("🧪 Running Scheduler Agent Test Suite\n");

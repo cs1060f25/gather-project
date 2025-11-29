@@ -51,11 +51,11 @@ export interface BusyPeriod {
 }
 
 /**
- * Calendar Agent - Google Calendar API integration
+ * Calendar Service - Google Calendar API integration
  * Handles calendar event creation and free/busy queries
  * Called after consensus is reached by the Consensus Coordinator
  */
-export class CalendarAgent {
+export class CalendarService {
   private oauth2Client: any;
   private calendar: any;
 
@@ -301,11 +301,12 @@ export class CalendarAgent {
 }
 
 // Export singleton instance
-export const calendarAgent = new CalendarAgent();
+export const calendarService = new CalendarService();
+export const calendarAgent = calendarService; // Alias for backward compatibility
 
 /**
  * Convenience function that matches the team contracts interface exactly
  */
 export async function createHostEvent(params: CalendarRequest): Promise<CalendarResponse> {
-  return calendarAgent.createHostEvent(params);
+  return calendarService.createHostEvent(params);
 }
