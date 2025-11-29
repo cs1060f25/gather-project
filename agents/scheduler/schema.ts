@@ -15,7 +15,7 @@ export const SchedulerRequestSchema = z.object({
     require_all: z.boolean().optional(),
     location_hint: z.string().optional(),
     duration_minutes: z.number().int().positive().default(60),
-  }).default({}),
+  }).default({ duration_minutes: 60 }),
   previous: z.array(z.string()).optional(), // previously suggested ISO timestamps to avoid
 });
 
