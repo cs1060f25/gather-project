@@ -1,6 +1,6 @@
 // /agents/scheduler/calendar.ts
 import { google } from 'googleapis';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Recurrence schema
 export const RecurrenceSchema = z.object({
@@ -62,13 +62,16 @@ export class CalendarService {
   constructor() {
     // Initialize OAuth2 client
     this.oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      process.env.GOOGLE_CLIENT_ID?.trim(),
+      process.env.GOOGLE_CLIENT_SECRET?.trim(),
+      process.env.GOOGLE_REDIRECT_URI?.trim()
     );
 
     // Initialize Calendar API
     this.calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
+
+    // Set initial credentials
+    this.setGlobalCredentials();
   }
 
   /**
@@ -279,18 +282,17 @@ export class CalendarService {
    * TODO: Implement user token retrieval from your database
    * This should fetch the user's stored OAuth tokens
    */
+  private setGlobalCredentials() {
+    this.oauth2Client.setCredentials({
+      access_token: process.env.GOOGLE_ACCESS_TOKEN?.trim(),
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN?.trim(),
+    });
+  }
+
   private async getUserTokens(hostId: string): Promise<{ accessToken: string; refreshToken?: string }> {
-    // PLACEHOLDER: Replace with actual database query
-    // Example using your user store:
-    // const user = await getUserById(hostId);
-    // return {
-    //   accessToken: user.googleAuthToken,
-    //   refreshToken: user.googleRefreshToken,
-    // };
-    
-    // For development, you can use environment variables:
-    const accessToken = process.env.GOOGLE_ACCESS_TOKEN;
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+    // For testing, we'll use the global tokens
+    const accessToken = process.env.GOOGLE_ACCESS_TOKEN?.trim();
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN?.trim();
     
     if (!accessToken) {
       throw new Error(`No Google Calendar access token found for user ${hostId}`);

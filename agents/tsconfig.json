@@ -1,22 +1,25 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "outDir": "./dist",
     "rootDir": ".",
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "declaration": true,
+    "sourceMap": true,
+    "noEmit": false
   },
   "include": [
-    "scheduler/**/*.ts",
-    "scheduler/**/*.test.ts"
+    "scheduler/simple-scheduler.ts",
+    "scheduler/calendar.ts",
+    "scheduler/api/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }

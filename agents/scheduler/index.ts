@@ -10,7 +10,7 @@ import {
   type SchedulerRequest,
   type SchedulerResponse,
   sortIsoAscending,
-} from "./schema.ts";
+} from "./schema";
 
 // Initialize client lazily to allow for environment variable loading
 let client: OpenAI | null = null;
