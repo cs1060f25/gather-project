@@ -1,0 +1,301 @@
+/* Sketchpad - CodePen Style */
+
+#sketch-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    cursor: none;
+    z-index: 10001;
+}
+
+#sketch-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    background-color: #6eccdf;
+}
+
+#sketchpad {
+    position: absolute;
+    left: 50px;
+    top: 50px;
+    right: 50px;
+    bottom: 100px;
+    background-color: #fafafa;
+    border-radius: 4px;
+    box-shadow: 0 8px 30px -5px rgba(0,0,0,0.4);
+    cursor: none;
+    overflow: hidden;
+}
+
+#sketch-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+/* Pencil Container */
+#pencil-container {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10002;
+    transform: translate(-50%, -100%);
+}
+
+/* 3D Pencil */
+#pencil3D {
+    transform-style: preserve-3d;
+    transition: transform 0.08s ease-out;
+    position: relative;
+    width: 16px;
+    height: 160px;
+}
+
+#pencil3D.drawing {
+    transition: transform 0.05s ease-out;
+}
+
+/* Pencil parts */
+.pencil-eraser {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(135deg, #ff8888 0%, #cc6666 100%);
+    border-radius: 3px 3px 0 0;
+}
+
+.pencil-ferrule {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 10px;
+    background: linear-gradient(90deg, 
+        #999 0%, 
+        #ddd 30%, 
+        #999 50%,
+        #ddd 70%,
+        #999 100%
+    );
+}
+
+.pencil-body {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 110px;
+    transform-style: preserve-3d;
+}
+
+.pencil-face {
+    position: absolute;
+    background: linear-gradient(180deg, 
+        #ffd700 0%, 
+        #e6c200 20%,
+        #ffd700 40%,
+        #ffed4a 50%,
+        #ffd700 60%,
+        #e6c200 80%,
+        #ffd700 100%
+    );
+}
+
+.pencil-face.front {
+    width: 14px;
+    height: 110px;
+    transform: translateZ(7px);
+}
+
+.pencil-face.back {
+    width: 14px;
+    height: 110px;
+    transform: rotateY(180deg) translateZ(7px);
+}
+
+.pencil-face.left {
+    width: 14px;
+    height: 110px;
+    left: -7px;
+    transform: rotateY(-90deg);
+}
+
+.pencil-face.right {
+    width: 14px;
+    height: 110px;
+    left: 7px;
+    transform: rotateY(90deg);
+}
+
+/* Simplified faces - just showing main body */
+.pencil-face.top,
+.pencil-face.bottom {
+    display: none;
+}
+
+.pencil-tip {
+    position: absolute;
+    top: 134px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 26px;
+}
+
+.tip-wood {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 20px solid #e8d4b8;
+}
+
+.tip-graphite {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 10px solid #333;
+}
+
+/* Pencil shadow */
+#pencil-shadow {
+    position: absolute;
+    top: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 20px;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%);
+    border-radius: 50%;
+    transition: all 0.15s ease-out;
+}
+
+/* Controls */
+#sketch-controls {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 10003;
+}
+
+.sketch-btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sketch-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.sketch-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.sketch-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sketch-btn.primary {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: white;
+}
+
+.sketch-btn.primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.sketch-btn.close {
+    padding: 12px 18px;
+    background: rgba(255,255,255,0.8);
+    color: #666;
+}
+
+.sketch-btn.close:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #sketchpad {
+        left: 15px;
+        top: 15px;
+        right: 15px;
+        bottom: 90px;
+    }
+
+    #sketch-controls {
+        bottom: 20px;
+        gap: 8px;
+    }
+
+    .sketch-btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    #pencil3D {
+        transform: scale(0.8);
+    }
+}
+
+@media (max-width: 480px) {
+    #sketchpad {
+        left: 10px;
+        top: 10px;
+        right: 10px;
+        bottom: 80px;
+    }
+
+    .sketch-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Hide pencil on touch devices - they have their finger */
+@media (hover: none) and (pointer: coarse) {
+    #pencil-container {
+        display: none;
+    }
+    
+    #sketchpad {
+        cursor: crosshair;
+    }
+}

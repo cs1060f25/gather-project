@@ -1,0 +1,50 @@
+/* Tutorial Arrow Container */
+.tutorial-arrow-container {
+    position: fixed;
+    z-index: 100001;
+    pointer-events: none;
+}
+
+/* Arrow for "just type" - points to the input field */
+.tutorial-arrow-type {
+    position: fixed;
+    top: 22%;
+    left: 16%;
+    transform: translateX(-50%) rotate(-25deg);
+    animation: arrowBounce 1s ease-in-out infinite;
+}
+
+/* Arrow for "click" - points to the manual schedule button */
+.tutorial-arrow-click {
+    position: fixed;
+    top: 35%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: arrowBounce 1s ease-in-out infinite;
+}
+
+/* Arrow bounce animation */
+@keyframes arrowBounce {
+
+    0%,
+    100% {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    50% {
+        transform: translateX(-50%) translateY(-10px);
+    }
+}
+
+/* Animated path stroke */
+.tutorial-arrow-path {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: drawArrow 0.5s ease-out forwards;
+}
+
+@keyframes drawArrow {
+    to {
+        stroke-dashoffset: 0;
+    }
+}

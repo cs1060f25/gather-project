@@ -1,0 +1,543 @@
+/* Tutorial Overlay System - Mac OS 9 Style */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    z-index: 100000;
+    pointer-events: none;
+    /* Lock scrolling */
+    overflow: hidden;
+}
+
+/* Lock body scroll when tutorial is active */
+body.tutorial-active {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+/* Dark overlay for welcome step */
+.tutorial-dark-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 99998;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.tutorial-dark-overlay.transitioning {
+    opacity: 0;
+}
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Spotlight Effect - Transparent cutout with border */
+.tutorial-spotlight {
+    position: fixed;
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 99999;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    background: transparent;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85);
+    animation: spotlightPulse 2s ease-in-out infinite;
+    opacity: 1;
+}
+
+.tutorial-spotlight.transitioning {
+    opacity: 0;
+}
+
+@keyframes spotlightPulse {
+    0%, 100% {
+        border-color: rgba(255, 255, 255, 0.9);
+    }
+    50% {
+        border-color: rgba(255, 255, 255, 1);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 20px 5px rgba(255, 255, 255, 0.3);
+    }
+}
+
+/* Allow clicks through to spotlighted elements */
+.tutorial-overlay {
+    pointer-events: none;
+}
+
+.tutorial-overlay>* {
+    pointer-events: all;
+}
+
+/* Mac OS 9 Window - Message Box */
+.tutorial-message {
+    position: fixed;
+    background: #c0c0c0;
+    border-radius: 0;
+    padding: 0;
+    max-width: 450px;
+    min-width: 350px;
+    box-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.8),
+        4px 4px 8px rgba(0, 0, 0, 0.5);
+    pointer-events: all;
+    z-index: 100001;
+    animation: tutorialFadeIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid #000;
+    font-family: Chicago, 'Geneva', 'Charcoal', 'Monaco', monospace;
+}
+
+@media (max-width: 600px) {
+    .tutorial-message {
+        max-width: calc(100vw - 40px);
+        min-width: 280px;
+    }
+}
+
+/* Disable animation after initial load - no transitions between steps */
+.tutorial-message.no-animate {
+    animation: none;
+}
+
+/* Smooth transitions between steps */
+.tutorial-message {
+    opacity: 1;
+    transition: opacity 0.2s ease, top 0.3s ease, bottom 0.3s ease, left 0.3s ease, right 0.3s ease, transform 0.3s ease;
+}
+
+.tutorial-message.transitioning {
+    opacity: 0;
+}
+
+@keyframes tutorialFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Mac OS 9 Title Bar */
+.tutorial-message::before {
+    content: '';
+    display: block;
+    height: 20px;
+    background: repeating-linear-gradient(90deg,
+            #000 0px,
+            #000 1px,
+            #fff 1px,
+            #fff 2px);
+    border-bottom: 1px solid #000;
+}
+
+.tutorial-title {
+    margin: 0;
+    padding: 16px 20px 8px 20px;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: Chicago, 'Geneva', 'Charcoal', monospace;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    background-image: url(https://media.giphy.com/media/26BROrSHlmyzzHf3i/giphy.gif);
+    background-size: cover;
+    color: transparent;
+    -moz-background-clip: text;
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.tutorial-text {
+    margin: 0;
+    padding: 0 20px 16px 20px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+    font-family: Chicago, 'Geneva', 'Charcoal', monospace;
+}
+
+/* Tutorial Controls - Mac OS 9 Style */
+.tutorial-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px 16px 20px;
+    border-top: 1px solid #999;
+    background: linear-gradient(180deg, #d0d0d0 0%, #c0c0c0 100%);
+}
+
+.tutorial-progress {
+    font-size: 11px;
+    color: #000;
+    font-weight: bold;
+    font-family: Chicago, 'Geneva', monospace;
+}
+
+.tutorial-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* Mac OS 9 Classic Buttons */
+.tutorial-btn {
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.1s;
+    border: 1px solid #000;
+    font-family: Chicago, 'Geneva', 'Charcoal', monospace;
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, 0.8),
+        inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+        1px 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.tutorial-btn-primary {
+    background: linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 50%, #b0b0b0 100%);
+    color: #000;
+    border: 2px solid #000;
+}
+
+.tutorial-btn-primary:hover {
+    background: linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #c0c0c0 100%);
+}
+
+.tutorial-btn-primary:active {
+    background: linear-gradient(180deg, #a0a0a0 0%, #c0c0c0 50%, #d0d0d0 100%);
+    box-shadow:
+        inset -1px -1px 0 rgba(255, 255, 255, 0.4),
+        inset 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.tutorial-btn-secondary {
+    background: linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 50%, #b0b0b0 100%);
+    color: #000;
+}
+
+.tutorial-btn-secondary:hover {
+    background: linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #c0c0c0 100%);
+}
+
+.tutorial-btn-secondary:active {
+    background: linear-gradient(180deg, #a0a0a0 0%, #c0c0c0 50%, #d0d0d0 100%);
+    box-shadow:
+        inset -1px -1px 0 rgba(255, 255, 255, 0.4),
+        inset 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.tutorial-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #c0c0c0;
+}
+
+/* Animation Indicator - Mac OS 9 Style */
+.tutorial-animating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    border: 1px solid #000;
+    margin: 0 20px 12px 20px;
+    font-size: 11px;
+    color: #000;
+    font-family: Chicago, 'Geneva', monospace;
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.tutorial-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #c0c0c0;
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Click Animation for S button */
+.tutorial-click-animation {
+    animation: tutorialClick 0.5s ease !important;
+}
+
+@keyframes tutorialClick {
+    0%, 100% {
+        transform: rotateX(13deg) scale(1);
+    }
+    50% {
+        transform: rotateX(13deg) scale(1.1);
+        box-shadow: 0 0 30px 10px rgba(255, 255, 255, 0.5);
+    }
+}
+
+/* Skip Button - Small Red Button */
+.tutorial-btn-skip {
+    background: linear-gradient(180deg, #ff6b6b 0%, #d63031 50%, #c0392b 100%) !important;
+    color: #fff !important;
+    border: 1px solid #8b0000 !important;
+    padding: 6px 8px !important;
+    min-width: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-btn-skip:hover {
+    background: linear-gradient(180deg, #ff7979 0%, #e74c3c 50%, #c0392b 100%) !important;
+}
+
+.tutorial-btn-skip:active {
+    background: linear-gradient(180deg, #c0392b 0%, #d63031 50%, #ff6b6b 100%) !important;
+}
+
+/* Skip Confirmation Dialog */
+.tutorial-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    animation: overlayFadeIn 0.2s ease;
+}
+
+.tutorial-confirm-dialog {
+    background: #c0c0c0;
+    border: 1px solid #000;
+    box-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.8),
+        4px 4px 8px rgba(0, 0, 0, 0.5);
+    min-width: 350px;
+    max-width: 400px;
+    font-family: Chicago, 'Geneva', 'Charcoal', monospace;
+    animation: tutorialFadeIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Mac OS 9 Title Bar for Confirm Dialog */
+.tutorial-confirm-dialog::before {
+    content: '';
+    display: block;
+    height: 20px;
+    background: repeating-linear-gradient(90deg,
+            #000 0px,
+            #000 1px,
+            #fff 1px,
+            #fff 2px);
+    border-bottom: 1px solid #000;
+}
+
+.tutorial-confirm-title {
+    margin: 0;
+    padding: 16px 20px 8px 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+    font-family: Chicago, 'Geneva', 'Charcoal', monospace;
+}
+
+.tutorial-confirm-text {
+    margin: 0;
+    padding: 0 20px 16px 20px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+    font-family: Chicago, 'Geneva', 'Charcoal', monospace;
+}
+
+.tutorial-confirm-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px 16px 20px;
+    border-top: 1px solid #999;
+    background: linear-gradient(180deg, #d0d0d0 0%, #c0c0c0 100%);
+}
+
+/* Wiggle Text Effect - Fluorescent Snake Animation */
+@property --wiggle-x {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
+@property --wiggle-y {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
+.wiggle-text {
+    position: relative;
+    display: inline;
+    font-weight: bold;
+    text-decoration: underline wavy;
+    text-decoration-color: #f2ff49;
+    text-underline-offset: 2px;
+    animation: wiggleBase 1.2s ease-in-out infinite;
+}
+
+@keyframes wiggleBase {
+
+    0%,
+    100% {
+        transform: translateY(0px) translateX(0px);
+        --wiggle-x: 0px;
+        --wiggle-y: 0px;
+    }
+
+    25% {
+        transform: translateY(-1px) translateX(0.5px);
+        --wiggle-x: 0.3px;
+        --wiggle-y: -0.5px;
+    }
+
+    50% {
+        transform: translateY(0px) translateX(1px);
+        --wiggle-x: 0.5px;
+        --wiggle-y: 0px;
+    }
+
+    75% {
+        transform: translateY(1px) translateX(0.5px);
+        --wiggle-x: 0.3px;
+        --wiggle-y: 0.5px;
+    }
+}
+
+.tutorial-text .wiggle-text {
+    text-shadow:
+        calc(var(--wiggle-x) * 1) calc(var(--wiggle-y) * 1) rgba(242, 255, 73, 0.7),
+        calc(var(--wiggle-x) * 2) calc(var(--wiggle-y) * 2) rgba(255, 66, 66, 0.7),
+        calc(var(--wiggle-x) * 3) calc(var(--wiggle-y) * 3) rgba(251, 98, 246, 0.7),
+        calc(var(--wiggle-x) * 4) calc(var(--wiggle-y) * 4) rgba(100, 93, 215, 0.7),
+        calc(var(--wiggle-x) * 5) calc(var(--wiggle-y) * 5) rgba(179, 255, 252, 0.7);
+}
+
+.tutorial-text strong {
+    font-weight: bold;
+    color: #000;
+}
+
+.tutorial-text mark {
+    background: #f2ff49;
+    color: #000;
+    padding: 2px 0px;
+    font-weight: bold;
+    border-radius: 2px;
+}
+
+/* ============================================
+   TUTORIAL RESPONSIVE STYLES
+   ============================================ */
+
+@media (max-width: 900px) {
+    .tutorial-message {
+        max-width: 380px;
+        min-width: 320px;
+    }
+    
+    .tutorial-title {
+        font-size: 14px;
+    }
+    
+    .tutorial-text {
+        font-size: 11px;
+    }
+    
+    .tutorial-btn {
+        padding: 5px 14px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 700px) {
+    .tutorial-message {
+        max-width: 320px;
+        min-width: 280px;
+    }
+    
+    .tutorial-title {
+        font-size: 13px;
+    }
+    
+    .tutorial-text {
+        font-size: 10px;
+    }
+    
+    .tutorial-btn {
+        padding: 4px 12px;
+        font-size: 9px;
+    }
+    
+    .tutorial-message-content {
+        padding: 12px 14px;
+    }
+}
+
+@media (max-width: 500px) {
+    .tutorial-message {
+        max-width: calc(100vw - 20px);
+        min-width: 200px;
+        left: 10px !important;
+        right: 10px !important;
+    }
+    
+    .tutorial-title {
+        font-size: 11px;
+    }
+    
+    .tutorial-text {
+        font-size: 9px;
+        line-height: 1.4;
+    }
+    
+    .tutorial-btn {
+        padding: 3px 8px;
+        font-size: 8px;
+    }
+    
+    .tutorial-message-content {
+        padding: 8px 10px;
+    }
+    
+    .tutorial-message::before {
+        height: 14px;
+    }
+    
+    .tutorial-controls {
+        gap: 6px;
+    }
+}
