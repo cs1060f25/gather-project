@@ -158,7 +158,6 @@ export const LandingPage: React.FC = () => {
                 <div className={`input-placeholder ${fade ? 'visible' : 'hidden'}`} style={{ opacity: fade ? 1 : 0, transition: 'opacity 0.5s' }}>
                   {suggestions[suggestionIndex]}
                   <span className="tab-hint">tab</span>
-                  <VoiceInput onTranscript={handleVoiceTranscript} disabled={isInputDisabled} />
                 </div>
               )}
 
@@ -169,13 +168,11 @@ export const LandingPage: React.FC = () => {
                     {suggestions.find(s => s.toLowerCase().startsWith(inputValue.toLowerCase()))?.slice(inputValue.length)}
                   </span>
                   <span className="tab-hint">tab</span>
-                  <VoiceInput onTranscript={handleVoiceTranscript} disabled={isInputDisabled} />
                 </div>
               )}
 
-              {inputValue && !suggestions.find(s => s.toLowerCase().startsWith(inputValue.toLowerCase())) && (
-                <VoiceInput onTranscript={handleVoiceTranscript} disabled={isInputDisabled} />
-              )}
+              {/* VoiceInput rendered once, outside conditionals to prevent remounting during recording */}
+              <VoiceInput onTranscript={handleVoiceTranscript} disabled={isInputDisabled} />
             </div>
             <ManualScheduleButton onClick={handleOpenModal} disabled={isButtonDisabled} />
           </div>

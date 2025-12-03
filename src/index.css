@@ -1173,6 +1173,13 @@ body {
   flex-wrap: nowrap;
 }
 
+/* Position voice input button at the end of input wrapper */
+.input-wrapper > .voice-input-btn {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
 @media (max-width: 768px) {
   .input-wrapper {
     font-size: 1rem;
