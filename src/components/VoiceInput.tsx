@@ -28,6 +28,26 @@ interface VoiceInputProps {
     disabled?: boolean;
 }
 
+// Filler words to remove in real-time during transcription
+const FILLER_WORDS = [
+    'uh', 'um', 'uhm', 'er', 'ah', 'hmm',
+    'like', 'you know', 'basically', 'actually',
+    'literally', 'so yeah', 'kind of', 'sort of',
+    'I mean', 'okay so', 'well basically'
+];
+
+// Remove filler words from text in real-time
+const removeFillersFromText = (text: string): string => {
+    let cleaned = text;
+    FILLER_WORDS.forEach(filler => {
+        // Match filler words with word boundaries, case-insensitive
+        const regex = new RegExp(`\\b${filler}\\b`, 'gi');
+        cleaned = cleaned.replace(regex, '');
+    });
+    // Clean up extra spaces
+    return cleaned.replace(/\s+/g, ' ').trim();
+};
+
 // Mac-style Alert Dialog Component
 const MacAlert: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => (
     <div className="mac-alert-overlay">
@@ -57,7 +77,7 @@ const cleanupWithOpenAI = async (rawText: string): Promise<string> => {
                 messages: [
                     {
                         role: 'system',
-                        content: 'You are a scheduling assistant that converts voice input into event scheduling requests. Your job is to take whatever the user says and turn it into a clean, actionable scheduling query. Fix spelling, grammar, and punctuation. If the user is thinking out loud, rambling, or asking a question, extract the scheduling intent and convert it into a concise event description. Examples: "uh maybe I should like meet with John sometime next week about the project" → "Meet with John next week about the project". "What if I scheduled a dentist appointment for Tuesday" → "Dentist appointment Tuesday". Always output ONLY the cleaned scheduling text, nothing else. Never answer questions or provide explanations.'
+                        content: 'You are a text cleanup assistant. Your ONLY job is to fix grammar, spelling, and punctuation in the given text. Do NOT rephrase, summarize, or change the meaning. Do NOT remove any words or add new ones. Just correct errors. If the text is already correct, return it exactly as-is. Output ONLY the corrected text, nothing else.'
                     },
                     {
                         role: 'user',
@@ -135,9 +155,13 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscript, disabled }
                 }
             }
             
-            transcriptRef.current = finalTranscript;
-            // Show live preview (final + interim)
-            onTranscript((finalTranscript + interimTranscript).trim());
+            // Apply filler word filter before displaying
+            const filteredFinal = removeFillersFromText(finalTranscript);
+            const filteredInterim = removeFillersFromText(interimTranscript);
+            
+            transcriptRef.current = filteredFinal;
+            // Show live preview (final + interim) with fillers removed
+            onTranscript((filteredFinal + ' ' + filteredInterim).trim());
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
