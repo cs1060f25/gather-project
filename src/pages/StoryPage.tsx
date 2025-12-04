@@ -214,26 +214,6 @@ const TypewriterText = ({ text, delay = 0, speed = 30 }: { text: string; delay?:
   );
 };
 
-// Parallax section component (reserved for future use)
-const _ParallaxSection = ({ children, speed = 0.5 }: { children: React.ReactNode; speed?: number }) => {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!ref.current) return;
-      const rect = ref.current.getBoundingClientRect();
-      const scrolled = window.scrollY;
-      const offset = rect.top + scrolled;
-      const parallax = (scrolled - offset) * speed;
-      ref.current.style.transform = `translateY(${parallax}px)`;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [speed]);
-
-  return <div ref={ref} className="parallax-content">{children}</div>;
-};
 
 export const StoryPage: React.FC = () => {
   const navigate = useNavigate();
