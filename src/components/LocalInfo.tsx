@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 interface WeatherData {
     location: string;
@@ -40,11 +40,7 @@ const getStateAbbr = (state: string): string => {
     return states[state] || '';
 };
 
-interface LocalInfoProps {
-    minimal?: boolean;
-}
-
-export const LocalInfo: React.FC<LocalInfoProps> = ({ minimal = false }) => {
+export const LocalInfo = ({ minimal = false }: { minimal?: boolean }) => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
 
