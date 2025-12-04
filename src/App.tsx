@@ -1,26 +1,214 @@
-import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useEffect, createContext, useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoadingScreen } from './components/LoadingScreen';
+import { supabase } from './lib/supabase';
 import './App.css';
 
-import { LandingPage } from './pages/LandingPage';
+import { MarketingPage } from './pages/MarketingPage';
+import { AuthPage } from './pages/AuthPage';
 import { Dashboard } from './pages/Dashboard';
+import { StoryPage } from './pages/StoryPage';
 
-function App() {
+// Auth Context
+interface AuthContextType {
+  user: any | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  signOut: async () => {},
+});
+
+export const useAuth = () => useContext(AuthContext);
+
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Give auth state a moment to settle after OAuth redirects
+    // Check if we have hash params (OAuth callback)
+    const hasAuthParams = window.location.hash.includes('access_token') || 
+                          window.location.search.includes('code=');
+    
+    if (hasAuthParams) {
+      // Wait a bit longer for OAuth to complete
+      const timer = setTimeout(() => setIsCheckingAuth(false), 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, []);
+
+  if (loading || isCheckingAuth) {
+    return (
+      <div className="auth-loading">
+        <div className="auth-loading-content">
+          <svg width="48" height="48" viewBox="-2 -2 28 28" fill="none" className="auth-logo-spin">
+            <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+            <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+            <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2"/>
+            <path d="M6 14V18" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M4 16H8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <p>Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Save the attempted URL for redirecting after login
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Public Route - redirects to /app if already logged in
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return null; // LoadingScreen handles this
+  }
+
+  // If user is logged in and on landing page, redirect to app
+  if (user && location.pathname === '/') {
+    return <Navigate to="/app" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Auth Provider Component
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    // Set up auth state listener FIRST to catch OAuth redirects
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth event:', event, session?.user?.email);
+        setUser(session?.user || null);
+        setLoading(false);
+      }
+    );
+
+    // Then check for existing session
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session check:', session?.user?.email);
+        setUser(session?.user || null);
+      } catch (error) {
+        console.error('Error checking session:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
   return (
-    <>
-      {loading && <LoadingScreen onComplete={() => setLoading(false)} />}
-      {!loading && (
-        <Router>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/app" element={<Dashboard />} />
-          </Routes>
-        </Router>
-      )}
-    </>
+    <AuthContext.Provider value={{ user, loading, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Main App Component
+function AppContent() {
+  const [showLoading, setShowLoading] = useState(true);
+
+  // Show loading screen on first visit or refresh
+  const isFirstVisit = !sessionStorage.getItem('gatherly_visited');
+
+  useEffect(() => {
+    if (!isFirstVisit) {
+      setShowLoading(false);
+    }
+  }, [isFirstVisit]);
+
+  const handleLoadingComplete = () => {
+    sessionStorage.setItem('gatherly_visited', 'true');
+    setShowLoading(false);
+  };
+
+  // Show loading screen only on first visit
+  if (showLoading && isFirstVisit) {
+    return <LoadingScreen onComplete={handleLoadingComplete} />;
+  }
+
+  return (
+    <Routes>
+      {/* Marketing/Landing Page */}
+      <Route 
+        path="/" 
+        element={
+          <PublicRoute>
+            <MarketingPage />
+          </PublicRoute>
+        } 
+      />
+      
+      {/* Auth Pages */}
+      <Route 
+        path="/auth" 
+        element={
+          <PublicRoute>
+            <AuthPage />
+          </PublicRoute>
+        } 
+      />
+      
+      {/* Main App Dashboard */}
+      <Route 
+        path="/app" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Our Story Page */}
+      <Route 
+        path="/story" 
+        element={<StoryPage />} 
+      />
+      
+      {/* Catch all - redirect to home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
   );
 }
 

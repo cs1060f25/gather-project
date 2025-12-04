@@ -1,0 +1,240 @@
+/* Dashboard Styles - Neobrutalist */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+.dashboard {
+  min-height: 100vh;
+  background: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Loading */
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1.5rem;
+  background: #FAFAFA;
+}
+
+.dashboard-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #1A1A1A;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.dashboard-loading p {
+  color: #666;
+  font-size: 0.95rem;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #FFF;
+  border-bottom: 3px solid #1A1A1A;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left,
+.header-center,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-logo .logo-icon {
+  font-size: 1.5rem;
+}
+
+.dashboard-logo .logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1A1A1A;
+  letter-spacing: 0.5px;
+}
+
+/* Pending Events Button */
+.pending-events-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #FFF;
+  border: 3px solid #1A1A1A;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #1A1A1A;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #1A1A1A;
+  transition: all 0.15s ease;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.pending-events-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1A1A1A;
+}
+
+.pending-events-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.pending-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: #FF6B6B;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid #1A1A1A;
+}
+
+/* Local Info Minimal */
+.local-info-minimal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #1A1A1A;
+  font-family: 'DM Mono', monospace;
+  padding: 8px 12px;
+  background: #F5F5F5;
+  border: 2px solid #1A1A1A;
+}
+
+.local-info-minimal .location-minimal {
+  opacity: 0.7;
+}
+
+/* Profile Button */
+.profile-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: #FFD166;
+  border: 3px solid #1A1A1A;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 4px 4px 0 #1A1A1A;
+  transition: all 0.15s ease;
+}
+
+.profile-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1A1A1A;
+}
+
+.profile-button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFD166;
+  color: #1A1A1A;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Main Content */
+.dashboard-main {
+  flex: 1;
+  padding: 2rem;
+  padding-bottom: 140px; /* Space for chat bar */
+}
+
+/* Dark Mode */
+.dark-mode .dashboard {
+  background: #1A1A1A;
+}
+
+.dark-mode .dashboard-header {
+  background: #2A2A2A;
+  border-color: #FFF;
+}
+
+.dark-mode .dashboard-logo .logo-text {
+  color: #FFF;
+}
+
+.dark-mode .pending-events-btn {
+  background: #2A2A2A;
+  border-color: #FFF;
+  color: #FFF;
+  box-shadow: 4px 4px 0 #FFF;
+}
+
+.dark-mode .profile-button {
+  border-color: #FFF;
+  box-shadow: 4px 4px 0 #FFF;
+}
+
+.dark-mode .local-info-minimal {
+  color: #FFF;
+  background: #333;
+  border-color: #FFF;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .dashboard-logo .logo-text {
+    display: none;
+  }
+  
+  .pending-events-btn span:not(.pending-badge) {
+    display: none;
+  }
+  
+  .dashboard-main {
+    padding: 1rem;
+    padding-bottom: 120px;
+  }
+  
+  .local-info-minimal {
+    display: none;
+  }
+}

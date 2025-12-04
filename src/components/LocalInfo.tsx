@@ -40,7 +40,11 @@ const getStateAbbr = (state: string): string => {
     return states[state] || '';
 };
 
-export const LocalInfo: React.FC = () => {
+interface LocalInfoProps {
+    minimal?: boolean;
+}
+
+export const LocalInfo: React.FC<LocalInfoProps> = ({ minimal = false }) => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -154,6 +158,15 @@ export const LocalInfo: React.FC = () => {
     if (loading || !weather) {
         return (
             <div className="info-text">Loading...</div>
+        );
+    }
+
+    if (minimal) {
+        return (
+            <div className="local-info-minimal">
+                <span>{weather.temperature}°</span>
+                <span className="location-minimal">{weather.location.split(',')[0]}</span>
+            </div>
         );
     }
 

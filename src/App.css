@@ -1,1 +1,75 @@
 /* Clean slate */
+
+/* Auth Loading State */
+.auth-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FAFAFA;
+  z-index: 9999;
+}
+
+.auth-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px;
+  background: #FAFAFA;
+  border: 3px solid #1A1A1A;
+  box-shadow: 8px 8px 0 #1A1A1A;
+}
+
+.auth-logo-spin {
+  animation: logo-spin 2s ease-in-out infinite;
+}
+
+@keyframes logo-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.auth-loading-content p {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin: 0;
+}
+
+.auth-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #E5E5E5;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: auth-spin 0.8s linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode support */
+.dark-mode .auth-loading {
+  background: #0a0a0a;
+}
+
+.dark-mode .auth-loading-content {
+  background: #1A1A1A;
+  border-color: #FAFAFA;
+  box-shadow: 8px 8px 0 #FAFAFA;
+}
+
+.dark-mode .auth-loading-content p {
+  color: #FAFAFA;
+}
+
+.dark-mode .auth-spinner {
+  border-color: #333;
+  border-top-color: #22c55e;
+}
