@@ -27,9 +27,10 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
   isOpen,
   onClose,
   initialData,
-  contacts,
+  contacts: _contacts,
   onSubmit
 }) => {
+  // Note: contacts will be used for autocomplete suggestions in future
   const [title, setTitle] = useState('');
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [startTime, setStartTime] = useState('');

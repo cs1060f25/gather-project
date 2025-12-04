@@ -214,8 +214,8 @@ const TypewriterText = ({ text, delay = 0, speed = 30 }: { text: string; delay?:
   );
 };
 
-// Parallax section component
-const ParallaxSection = ({ children, speed = 0.5 }: { children: React.ReactNode; speed?: number }) => {
+// Parallax section component (reserved for future use)
+const _ParallaxSection = ({ children, speed = 0.5 }: { children: React.ReactNode; speed?: number }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
