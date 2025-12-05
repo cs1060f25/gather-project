@@ -449,6 +449,76 @@
   color: #94A3B8;
 }
 
+/* Suggested Times */
+.suggested-times label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.suggested-times .sparkle {
+  animation: sparkle-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.suggested-time-chips {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.suggested-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border: 3px solid #22c55e;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 4px 4px 0 #22c55e;
+}
+
+.suggested-chip:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #22c55e;
+}
+
+.suggested-chip.selected {
+  background: #22c55e;
+  color: #fff;
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #166534;
+}
+
+.suggested-chip .chip-rank {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.suggested-chip .chip-time {
+  font-weight: 700;
+}
+
+.dark-mode .suggested-chip {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #22c55e;
+  box-shadow: 4px 4px 0 #22c55e;
+}
+
+.dark-mode .suggested-chip.selected {
+  background: #22c55e;
+  color: #000;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .scheduling-modal {
@@ -467,5 +537,10 @@
   .submit-btn,
   .cancel-btn {
     flex: unset;
+  }
+
+  .suggested-chip {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
   }
 }

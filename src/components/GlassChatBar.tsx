@@ -52,9 +52,10 @@ interface GlassChatBarProps {
   onChange: (value: string) => void;
   onSubmit: (message: string) => void;
   contacts?: { name: string; email: string }[];
+  isLoading?: boolean;
 }
 
-export const GlassChatBar: React.FC<GlassChatBarProps> = ({ value, onChange, onSubmit, contacts = [] }) => {
+export const GlassChatBar: React.FC<GlassChatBarProps> = ({ value, onChange, onSubmit, contacts = [], isLoading = false }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -177,17 +178,19 @@ export const GlassChatBar: React.FC<GlassChatBarProps> = ({ value, onChange, onS
             <input
               type="text"
               className="chat-input"
-              placeholder="Schedule something... (e.g., 'Meeting with Sarah tomorrow at 2pm')"
+              placeholder={isLoading ? "Understanding your request..." : "Schedule something... (e.g., 'Coffee with @Sarah tomorrow at 2pm')"}
               value={value}
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onKeyDown={handleKeyDown}
+              disabled={isLoading}
             />
             <button 
               type="button" 
               className={`voice-btn ${isListening ? 'listening' : ''}`}
               onClick={toggleVoice}
+              disabled={isLoading}
               aria-label={isListening ? 'Stop listening' : 'Start voice input'}
             >
               <div className="voice-btn-bg"></div>
@@ -199,11 +202,15 @@ export const GlassChatBar: React.FC<GlassChatBarProps> = ({ value, onChange, onS
                 <line x1="8" y1="23" x2="16" y2="23"></line>
               </svg>
             </button>
-            <button type="submit" className="chat-submit" disabled={!value.trim()}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
+            <button type="submit" className={`chat-submit ${isLoading ? 'loading' : ''}`} disabled={!value.trim() || isLoading}>
+              {isLoading ? (
+                <div className="loading-spinner"></div>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              )}
             </button>
           </form>
         </div>

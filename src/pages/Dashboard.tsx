@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
+import { parseSchedulingMessage, getSuggestedTimes, type ParsedSchedulingData } from '../lib/openai';
 import { Calendar } from '../components/Calendar';
 import { GlassChatBar } from '../components/GlassChatBar';
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import { LocalInfo } from '../components/LocalInfo';
 import { DayNightToggle } from '../components/DayNightToggle';
+import { SchedulingModal, type ParsedEventData, type ScheduledEventData } from '../components/SchedulingModal';
 import './Dashboard.css';
 
 // Gatherly Logo SVG Component
@@ -58,6 +60,12 @@ export const Dashboard: React.FC = () => {
   const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
   const [, setCalendarSynced] = useState(false);
   const [, setContactsSynced] = useState(false);
+  
+  // Scheduling modal state
+  const [showSchedulingModal, setShowSchedulingModal] = useState(false);
+  const [schedulingData, setSchedulingData] = useState<ParsedEventData | null>(null);
+  const [suggestedTimes, setSuggestedTimes] = useState<string[]>([]);
+  const [isParsingChat, setIsParsingChat] = useState(false);
 
   useEffect(() => {
     if (authUser) {
@@ -253,23 +261,72 @@ export const Dashboard: React.FC = () => {
 
   const handleChatSubmit = async (message: string) => {
     console.log('Schedule request:', message);
+    setIsParsingChat(true);
     
-    // Parse the message and create an event
-    const mentionTokens = message.match(/@\S+/g) || [];
-    const attendeeEmails = contacts
-      .filter(c => mentionTokens.some(tok => tok.toLowerCase().includes(c.name.toLowerCase()) || tok.toLowerCase().includes(c.email.toLowerCase())))
-      .map(c => c.email);
+    try {
+      // Use OpenAI to parse the message
+      const contactNames = contacts.map(c => c.name);
+      const parsed: ParsedSchedulingData = await parseSchedulingMessage(message, contactNames);
+      
+      console.log('Parsed scheduling data:', parsed);
+      
+      if (!parsed.isSchedulingRequest) {
+        // Not a scheduling request, just log it
+        console.log('Not recognized as a scheduling request');
+        setIsParsingChat(false);
+        setChatInput('');
+        return;
+      }
+      
+      // Convert participants to emails
+      const participantEmails = parsed.participants.map(name => {
+        const contact = contacts.find(c => 
+          c.name.toLowerCase() === name.toLowerCase() || 
+          c.email.toLowerCase() === name.toLowerCase()
+        );
+        return contact?.email || name;
+      });
+      
+      // Get calendar events for time suggestions
+      const calendarEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
+      const targetDate = parsed.suggestedDate || new Date().toISOString().split('T')[0];
+      const timeSuggestions = getSuggestedTimes(calendarEvents, targetDate, parsed.duration || 60);
+      setSuggestedTimes(timeSuggestions);
+      
+      // Prepare data for scheduling modal
+      const eventData: ParsedEventData = {
+        title: parsed.title,
+        participants: participantEmails,
+        dates: parsed.suggestedDate ? [parsed.suggestedDate] : undefined,
+        time: parsed.suggestedTime,
+        duration: parsed.duration,
+        location: parsed.location,
+        priority: parsed.priority,
+        notes: parsed.notes
+      };
+      
+      setSchedulingData(eventData);
+      setShowSchedulingModal(true);
+      setChatInput('');
+    } catch (error) {
+      console.error('Error parsing chat:', error);
+    } finally {
+      setIsParsingChat(false);
+    }
+  };
 
-    const cleanTitle = message.replace(/@\S+/g, '').trim() || message.trim();
-    const today = new Date();
+  const handleScheduleSubmit = (eventData: ScheduledEventData) => {
     const newEvent = {
       id: crypto.randomUUID(),
-      title: cleanTitle || 'New event',
-      date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
-      time: '12:00',
-      category: categorizeEvent(cleanTitle || ''),
-      attendees: attendeeEmails,
-      important: true,
+      title: eventData.title,
+      date: eventData.date,
+      time: eventData.startTime || eventData.time,
+      endTime: eventData.endTime,
+      category: eventData.priority === 'must' ? 'work' : eventData.priority === 'should' ? 'personal' : 'travel',
+      attendees: eventData.participants,
+      location: eventData.location,
+      description: eventData.notes,
+      important: eventData.priority !== 'maybe',
       source: 'chat' as const
     };
     
@@ -277,11 +334,27 @@ export const Dashboard: React.FC = () => {
     const existingEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
     localStorage.setItem('gatherly_events', JSON.stringify([...existingEvents, newEvent]));
     
+    // Create pending event if there are participants
+    if (eventData.participants.length > 0) {
+      const pending: PendingEvent = {
+        id: newEvent.id,
+        title: eventData.title,
+        date: eventData.date,
+        time: eventData.startTime,
+        invitees: eventData.participants,
+        status: 'waiting'
+      };
+      setPendingEvents(prev => [...prev, pending]);
+      
+      // TODO: Send actual email invites here
+      console.log('Would send invites to:', eventData.participants);
+    }
+    
     // Trigger calendar refresh
     window.dispatchEvent(new Event('gatherly_events_updated'));
     
-    // Clear input
-    setChatInput('');
+    setShowSchedulingModal(false);
+    setSchedulingData(null);
   };
 
   const handleAddContact = (contact: Contact) => {
@@ -416,12 +489,26 @@ export const Dashboard: React.FC = () => {
         onImportContacts={syncGoogleContacts}
       />
 
+      {/* Scheduling Modal */}
+      <SchedulingModal
+        isOpen={showSchedulingModal}
+        onClose={() => {
+          setShowSchedulingModal(false);
+          setSchedulingData(null);
+        }}
+        initialData={schedulingData}
+        contacts={contacts.map(c => ({ id: c.id, name: c.name, email: c.email }))}
+        onSubmit={handleScheduleSubmit}
+        suggestedTimes={suggestedTimes}
+      />
+
       {/* Chat Bar */}
       <GlassChatBar 
         value={chatInput}
         onChange={setChatInput}
         onSubmit={handleChatSubmit}
         contacts={contacts}
+        isLoading={isParsingChat}
       />
     </div>
   );

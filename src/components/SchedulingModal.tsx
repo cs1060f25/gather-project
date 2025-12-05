@@ -37,6 +37,7 @@ interface SchedulingModalProps {
   initialData?: ParsedEventData | null;
   contacts: Contact[];
   defaultDate?: string;
+  suggestedTimes?: string[];
   onSubmit: (eventData: ScheduledEventData) => void;
 }
 
@@ -46,6 +47,7 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
   initialData,
   contacts: _contacts,
   defaultDate,
+  suggestedTimes = [],
   onSubmit
 }) => {
   const contacts = _contacts || [];
@@ -259,6 +261,43 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Suggested Times */}
+          {suggestedTimes.length > 0 && (
+            <div className="form-field suggested-times">
+              <label>
+                <span className="sparkle">✨</span> Suggested times (based on your calendar)
+              </label>
+              <div className="suggested-time-chips">
+                {suggestedTimes.map((time, idx) => {
+                  const displayTime = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  });
+                  return (
+                    <button
+                      key={time}
+                      type="button"
+                      className={`suggested-chip ${startTime === time ? 'selected' : ''}`}
+                      onClick={() => {
+                        setStartTime(time);
+                        // Auto-set end time based on duration
+                        const [h, m] = time.split(':').map(Number);
+                        const endMinutes = h * 60 + m + duration;
+                        const endH = Math.floor(endMinutes / 60) % 24;
+                        const endM = endMinutes % 60;
+                        setEndTime(`${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`);
+                      }}
+                    >
+                      <span className="chip-rank">#{idx + 1}</span>
+                      <span className="chip-time">{displayTime}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Time Selection */}
           <div className={`form-field time-field ${autoFilledFields.includes('time') ? 'auto-filled' : ''}`}>
