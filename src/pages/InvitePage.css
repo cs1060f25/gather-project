@@ -1,0 +1,458 @@
+/* Invite Page - Neobrutalist Style */
+
+.invite-page {
+  min-height: 100vh;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.invite-container {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border: 4px solid #111;
+  box-shadow: 8px 8px 0 #111;
+}
+
+/* Header */
+.invite-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 3px solid #111;
+  background: #fff;
+}
+
+.gatherly-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gatherly-logo span {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+}
+
+/* Main Content */
+.invite-main {
+  padding: 2rem 1.5rem;
+}
+
+.invite-from {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.from-label {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.from-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+}
+
+/* Event Card */
+.event-card {
+  background: #f8f8f8;
+  border: 3px solid #111;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.event-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: #111;
+  line-height: 1.2;
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  color: #444;
+}
+
+.detail-icon {
+  font-size: 1.25rem;
+}
+
+/* Question */
+.invite-question {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111;
+  margin: 0 0 1.25rem;
+  text-align: center;
+}
+
+/* Response Buttons */
+.response-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-response {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border: 3px solid #111;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 4px 4px 0 #111;
+}
+
+.btn-response:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #111;
+}
+
+.btn-response:active,
+.btn-response.selected {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #111;
+}
+
+.btn-response:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.btn-yes {
+  background: #22c55e;
+  color: #fff;
+}
+
+.btn-yes:hover {
+  background: #16a34a;
+}
+
+.btn-maybe {
+  background: #fbbf24;
+  color: #111;
+}
+
+.btn-maybe:hover {
+  background: #f59e0b;
+}
+
+.btn-no {
+  background: #fff;
+  color: #111;
+}
+
+.btn-no:hover {
+  background: #f5f5f5;
+}
+
+.btn-emoji {
+  font-size: 1.25rem;
+}
+
+/* Loading States */
+.invite-loading,
+.invite-error {
+  text-align: center;
+  padding: 3rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e5e5;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.invite-error h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.invite-error p {
+  color: #666;
+  margin: 0 0 1.5rem;
+}
+
+.btn-home {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  border: 3px solid #111;
+  box-shadow: 4px 4px 0 #111;
+  transition: all 0.15s ease;
+}
+
+.btn-home:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #111;
+}
+
+/* Success State */
+.invite-response-success {
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.invite-response-success h1 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem;
+  color: #111;
+}
+
+.invite-response-success > p {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 0 0 1.5rem;
+}
+
+.event-summary {
+  background: #f8f8f8;
+  border: 3px solid #111;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.event-summary h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.event-summary .event-detail {
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.response-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-change {
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border: 3px solid #111;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #111;
+  transition: all 0.15s ease;
+}
+
+.btn-change:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #111;
+}
+
+.btn-gatherly {
+  padding: 0.75rem 1.5rem;
+  background: #22c55e;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  border: 3px solid #111;
+  box-shadow: 4px 4px 0 #111;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.btn-gatherly:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #111;
+  background: #16a34a;
+}
+
+/* Footer */
+.invite-footer {
+  padding: 1rem 1.5rem;
+  border-top: 3px solid #111;
+  text-align: center;
+  background: #f8f8f8;
+}
+
+.invite-footer p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.invite-footer a {
+  color: #22c55e;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.invite-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .invite-page {
+    background: #111;
+  }
+
+  .invite-container {
+    background: #1a1a1a;
+    border-color: #fff;
+    box-shadow: 8px 8px 0 #fff;
+  }
+
+  .invite-header {
+    background: #1a1a1a;
+    border-color: #fff;
+  }
+
+  .gatherly-logo span,
+  .from-name,
+  .event-title,
+  .invite-question {
+    color: #fff;
+  }
+
+  .from-label {
+    color: #888;
+  }
+
+  .event-card {
+    background: #222;
+    border-color: #fff;
+  }
+
+  .event-detail {
+    color: #ccc;
+  }
+
+  .btn-response {
+    border-color: #fff;
+    box-shadow: 4px 4px 0 #fff;
+  }
+
+  .btn-response:hover {
+    box-shadow: 6px 6px 0 #fff;
+  }
+
+  .btn-no {
+    background: #222;
+    color: #fff;
+  }
+
+  .invite-footer {
+    background: #222;
+    border-color: #fff;
+  }
+
+  .invite-response-success h1 {
+    color: #fff;
+  }
+
+  .event-summary {
+    background: #222;
+    border-color: #fff;
+  }
+
+  .btn-change {
+    background: #222;
+    color: #fff;
+    border-color: #fff;
+    box-shadow: 4px 4px 0 #fff;
+  }
+
+  .btn-gatherly {
+    border-color: #fff;
+    box-shadow: 4px 4px 0 #fff;
+  }
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .invite-page {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .invite-container {
+    border: none;
+    box-shadow: none;
+    max-width: none;
+  }
+
+  .invite-header {
+    border-bottom-width: 2px;
+  }
+
+  .event-card {
+    border-width: 2px;
+  }
+
+  .btn-response {
+    border-width: 2px;
+    box-shadow: 3px 3px 0 #111;
+  }
+
+  .invite-footer {
+    border-top-width: 2px;
+  }
+}
+

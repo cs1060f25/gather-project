@@ -8,6 +8,7 @@ import { MarketingPage } from './pages/MarketingPage';
 import { AuthPage } from './pages/AuthPage';
 import { Dashboard } from './pages/Dashboard';
 import { StoryPage } from './pages/StoryPage';
+import { InvitePage } from './pages/InvitePage';
 
 // Auth Context
 interface AuthContextType {
@@ -194,6 +195,12 @@ function AppContent() {
       <Route 
         path="/story" 
         element={<StoryPage />} 
+      />
+      
+      {/* Invite Response Page */}
+      <Route 
+        path="/invite/:token" 
+        element={<InvitePage />} 
       />
       
       {/* Catch all - redirect to home */}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
 import { parseSchedulingMessage, getSuggestedTimes, type ParsedSchedulingData } from '../lib/openai';
+import { createInvites, sendInviteEmails } from '../lib/invites';
 import { Calendar } from '../components/Calendar';
 import { GlassChatBar } from '../components/GlassChatBar';
 import { ProfileSidebar } from '../components/ProfileSidebar';
@@ -315,9 +316,10 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleScheduleSubmit = (eventData: ScheduledEventData) => {
+  const handleScheduleSubmit = async (eventData: ScheduledEventData) => {
+    const eventId = crypto.randomUUID();
     const newEvent = {
-      id: crypto.randomUUID(),
+      id: eventId,
       title: eventData.title,
       date: eventData.date,
       time: eventData.startTime || eventData.time,
@@ -334,10 +336,10 @@ export const Dashboard: React.FC = () => {
     const existingEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
     localStorage.setItem('gatherly_events', JSON.stringify([...existingEvents, newEvent]));
     
-    // Create pending event if there are participants
-    if (eventData.participants.length > 0) {
+    // Create and send invites if there are participants
+    if (eventData.participants.length > 0 && user) {
       const pending: PendingEvent = {
-        id: newEvent.id,
+        id: eventId,
         title: eventData.title,
         date: eventData.date,
         time: eventData.startTime,
@@ -346,8 +348,34 @@ export const Dashboard: React.FC = () => {
       };
       setPendingEvents(prev => [...prev, pending]);
       
-      // TODO: Send actual email invites here
-      console.log('Would send invites to:', eventData.participants);
+      // Create invites in database
+      const { invites, errors } = await createInvites(
+        eventId,
+        {
+          title: eventData.title,
+          date: eventData.date,
+          time: eventData.startTime,
+          location: eventData.location,
+        },
+        user.full_name || user.email?.split('@')[0] || 'Someone',
+        user.email || '',
+        eventData.participants
+      );
+      
+      if (errors.length > 0) {
+        console.error('Some invites failed:', errors);
+      }
+      
+      if (invites.length > 0) {
+        // Send invite emails
+        const { sent, failed } = await sendInviteEmails(invites);
+        console.log(`Sent ${sent} invites, ${failed} failed`);
+        
+        // Show invite links in console for demo
+        invites.forEach(invite => {
+          console.log(`Invite for ${invite.invitee_email}: ${window.location.origin}/invite/${invite.token}`);
+        });
+      }
     }
     
     // Trigger calendar refresh
