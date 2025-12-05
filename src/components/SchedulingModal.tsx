@@ -1,18 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './SchedulingModal.css';
 
-interface Contact {
+export interface Contact {
   id: string;
   name: string;
   email: string;
 }
 
-interface ParsedEventData {
+export interface ParsedEventData {
   title?: string;
   participants?: string[];
   dates?: string[];
   time?: string;
   duration?: number;
+  location?: string;
+  priority?: 'must' | 'should' | 'maybe';
+  notes?: string;
+}
+
+export interface ScheduledEventData {
+  title: string;
+  date: string;
+  time?: string;
+  startTime?: string;
+  endTime?: string;
+  duration: number;
+  participants: string[];
+  location?: string;
+  priority: 'must' | 'should' | 'maybe';
+  notes?: string;
 }
 
 interface SchedulingModalProps {
@@ -20,7 +36,8 @@ interface SchedulingModalProps {
   onClose: () => void;
   initialData?: ParsedEventData | null;
   contacts: Contact[];
-  onSubmit: (eventData: any) => void;
+  defaultDate?: string;
+  onSubmit: (eventData: ScheduledEventData) => void;
 }
 
 export const SchedulingModal: React.FC<SchedulingModalProps> = ({
@@ -28,8 +45,10 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
   onClose,
   initialData,
   contacts: _contacts,
+  defaultDate,
   onSubmit
 }) => {
+  const contacts = _contacts || [];
   // Note: contacts will be used for autocomplete suggestions in future
   const [title, setTitle] = useState('');
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
@@ -40,6 +59,9 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
   const [newParticipant, setNewParticipant] = useState('');
   const [isDateRange, setIsDateRange] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<string[]>([]);
+  const [location, setLocation] = useState('');
+  const [priority, setPriority] = useState<'must' | 'should' | 'maybe'>('should');
+  const [notes, setNotes] = useState('');
 
   // Pre-fill from parsed data
   useEffect(() => {
@@ -66,10 +88,36 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
         setDuration(initialData.duration);
         filled.push('duration');
       }
+      if (initialData.location) {
+        setLocation(initialData.location);
+        filled.push('location');
+      }
+      if (initialData.priority) {
+        setPriority(initialData.priority);
+        filled.push('priority');
+      }
+      if (initialData.notes) {
+        setNotes(initialData.notes);
+        filled.push('notes');
+      }
       
       setAutoFilledFields(filled);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    if (isOpen && defaultDate) {
+      setSelectedDates([defaultDate]);
+    }
+  }, [isOpen, defaultDate]);
+
+  const filteredContactSuggestions = useMemo(() => {
+    if (!newParticipant.trim()) return contacts.slice(0, 6);
+    const query = newParticipant.toLowerCase();
+    return contacts
+      .filter((c: Contact) => c.name.toLowerCase().includes(query) || c.email.toLowerCase().includes(query))
+      .slice(0, 6);
+  }, [contacts, newParticipant]);
 
   // Generate time options
   const timeOptions = [];
@@ -85,9 +133,10 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
     }
   }
 
-  const handleAddParticipant = () => {
-    if (newParticipant && !participants.includes(newParticipant)) {
-      setParticipants([...participants, newParticipant]);
+  const handleAddParticipant = (value?: string) => {
+    const candidate = (value ?? newParticipant).trim();
+    if (candidate && !participants.includes(candidate)) {
+      setParticipants([...participants, candidate]);
       setNewParticipant('');
     }
   };
@@ -111,10 +160,13 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
       title,
       date: selectedDates[0] || new Date().toISOString().split('T')[0],
       time: startTime,
+      startTime,
+      endTime,
       duration,
       participants,
-      category: 'personal',
-      status: 'pending'
+      location,
+      priority,
+      notes,
     });
   };
 
@@ -162,6 +214,17 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
             {autoFilledFields.includes('title') && (
               <span className="auto-badge">Auto-filled</span>
             )}
+          </div>
+
+          {/* Location */}
+          <div className={`form-field ${autoFilledFields.includes('location') ? 'auto-filled' : ''}`}>
+            <label>Location / Link</label>
+            <input
+              type="text"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              placeholder="Office, Zoom link, Cafe..."
+            />
           </div>
 
           {/* Date Selection */}
@@ -240,6 +303,44 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
             </div>
           </div>
 
+          {/* Priority & Flexibility */}
+          <div className="form-field inline-fields">
+            <div className="priority-group">
+              <label>Priority</label>
+              <div className="pill-toggle">
+                {(['must', 'should', 'maybe'] as const).map(level => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={priority === level ? 'active' : ''}
+                    onClick={() => setPriority(level)}
+                  >
+                    {level === 'must' ? 'Must do' : level === 'should' ? 'Should do' : 'Maybe'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="priority-group">
+              <label>Flexibility</label>
+              <div className="pill-toggle">
+                <button
+                  type="button"
+                  className={!isDateRange ? 'active' : ''}
+                  onClick={() => setIsDateRange(false)}
+                >
+                  Fixed time
+                </button>
+                <button
+                  type="button"
+                  className={isDateRange ? 'active' : ''}
+                  onClick={() => setIsDateRange(true)}
+                >
+                  Flexible
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Participants */}
           <div className={`form-field ${autoFilledFields.includes('participants') ? 'auto-filled' : ''}`}>
             <label>Participants</label>
@@ -256,8 +357,21 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
                   }
                 }}
               />
-              <button type="button" onClick={handleAddParticipant}>Add</button>
+              <button type="button" onClick={() => handleAddParticipant()}>Add</button>
             </div>
+            {filteredContactSuggestions.length > 0 && (
+              <div className="contact-suggestions">
+                {filteredContactSuggestions.map((contact: Contact) => (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => handleAddParticipant(contact.email)}
+                  >
+                    {contact.name} — {contact.email}
+                  </button>
+                ))}
+              </div>
+            )}
             {participants.length > 0 && (
               <div className="participants-list">
                 {participants.map(email => (
@@ -271,6 +385,17 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
             {autoFilledFields.includes('participants') && (
               <span className="auto-badge">Auto-filled</span>
             )}
+          </div>
+
+          {/* Notes */}
+          <div className={`form-field ${autoFilledFields.includes('notes') ? 'auto-filled' : ''}`}>
+            <label>Notes</label>
+            <textarea
+              rows={3}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Context, agenda, prep work..."
+            />
           </div>
 
           {/* Submit */}

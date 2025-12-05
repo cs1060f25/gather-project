@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { DemoModal } from '../components/DemoModal';
 import { supabase } from '../lib/supabase';
 import './MarketingPage.css';
@@ -101,6 +101,7 @@ const steps = [
 
 export const MarketingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showDemo, setShowDemo] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -154,7 +155,17 @@ export const MarketingPage: React.FC = () => {
       {/* Navigation */}
       <nav className="g-nav">
         <div className="g-nav-inner">
-          <div className="g-logo" onClick={() => navigate('/')}>
+          <div
+            className="g-logo"
+            onClick={() => {
+              // If already on home, just scroll to top and keep hash intact
+              if (location.pathname === '/') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              } else {
+                navigate('/');
+              }
+            }}
+          >
             <GatherlyLogo size={28} color="#22c55e" />
             <span>Gatherly</span>
           </div>

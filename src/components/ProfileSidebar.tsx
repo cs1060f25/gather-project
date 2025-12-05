@@ -24,6 +24,7 @@ interface ProfileSidebarProps {
   onClose: () => void;
   onSignOut: () => void;
   onAddContact: (contact: Contact) => void;
+  onImportContacts?: () => void;
 }
 
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 
@@ -32,16 +33,15 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   contacts: propContacts,
   onClose, 
   onSignOut,
-  onAddContact 
+  onAddContact,
+  onImportContacts
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'people' | 'settings'>('profile');
   const [newContact, setNewContact] = useState({ name: '', email: '' });
   const [showAddContact, setShowAddContact] = useState(false);
   
-  const contacts = propContacts.length > 0 ? propContacts : [
-    { id: '1', name: 'Sarah Johnson', email: 'sarah@example.com', isGatherly: true },
-    { id: '2', name: 'Mike Chen', email: 'mike@company.com', isGatherly: false },
-  ];
+  // Use real contacts only - no mock data
+  const contacts = propContacts;
 
   if (!isOpen) return null;
 
@@ -145,6 +145,15 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 >
                   {showAddContact ? 'Cancel' : '+ Add'}
                 </button>
+                {onImportContacts && (
+                  <button 
+                    className="btn-small import-btn"
+                    onClick={onImportContacts}
+                    title="Import from Google"
+                  >
+                    Import Google
+                  </button>
+                )}
               </div>
 
               {showAddContact && (
@@ -168,20 +177,27 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               )}
 
               <div className="contacts-list">
-                {contacts.map(contact => (
-                  <div key={contact.id} className="contact-item">
-                    <div className="contact-avatar">
-                      {contact.name[0].toUpperCase()}
-                    </div>
-                    <div className="contact-info">
-                      <span className="contact-name">{contact.name}</span>
-                      <span className="contact-email">{contact.email}</span>
-                    </div>
-                    {contact.isGatherly && (
-                      <span className="gatherly-badge">📅 Gatherly</span>
-                    )}
+                {contacts.length === 0 ? (
+                  <div className="no-contacts">
+                    <p>No contacts yet</p>
+                    <p className="no-contacts-hint">Add contacts to easily invite them to events</p>
                   </div>
-                ))}
+                ) : (
+                  contacts.map(contact => (
+                    <div key={contact.id} className="contact-item">
+                      <div className="contact-avatar">
+                        {contact.name[0].toUpperCase()}
+                      </div>
+                      <div className="contact-info">
+                        <span className="contact-name">{contact.name}</span>
+                        <span className="contact-email">{contact.email}</span>
+                      </div>
+                      {contact.isGatherly && (
+                        <span className="gatherly-badge">📅 Gatherly</span>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

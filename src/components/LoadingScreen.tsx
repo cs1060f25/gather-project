@@ -101,6 +101,13 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
 
     return (
         <div className={`loading-screen ${isExiting ? 'exit' : ''}`} ref={containerRef}>
+            {/* Galaxy background */}
+            <div className="galaxy">
+                <div className="galaxy-layer layer-1" />
+                <div className="galaxy-layer layer-2" />
+                <div className="galaxy-layer layer-3" />
+            </div>
+
             {/* Stars Animation */}
             <div 
                 className="stars-container"

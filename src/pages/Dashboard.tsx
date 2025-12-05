@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
-import { supabase } from '../lib/supabase';
+import { supabase, getGoogleToken } from '../lib/supabase';
 import { Calendar } from '../components/Calendar';
 import { GlassChatBar } from '../components/GlassChatBar';
 import { ProfileSidebar } from '../components/ProfileSidebar';
-import { ThemeToggle } from '../components/ThemeToggle';
 import { LocalInfo } from '../components/LocalInfo';
+import { DayNightToggle } from '../components/DayNightToggle';
 import './Dashboard.css';
 
 // Gatherly Logo SVG Component
@@ -37,14 +37,27 @@ interface Contact {
   isGatherly?: boolean;
 }
 
+interface PendingEvent {
+  id: string;
+  title: string;
+  date: string;
+  time?: string;
+  invitees: string[];
+  status: 'waiting' | 'partial';
+}
+
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser, signOut, loading: authLoading } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showPending, setShowPending] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [pendingCount] = useState(2); // Mock for now
+  // No mock data - start with empty pending events
+  const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
+  const [, setCalendarSynced] = useState(false);
+  const [, setContactsSynced] = useState(false);
 
   useEffect(() => {
     if (authUser) {
@@ -61,6 +74,8 @@ export const Dashboard: React.FC = () => {
       
       // Sync Google Calendar if connected
       syncGoogleCalendar();
+      // Sync Google Contacts if connected
+      syncGoogleContacts();
     }
   }, [authUser]);
 
@@ -87,54 +102,136 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const syncGoogleCalendar = async () => {
-    // Check if user has Google Calendar connected
-    const session = await supabase.auth.getSession();
-    const providerToken = session.data.session?.provider_token;
-    
-    if (providerToken) {
-      try {
-        // Fetch events from Google Calendar
-        const response = await fetch(
-          'https://www.googleapis.com/calendar/v3/calendars/primary/events?' + 
-          new URLSearchParams({
-            timeMin: new Date().toISOString(),
-            maxResults: '50',
-            singleEvents: 'true',
-            orderBy: 'startTime'
-          }),
-          {
-            headers: {
-              Authorization: `Bearer ${providerToken}`
-            }
+  const syncGoogleContacts = async () => {
+    const providerToken = getGoogleToken();
+    if (!providerToken) return;
+
+    try {
+      const response = await fetch(
+        'https://people.googleapis.com/v1/people/me/connections?' +
+        new URLSearchParams({
+          personFields: 'names,emailAddresses',
+          sortOrder: 'FIRST_NAME_ASCENDING',
+          pageSize: '200'
+        }),
+        {
+          headers: {
+            Authorization: `Bearer ${providerToken}`
           }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Convert Google events to our format and store in localStorage
-          const events = data.items?.map((item: any) => ({
-            id: item.id,
-            title: item.summary || 'Untitled Event',
-            date: item.start?.date || item.start?.dateTime?.split('T')[0],
-            time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-            category: categorizeEvent(item.summary || '')
-          })) || [];
-          
-          // Merge with existing local events
-          const existingEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
-          const existingIds = new Set(existingEvents.map((e: any) => e.id));
-          const newEvents = events.filter((e: any) => !existingIds.has(e.id));
-          
-          localStorage.setItem('gatherly_events', JSON.stringify([...existingEvents, ...newEvents]));
-          
-          // Trigger calendar refresh
-          window.dispatchEvent(new Event('gatherly_events_updated'));
         }
-      } catch (error) {
-        console.error('Error syncing Google Calendar:', error);
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('gatherly_google_token');
+        }
+        return;
       }
+
+      const data = await response.json();
+      const googleContacts: Contact[] = (data.connections || [])
+        .map((c: any) => {
+          const email = c.emailAddresses?.[0]?.value;
+          const name = c.names?.[0]?.displayName || email;
+          if (!email) return null;
+          return { id: `g-${email}`, name, email, isGatherly: false };
+        })
+        .filter(Boolean);
+
+      setContacts(prev => {
+        const merged = [...prev];
+        googleContacts.forEach(gc => {
+          if (!merged.find(c => c.email === gc!.email)) {
+            merged.push(gc as Contact);
+          }
+        });
+        return merged;
+      });
+      setContactsSynced(true);
+
+      // Persist new contacts to Supabase
+      if (authUser) {
+        const rows = googleContacts.map(c => ({
+          user_id: authUser.id,
+          name: c!.name,
+          email: c!.email,
+          phone: c!.phone,
+          is_gatherly: false,
+        }));
+        await supabase.from('contacts').upsert(rows, { onConflict: 'email' });
+      }
+    } catch (error) {
+      console.error('Error syncing Google Contacts:', error);
+    }
+  };
+
+  const syncGoogleCalendar = async () => {
+    // Get the stored Google token
+    const providerToken = getGoogleToken();
+    
+    if (!providerToken) {
+      console.log('No Google token found, skipping calendar sync');
+      return;
+    }
+
+    try {
+      console.log('Syncing Google Calendar...');
+      
+      // Fetch events from Google Calendar
+      const response = await fetch(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events?' + 
+        new URLSearchParams({
+          timeMin: new Date().toISOString(),
+          maxResults: '50',
+          singleEvents: 'true',
+          orderBy: 'startTime'
+        }),
+        {
+          headers: {
+            Authorization: `Bearer ${providerToken}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched', data.items?.length || 0, 'events from Google Calendar');
+        
+        // Convert Google events to our format
+        const events = data.items?.map((item: any) => ({
+          id: `gcal-${item.id}`,
+          title: item.summary || 'Untitled Event',
+          date: item.start?.date || item.start?.dateTime?.split('T')[0],
+          time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+          category: categorizeEvent(item.summary || ''),
+          source: 'google',
+          attendees: (item.attendees || [])
+            .filter((a: any) => a.email)
+            .map((a: any) => a.email),
+          important: true,
+        })) || [];
+        
+        // Get existing local events (non-google)
+        const existingEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
+        const localEvents = existingEvents.filter((e: any) => !e.id.startsWith('gcal-'));
+        
+        // Merge local events with Google events
+        localStorage.setItem('gatherly_events', JSON.stringify([...localEvents, ...events]));
+        
+        // Trigger calendar refresh
+        window.dispatchEvent(new Event('gatherly_events_updated'));
+        setCalendarSynced(true);
+      } else {
+        const errorText = await response.text();
+        console.error('Google Calendar API error:', response.status, errorText);
+        
+        // Token might be expired - clear it
+        if (response.status === 401) {
+          localStorage.removeItem('gatherly_google_token');
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing Google Calendar:', error);
     }
   };
 
@@ -158,14 +255,22 @@ export const Dashboard: React.FC = () => {
     console.log('Schedule request:', message);
     
     // Parse the message and create an event
-    // TODO: Use OpenAI to parse the message into event details
+    const mentionTokens = message.match(/@\S+/g) || [];
+    const attendeeEmails = contacts
+      .filter(c => mentionTokens.some(tok => tok.toLowerCase().includes(c.name.toLowerCase()) || tok.toLowerCase().includes(c.email.toLowerCase())))
+      .map(c => c.email);
+
+    const cleanTitle = message.replace(/@\S+/g, '').trim() || message.trim();
     const today = new Date();
     const newEvent = {
       id: crypto.randomUUID(),
-      title: message,
+      title: cleanTitle || 'New event',
       date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
       time: '12:00',
-      category: 'personal' as const
+      category: categorizeEvent(cleanTitle || ''),
+      attendees: attendeeEmails,
+      important: true,
+      source: 'chat' as const
     };
     
     // Add to localStorage
@@ -203,31 +308,79 @@ export const Dashboard: React.FC = () => {
     );
   }
 
+  const dismissPendingEvent = (id: string) => {
+    setPendingEvents(prev => prev.filter(e => e.id !== id));
+  };
+
   return (
     <div className="dashboard">
       {/* Header */}
       <header className="dashboard-header">
         <div className="header-left">
-          <div className="dashboard-logo">
+          <button 
+            className="dashboard-logo"
+            onClick={() => window.location.reload()}
+            aria-label="Refresh page"
+          >
             <GatherlyLogo size={28} />
             <span className="logo-text">Gatherly</span>
-          </div>
+          </button>
         </div>
         <div className="header-center">
-          <button className="pending-events-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span>Pending</span>
-            {pendingCount > 0 && (
-              <span className="pending-badge">{pendingCount}</span>
+          <div className="pending-wrapper">
+            <button 
+              className="pending-events-btn"
+              onClick={() => setShowPending(!showPending)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>Pending</span>
+              {pendingEvents.length > 0 && (
+                <span className="pending-badge">{pendingEvents.length}</span>
+              )}
+            </button>
+            
+            {showPending && (
+              <div className="pending-dropdown">
+                <div className="pending-dropdown-header">
+                  <h3>Pending Invitations</h3>
+                  <button className="close-btn" onClick={() => setShowPending(false)}>✕</button>
+                </div>
+                {pendingEvents.length === 0 ? (
+                  <div className="pending-empty">
+                    <p>No pending events! 🎉</p>
+                  </div>
+                ) : (
+                  <ul className="pending-list">
+                    {pendingEvents.map(event => (
+                      <li key={event.id} className="pending-item">
+                        <div className="pending-item-content">
+                          <strong>{event.title}</strong>
+                          <span className="pending-date">
+                            {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            {event.time && ` at ${event.time}`}
+                          </span>
+                          <span className={`pending-status ${event.status}`}>
+                            {event.status === 'partial' ? '1/' + event.invitees.length + ' responded' : 'Waiting for responses'}
+                          </span>
+                        </div>
+                        <div className="pending-item-actions">
+                          <button className="btn-send-reminder">Remind</button>
+                          <button className="btn-dismiss" onClick={() => dismissPendingEvent(event.id)}>✕</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
-          </button>
+          </div>
         </div>
         <div className="header-right">
           <LocalInfo minimal />
-          <ThemeToggle />
+          <DayNightToggle />
           <button 
             className="profile-button"
             onClick={() => setShowProfile(!showProfile)}
@@ -249,7 +402,7 @@ export const Dashboard: React.FC = () => {
 
       {/* Main Content - Calendar */}
       <main className="dashboard-main">
-        <Calendar />
+        <Calendar contacts={contacts} />
       </main>
 
       {/* Profile Sidebar */}
@@ -260,6 +413,7 @@ export const Dashboard: React.FC = () => {
         onClose={() => setShowProfile(false)}
         onSignOut={handleSignOut}
         onAddContact={handleAddContact}
+        onImportContacts={syncGoogleContacts}
       />
 
       {/* Chat Bar */}
@@ -267,6 +421,7 @@ export const Dashboard: React.FC = () => {
         value={chatInput}
         onChange={setChatInput}
         onSubmit={handleChatSubmit}
+        contacts={contacts}
       />
     </div>
   );

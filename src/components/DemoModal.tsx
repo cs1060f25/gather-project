@@ -183,7 +183,6 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
               <GatherlyLogo size={24} />
               <span className="logo-name">Gatherly</span>
             </div>
-            <div className="user-avatar">S</div>
           </header>
 
           {/* Main Content */}

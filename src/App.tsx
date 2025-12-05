@@ -28,24 +28,9 @@ export const useAuth = () => useContext(AuthContext);
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  useEffect(() => {
-    // Give auth state a moment to settle after OAuth redirects
-    // Check if we have hash params (OAuth callback)
-    const hasAuthParams = window.location.hash.includes('access_token') || 
-                          window.location.search.includes('code=');
-    
-    if (hasAuthParams) {
-      // Wait a bit longer for OAuth to complete
-      const timer = setTimeout(() => setIsCheckingAuth(false), 1500);
-      return () => clearTimeout(timer);
-    } else {
-      setIsCheckingAuth(false);
-    }
-  }, []);
-
-  if (loading || isCheckingAuth) {
+  // Show loading while auth is being checked
+  if (loading) {
     return (
       <div className="auth-loading">
         <div className="auth-loading-content">
@@ -93,29 +78,44 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST to catch OAuth redirects
+    console.log('Auth init - setting up listeners');
+
+    // Set up auth state listener - Supabase will automatically handle OAuth callbacks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth event:', event, session?.user?.email);
+        
         setUser(session?.user || null);
+        
+        // Clean up URL hash if it contains tokens
+        if (window.location.hash.includes('access_token')) {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState(null, '', cleanUrl);
+        }
+        
         setLoading(false);
       }
     );
 
-    // Then check for existing session
+    // Check for existing session
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+        }
+        
         console.log('Initial session check:', session?.user?.email);
         setUser(session?.user || null);
+        setLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
         setUser(null);
-      } finally {
         setLoading(false);
       }
     };
-
+    
     checkSession();
 
     return () => {

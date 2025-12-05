@@ -1,0 +1,29 @@
+{
+  "name": "Gatherly",
+  "short_name": "Gatherly",
+  "description": "Schedule meetings faster with AI",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#22c55e",
+  "background_color": "#fafafa",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}
+

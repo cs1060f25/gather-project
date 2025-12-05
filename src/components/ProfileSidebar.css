@@ -138,17 +138,30 @@
   font-size: 1.5rem;
 }
 
+.profile-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .profile-info h3 {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-info p {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   margin: 0;
   opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .profile-stats {
@@ -245,6 +258,17 @@
   box-shadow: 2px 2px 0 0 #111;
 }
 
+.import-btn {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+  box-shadow: 3px 3px 0 0 #1e3a8a;
+}
+
+.import-btn:hover {
+  box-shadow: 4px 4px 0 0 #1e3a8a;
+}
+
 .add-contact-form {
   display: flex;
   flex-direction: column;
@@ -276,6 +300,23 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.no-contacts {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #666;
+}
+
+.no-contacts p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.no-contacts .no-contacts-hint {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  opacity: 0.7;
 }
 
 .contact-item {

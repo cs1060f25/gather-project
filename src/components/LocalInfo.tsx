@@ -23,23 +23,6 @@ const getTimeAndDate = () => {
     return { militaryTime, formattedDate };
 };
 
-// US state name to abbreviation
-const getStateAbbr = (state: string): string => {
-    const states: { [key: string]: string } = {
-        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
-        'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
-        'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
-        'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
-        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
-        'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
-        'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
-        'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
-        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
-        'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
-    };
-    return states[state] || '';
-};
-
 export const LocalInfo = ({ minimal = false }: { minimal?: boolean }) => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -90,45 +73,27 @@ export const LocalInfo = ({ minimal = false }: { minimal?: boolean }) => {
         const getLocation = async () => {
             // Use IP-based geolocation (no permission needed)
             try {
-                // Try ip-api.com first (more reliable, no rate limiting issues)
-                const geoResponse = await fetch('http://ip-api.com/json/?fields=status,city,regionName,lat,lon');
+                // Use ipapi.co (supports HTTPS)
+                const geoResponse = await fetch('https://ipapi.co/json/');
                 const geoData = await geoResponse.json();
-                
-                if (geoData.status === 'success') {
-                    const region = getStateAbbr(geoData.regionName) || geoData.regionName;
-                    fetchWeatherData(
-                        geoData.lat,
-                        geoData.lon,
-                        geoData.city || 'Unknown',
-                        region
-                    );
-                } else {
-                    throw new Error('IP API failed');
-                }
+                if (geoData.error) throw new Error('IP API error');
+                fetchWeatherData(
+                    geoData.latitude,
+                    geoData.longitude,
+                    geoData.city || 'Unknown',
+                    geoData.region_code || ''
+                );
             } catch {
-                // Fallback to ipapi.co
-                try {
-                    const geoResponse = await fetch('https://ipapi.co/json/');
-                    const geoData = await geoResponse.json();
-                    if (geoData.error) throw new Error('IP API error');
-                    fetchWeatherData(
-                        geoData.latitude,
-                        geoData.longitude,
-                        geoData.city || 'Unknown',
-                        geoData.region_code || ''
-                    );
-                } catch {
-                    // Ultimate fallback - just show time/date
-                    const { militaryTime, formattedDate } = getTimeAndDate();
-                    setWeather({
-                        location: 'Location unavailable',
-                        temperature: 70,
-                        condition: 'Clear',
-                        time: militaryTime,
-                        date: formattedDate
-                    });
-                    setLoading(false);
-                }
+                // Fallback - just show time/date
+                const { militaryTime, formattedDate } = getTimeAndDate();
+                setWeather({
+                    location: 'Location unavailable',
+                    temperature: 70,
+                    condition: 'Clear',
+                    time: militaryTime,
+                    date: formattedDate
+                });
+                setLoading(false);
             }
         };
 

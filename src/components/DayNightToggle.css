@@ -1,0 +1,350 @@
+/* Day/Night Toggle - Inspired by CodePen */
+/* Scaled down from 500x200 to ~80x32 (0.16 scale factor) */
+
+.day-night-toggle {
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* CONTAINER */
+.toggle-container {
+  position: relative;
+  width: 80px;
+  height: 32px;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.2s;
+  cursor: pointer;
+  background-color: rgb(33, 166, 255);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-container::after {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 32px;
+  border-radius: 16px;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  box-shadow: inset -2px -2px rgba(0, 0, 0, 0.2),
+    inset 2px 2px rgba(255, 255, 255, 0.2),
+    inset -2px 1px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.toggle-container:hover {
+  transform: scale(1.05);
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.toggle-container--night {
+  background-color: rgb(7, 39, 61);
+}
+
+/* RADIANT */
+.radiant {
+  position: absolute;
+  top: -12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.5s ease-out;
+}
+
+.sun-radiant {
+  left: -12px;
+  transition-delay: 0.5s;
+  opacity: 1;
+}
+
+.moon-radiant {
+  right: -12px;
+  transition-delay: 0s;
+  transform: translateX(56px);
+  opacity: 0;
+}
+
+.radiant::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.5s ease-out;
+}
+
+.sun-radiant::after {
+  left: 8px;
+}
+
+.moon-radiant::after {
+  right: 8px;
+}
+
+.radiant::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: translateX(0);
+  transition: all 0.5s ease-out;
+}
+
+.sun-radiant::before {
+  left: -8px;
+}
+
+.moon-radiant::before {
+  right: -8px;
+}
+
+.sun-radiant--night {
+  transition-delay: 0s;
+  transform: translateX(-56px);
+  opacity: 0;
+}
+
+.sun-radiant--night::before {
+  transition-delay: 0s;
+  transform: translateX(-16px);
+}
+
+.sun-radiant--night::after {
+  transition-delay: 0s;
+  transform: translateX(16px);
+}
+
+.moon-radiant--night {
+  transition-delay: 0.5s;
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.moon-radiant--night::before {
+  transition-delay: 0.5s;
+  transform: translateX(0);
+}
+
+.moon-radiant--night::after {
+  transition-delay: 0.5s;
+  transform: translateX(0);
+}
+
+/* CLOUDS */
+.cloud {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  position: absolute;
+  transition: transform 0.8s;
+}
+
+.cloud--1 {
+  bottom: 10px;
+  right: -6px;
+  background-color: rgb(211, 236, 252);
+  box-shadow: 
+    -6px 8px rgb(211, 236, 252),
+    -13px 16px rgb(211, 236, 252),
+    -26px 18px rgb(211, 236, 252),
+    -35px 19px rgb(211, 236, 252),
+    -42px 18px rgb(211, 236, 252),
+    -51px 22px rgb(211, 236, 252),
+    -58px 22px rgb(211, 236, 252),
+    -64px 27px rgb(211, 236, 252);
+}
+
+.cloud--2 {
+  bottom: 16px;
+  right: -2px;
+  opacity: 0.4;
+  background-color: white;
+  box-shadow: 
+    -6px 8px white,
+    -13px 16px white,
+    -26px 18px white,
+    -35px 19px white,
+    -42px 18px white,
+    -51px 22px white,
+    -58px 22px white,
+    -64px 27px white;
+  transition-delay: 0.05s;
+}
+
+.cloud--night {
+  transform: translateY(32px);
+}
+
+/* STARS */
+.star {
+  position: absolute;
+  background-color: white;
+  clip-path: polygon(50% 0, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0 50%, 35% 35%);
+  opacity: 0;
+  transition: all 0.5s;
+}
+
+.stars--night > .star {
+  opacity: 0.6;
+}
+
+.stars--night > .star--1 {
+  animation: sparkle 1s linear 0.5s infinite;
+}
+
+.stars--night > .star--2 {
+  animation: sparkle 1s linear 1s infinite;
+}
+
+.stars--night > .star--3 {
+  animation: sparkle 1s linear 0.7s infinite;
+}
+
+.star--1 {
+  height: 3px;
+  width: 3px;
+  top: 8px;
+  left: 16px;
+}
+
+.star--2 {
+  height: 4px;
+  width: 4px;
+  top: 21px;
+  left: 10px;
+}
+
+.star--3 {
+  height: 2px;
+  width: 2px;
+  top: 18px;
+  left: 30px;
+}
+
+.star--1b {
+  height: 3px;
+  width: 3px;
+  top: 8px;
+  right: 16px;
+}
+
+.star--2b {
+  height: 4px;
+  width: 4px;
+  top: 21px;
+  right: 10px;
+}
+
+.star--3b {
+  height: 2px;
+  width: 2px;
+  top: 18px;
+  right: 30px;
+}
+
+.star-round {
+  height: 1px;
+  width: 1px;
+  border-radius: 50%;
+  position: absolute;
+  background-color: white;
+  opacity: 0;
+  transition: all 0.5s;
+}
+
+.star-round--1 { top: 14px; left: 19px; }
+.star-round--2 { top: 6px; left: 8px; }
+.star-round--3 { top: 13px; left: 6px; }
+.star-round--4 { top: 26px; left: 26px; }
+.star-round--5 { top: 5px; left: 29px; }
+.star-round--6 { top: 10px; left: 32px; }
+
+.stars--night > .star-round {
+  opacity: 0.6;
+  animation: sparkle 1s linear 0.5s infinite;
+}
+
+@keyframes sparkle {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.6; }
+}
+
+/* DOT (SUN/MOON) */
+.toggle-dot {
+  height: 26px;
+  width: 26px;
+  background-color: rgb(255, 230, 0);
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  box-shadow: 
+    inset -1px -2px 2px rgb(204, 156, 0),
+    inset 1px 2px 2px rgb(255, 246, 168);
+  transition: transform 1s ease-in-out, background-color 0.4s, box-shadow 0.4s;
+  transform: translateX(0) rotate(0deg);
+  z-index: 5;
+}
+
+.toggle-dot--night {
+  background-color: rgb(215, 223, 233);
+  box-shadow: 
+    inset -1px -2px 2px rgb(112, 140, 175),
+    inset 1px 2px 2px rgb(237, 241, 245);
+  transform-origin: center;
+  transform: translateX(48px) rotate(360deg);
+}
+
+/* MOON CRATERS */
+.toggle-crater {
+  background-color: rgb(158, 176, 197);
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: inset 1px 2px 1px rgb(133, 156, 185);
+  opacity: 0;
+  transition: all 0.5s;
+}
+
+.toggle-crater--1 {
+  height: 6px;
+  width: 6px;
+  top: 3px;
+  left: 10px;
+}
+
+.toggle-crater--2 {
+  height: 8px;
+  width: 8px;
+  top: 8px;
+  left: 2px;
+}
+
+.toggle-crater--3 {
+  height: 7px;
+  width: 7px;
+  bottom: 5px;
+  right: 5px;
+}
+
+.toggle-crater--night {
+  opacity: 1;
+}
+
+/* Dark mode styles for the container border */
+.dark-mode .toggle-container {
+  box-shadow: 2px 2px 6px rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .toggle-container:hover {
+  box-shadow: 2px 2px 10px rgba(255, 255, 255, 0.15);
+}

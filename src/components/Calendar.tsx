@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import './Calendar.css';
+import { SchedulingModal, type ScheduledEventData } from './SchedulingModal';
+
+export interface ContactSuggestion {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface CalendarEvent {
   id: string;
   date: string;
   time?: string;
+  endTime?: string;
   title: string;
   category: 'work' | 'personal' | 'travel';
+  duration?: number;
+  attendees?: string[];
+  location?: string;
+  description?: string;
+  source?: 'google' | 'manual' | 'chat';
+  important?: boolean;
+}
+
+interface CalendarProps {
+  contacts: ContactSuggestion[];
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -18,33 +36,33 @@ const CATEGORIES = {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fmtTimeLabel = (time?: string) => {
+  if (!time) return 'All day';
+  const [h, m] = time.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return time;
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
 
-export const Calendar: React.FC = () => {
-  const [view, setView] = useState<'month' | 'week' | 'agenda'>('month');
+export const Calendar: React.FC<CalendarProps> = ({ contacts }) => {
+  const [view] = useState<'month' | 'week' | 'agenda'>('month');
   const [today] = useState(new Date());
   const [current, setCurrent] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(new Date(today));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [filters, setFilters] = useState({ work: true, personal: true, travel: true });
-  const [showViewMenu, setShowViewMenu] = useState(false);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [quickAddData, setQuickAddData] = useState<{ title: string; date: string; time: string; category: 'work' | 'personal' | 'travel' }>({ title: '', date: '', time: '', category: 'work' });
+  const [filters] = useState({ work: true, personal: true, travel: true });
+  const [showScheduler, setShowScheduler] = useState(false);
   const [popover, setPopover] = useState<{ event: CalendarEvent; x: number; y: number } | null>(null);
 
-  // Load events from localStorage
+  // Load events from localStorage - no mock data
   const loadEvents = () => {
     const stored = localStorage.getItem('gatherly_events');
     if (stored) {
       setEvents(JSON.parse(stored));
     } else {
-      // Sample events
-      const sampleEvents: CalendarEvent[] = [
-        { id: crypto.randomUUID(), date: fmtDateISO(today), time: '09:00', title: 'Daily Standup', category: 'work' },
-        { id: crypto.randomUUID(), date: fmtDateISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)), time: '18:30', title: 'Run 5k', category: 'personal' },
-        { id: crypto.randomUUID(), date: fmtDateISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3)), time: '12:00', title: 'Flight to NYC', category: 'travel' },
-      ];
-      setEvents(sampleEvents);
-      localStorage.setItem('gatherly_events', JSON.stringify(sampleEvents));
+      // Start with empty events - no sample data
+      setEvents([]);
     }
   };
 
@@ -93,21 +111,39 @@ export const Calendar: React.FC = () => {
   };
 
   const filteredEventsFor = (dateISO: string) => {
-    return events.filter(e => e.date === dateISO && filters[e.category]);
+    return events
+      .filter(e => e.date === dateISO && filters[e.category])
+      .sort((a, b) => {
+        // Important events first, then time
+        if ((b.important ? 1 : 0) !== (a.important ? 1 : 0)) {
+          return (b.important ? 1 : 0) - (a.important ? 1 : 0);
+        }
+        return (a.time || '').localeCompare(b.time || '');
+      });
   };
 
-  const handleQuickAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickAddData.title || !quickAddData.date) return;
+  const handleScheduleSubmit = (data: ScheduledEventData) => {
+    const category: CalendarEvent['category'] =
+      data.priority === 'must' ? 'work' : data.priority === 'should' ? 'personal' : 'travel';
 
     const newEvent: CalendarEvent = {
       id: crypto.randomUUID(),
-      ...quickAddData,
-      category: quickAddData.category as 'work' | 'personal' | 'travel',
+      title: data.title,
+      date: data.date,
+      time: data.startTime || data.time,
+      endTime: data.endTime,
+      duration: data.duration,
+      category,
+      attendees: data.participants,
+      location: data.location,
+      description: data.notes,
+      source: 'manual',
+      important: data.priority !== 'maybe',
     };
+
     saveEvents([...events, newEvent]);
-    setQuickAddData({ title: '', date: '', time: '', category: 'work' });
-    setShowQuickAdd(false);
+    setShowScheduler(false);
+    window.dispatchEvent(new Event('gatherly_events_updated'));
   };
 
   const deleteEvent = (id: string) => {
@@ -148,7 +184,7 @@ export const Calendar: React.FC = () => {
       cells.push(
         <div
           key={i}
-          className={`calendar-cell ${!inCurrent ? 'other-month' : ''} ${isSelected ? 'selected' : ''}`}
+          className={`calendar-cell ${!inCurrent ? 'other-month' : ''} ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
           onClick={() => {
             setSelectedDate(dateObj);
             if (!inCurrent) {
@@ -158,19 +194,21 @@ export const Calendar: React.FC = () => {
         >
           <div className="cell-header">
             <span className="day-number">{dayNum}</span>
-            {isToday && <span className="today-badge">TODAY</span>}
           </div>
           <div className="cell-events">
             {dayEvents.slice(0, 3).map(ev => (
               <button
                 key={ev.id}
-                className={`event-dot ${ev.category}`}
+                className={`event-chip ${ev.category} ${ev.important ? 'important' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopover({ event: ev, x: e.clientX, y: e.clientY });
                 }}
                 aria-label={`${ev.title} at ${ev.time || 'all day'}`}
-              />
+              >
+                <span className="chip-time">{fmtTimeLabel(ev.time)}</span>
+                <span className="chip-title">{ev.title}</span>
+              </button>
             ))}
             {dayEvents.length > 3 && (
               <span className="more-events">+{dayEvents.length - 3}</span>
@@ -229,38 +267,73 @@ export const Calendar: React.FC = () => {
     });
   };
 
+  // Get upcoming events for suggestions
+  const getUpcomingEvents = () => {
+    const todayISO = fmtDateISO(today);
+    return events
+      .filter(e => e.date >= todayISO)
+      .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
+      .slice(0, 3);
+  };
+
+  const upcomingEvents = getUpcomingEvents();
+
   return (
     <div className="calendar-container">
       {/* Header */}
       <header className="calendar-header">
-        <div className="header-info">
-          <h2 className="calendar-title">Neobrutalist Calendar</h2>
-          <p className="calendar-subtitle">Punchy, high-contrast scheduling with unapologetic edges.</p>
+        <div className="header-left">
+          <div className="month-title">{monthLabel}</div>
         </div>
-        <div className="header-controls">
-          <button className="btn btn-accent" onClick={goToday}>Today</button>
+        <div className="header-center">
           <div className="nav-group">
-            <button className="btn" onClick={goPrev}>◀</button>
-            <div className="month-label">{monthLabel}</div>
-            <button className="btn" onClick={goNext}>▶</button>
-          </div>
-          <div className="view-dropdown">
-            <button 
-              className="btn" 
-              onClick={() => setShowViewMenu(!showViewMenu)}
-            >
-              {view === 'month' ? 'Month View' : view === 'week' ? 'Week View' : 'Agenda'} ▾
+            <button className="btn btn-icon" onClick={goPrev} aria-label="Previous">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
             </button>
-            {showViewMenu && (
-              <ul className="view-menu">
-                <li onClick={() => { setView('month'); setShowViewMenu(false); }}>Month View</li>
-                <li onClick={() => { setView('week'); setShowViewMenu(false); }}>Week View</li>
-                <li onClick={() => { setView('agenda'); setShowViewMenu(false); }}>Agenda</li>
-              </ul>
-            )}
+            <button className="btn btn-today" onClick={goToday}>Today</button>
+            <button className="btn btn-icon" onClick={goNext} aria-label="Next">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
           </div>
+        </div>
+        <div className="header-right">
+          <button 
+            className="btn btn-schedule"
+            onClick={() => setShowScheduler(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Schedule
+          </button>
         </div>
       </header>
+
+      <SchedulingModal
+        isOpen={showScheduler}
+        onClose={() => setShowScheduler(false)}
+        contacts={contacts}
+        defaultDate={fmtDateISO(selectedDate)}
+        onSubmit={handleScheduleSubmit}
+      />
+
+      {/* Upcoming Events Bar */}
+      {upcomingEvents.length > 0 && (
+        <div className="upcoming-bar">
+          <span className="upcoming-label">Coming up:</span>
+          {upcomingEvents.map(ev => (
+            <div key={ev.id} className={`upcoming-chip ${ev.category}`}>
+              <span className="upcoming-title">{ev.title}</span>
+              <span className="upcoming-time">{ev.time || 'All day'}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="calendar-content">
         {/* Calendar Grid */}
@@ -284,87 +357,6 @@ export const Calendar: React.FC = () => {
           )}
         </section>
 
-        {/* Sidebar */}
-        <aside className="calendar-sidebar">
-          <h3 className="sidebar-title">Filters & Quick Add</h3>
-          
-          <button 
-            className="btn btn-add"
-            onClick={() => setShowQuickAdd(!showQuickAdd)}
-          >
-            {showQuickAdd ? 'Cancel' : '+ Add Event'}
-          </button>
-
-          {showQuickAdd && (
-            <form className="quick-add-form" onSubmit={handleQuickAdd}>
-              <label>
-                <span>Title</span>
-                <input
-                  type="text"
-                  value={quickAddData.title}
-                  onChange={e => setQuickAddData({ ...quickAddData, title: e.target.value })}
-                  placeholder="Team sync"
-                  required
-                />
-              </label>
-              <div className="form-row">
-                <label>
-                  <span>Date</span>
-                  <input
-                    type="date"
-                    value={quickAddData.date}
-                    onChange={e => setQuickAddData({ ...quickAddData, date: e.target.value })}
-                    required
-                  />
-                </label>
-                <label>
-                  <span>Time</span>
-                  <input
-                    type="time"
-                    value={quickAddData.time}
-                    onChange={e => setQuickAddData({ ...quickAddData, time: e.target.value })}
-                  />
-                </label>
-              </div>
-              <label>
-                <span>Category</span>
-                <select
-                  value={quickAddData.category}
-                  onChange={e => setQuickAddData({ ...quickAddData, category: e.target.value as 'work' | 'personal' | 'travel' })}
-                >
-                  <option value="work">Work</option>
-                  <option value="personal">Personal</option>
-                  <option value="travel">Travel</option>
-                </select>
-              </label>
-              <button type="submit" className="btn btn-submit">Add Event</button>
-            </form>
-          )}
-
-          <div className="filters-section">
-            <h4>Show Categories</h4>
-            {Object.entries(CATEGORIES).map(([key, { label, color }]) => (
-              <label key={key} className="filter-item">
-                <input
-                  type="checkbox"
-                  checked={filters[key as keyof typeof filters]}
-                  onChange={e => setFilters({ ...filters, [key]: e.target.checked })}
-                />
-                <span className={`filter-pill ${color}`}>{label}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="legend-section">
-            <h4>Legend</h4>
-            {Object.entries(CATEGORIES).map(([key, { label }]) => (
-              <div key={key} className="legend-item">
-                <span className={`event-dot ${key}`} />
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        </aside>
       </div>
 
       {/* Event Popover */}
@@ -382,10 +374,31 @@ export const Calendar: React.FC = () => {
             <p className="popover-date">
               {new Date(popover.event.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
-            <p className="popover-time">{popover.event.time ? `Time: ${popover.event.time}` : 'All day'}</p>
+            <p className="popover-time">
+              {popover.event.time ? `Time: ${fmtTimeLabel(popover.event.time)}${popover.event.endTime ? ` — ${fmtTimeLabel(popover.event.endTime)}` : ''}` : 'All day'}
+            </p>
+            {popover.event.location && (
+              <p className="popover-location">📍 {popover.event.location}</p>
+            )}
+            {popover.event.attendees && popover.event.attendees.length > 0 && (
+              <div className="popover-attendees">
+                <span>Attendees:</span>
+                <ul>
+                  {popover.event.attendees.map(email => (
+                    <li key={email}>{email}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {popover.event.description && (
+              <p className="popover-notes">{popover.event.description}</p>
+            )}
             <span className={`popover-category ${popover.event.category}`}>
               {CATEGORIES[popover.event.category].label}
             </span>
+            {popover.event.source && (
+              <span className="popover-source">{popover.event.source === 'google' ? 'Google Calendar' : 'Gatherly'}</span>
+            )}
             <div className="popover-actions">
               <button className="btn btn-delete" onClick={() => deleteEvent(popover.event.id)}>Delete</button>
             </div>
