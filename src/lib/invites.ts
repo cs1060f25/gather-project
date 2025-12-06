@@ -219,7 +219,7 @@ export async function sendInviteEmails(invites: Invite[]): Promise<{ sent: numbe
           'Authorization': `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: 'Gatherly <invites@gatherly.now>',
+          from: 'Gatherly <noreply@gatherly.now>',
           to: invite.invitee_email,
           subject: `${invite.host_name} invited you: ${invite.event_title}`,
           html: `
