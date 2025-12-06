@@ -68,6 +68,13 @@ def init_routes(app, socketio, db):
                              responses=response_data,
                              time_slots=[event.time1, event.time2, event.time3])
 
+    @app.route('/event/<string:event_id>/schedule', methods=['POST'])
+    def schedule_event(event_id):
+        event = Event.query.get_or_404(event_id)
+        event.status = "Scheduled"
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Event scheduled successfully"})
+
     @app.route("/event/<string:event_id>/response", methods=["GET", "POST"])
     def event_response_page(event_id):
         event = Event.query.get_or_404(event_id)
@@ -173,7 +180,7 @@ def init_routes(app, socketio, db):
                 "title": e.title,
                 "created_at": e.created_at.isoformat() if e.created_at else None,
                 "response_count": len(e.responses),
-                "status": "In Progress",
+                "status": getattr(e, "status", None) or "In Progress",
             }
             for e in events
         ])

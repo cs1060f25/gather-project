@@ -13,12 +13,12 @@ class Event(db.Model):
     time3 = db.Column(db.String(255), nullable=False)
     token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid.uuid4().hex))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="In Progress", nullable=False)
 
     responses = db.relationship('Response', backref='event', lazy=True)
 
 class Response(db.Model):
     __tablename__ = "responses"
-
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     event_id = db.Column(db.String(36), db.ForeignKey('events.id'), nullable=False)
     responder_name = db.Column(db.String(255), nullable=False)

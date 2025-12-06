@@ -1,7 +1,31 @@
 import os
 import datetime as dt
+import json
+import openai
+from datetime import datetime, timedelta
+from typing import List, Dict, Any, Optional
 
-from flask import Flask, redirect, url_for, session, request, render_template_string, jsonify
+from flask import Flask, redirect, url_for, session, request, render_template_string, render_template, jsonify
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Load LLM configuration from environment variables
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if OPENAI_API_KEY:
+    openai.api_key = OPENAI_API_KEY
+else:
+    print("Warning: OPENAI_API_KEY not found in environment variables. LLM features will be disabled.")
+
+# LLM configuration
+LLM_MODEL = "gpt-4"  # or "gpt-3.5-turbo" for faster/cheaper results
+
+# IMPORTANT: LLM is disabled by default to avoid quota errors.
+# To enable it explicitly, set environment variable ENABLE_LLM=true
+_ENABLE_LLM_ENV = os.getenv('ENABLE_LLM', 'true').lower() == 'true'
+ENABLE_LLM = bool(OPENAI_API_KEY) and _ENABLE_LLM_ENV
+
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -25,48 +49,196 @@ REDIRECT_URI = "http://127.0.0.1:5000/oauth2callback"
 def index():
     if "credentials" not in session:
         return '''
-        <h1>Google Calendar Demo</h1>
-        <p><a href="/authorize">🔑 Connect Google Calendar</a> to get started</p>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Google Calendar Availability Checker</title>
+                <link href='https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap' rel='stylesheet'>
+                <style>
+                    body {
+                        font-family: 'Google Sans', Roboto, Arial, sans-serif;
+                        max-width: 800px;
+                        margin: 0 auto;
+                        padding: 2rem;
+                        line-height: 1.6;
+                        color: #202124;
+                    }
+                    h1 {
+                        color: #1a73e8;
+                        margin-bottom: 1.5rem;
+                    }
+                    .btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 0.75rem 1.5rem;
+                        background-color: #1a73e8;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        font-size: 1rem;
+                        font-weight: 500;
+                        text-decoration: none;
+                        cursor: pointer;
+                        transition: background-color 0.2s, box-shadow 0.2s;
+                        margin-top: 1rem;
+                    }
+                    .btn:hover {
+                        background-color: #1557b0;
+                        box-shadow: 0 1px 2px 0 rgba(26, 115, 232, 0.3), 0 2px 6px 2px rgba(26, 115, 232, 0.15);
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Google Calendar Availability Checker</h1>
+                <p>Connect your Google Calendar to check your availability and find the best meeting times.</p>
+                <a href="/authorize" class="btn">Connect Google Calendar</a>
+            </body>
+            </html>
         '''
-    else:
-        return f"""
-        <h1>Google Calendar Demo</h1>
-        <p>✅ Google Calendar is connected</p>
-        
-        <h2>Calendar Actions</h2>
-        <ul>
-            <li><a href="/calendars">📅 View All Calendars</a></li>
-            <li><a href="/my-week">📆 View My Week</a></li>
-            <li><a href="/check-availability-form">⏱️ Check Availability</a> (across multiple calendars)</li>
-            <li><a href="/create-test-event">➕ Create Test Event</a></li>
-        </ul>
-        
-        <h2>Debug</h2>
-        <ul>
-            <li><a href="/clear">🔄 Clear Session</a> (use if you need to re-authenticate)</li>
-        </ul>
-        
-        <style>
-            body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-            h1 {{ color: #1a73e8; }}
-            h2 {{ color: #5f6368; margin-top: 1.5em; }}
-            ul {{ list-style: none; padding: 0; }}
-            li {{ margin: 10px 0; }}
-            a {{ 
-                display: inline-block;
-                padding: 10px 15px;
-                background: #f1f3f4;
-                border-radius: 4px;
-                text-decoration: none;
-                color: #202124;
-                transition: background 0.2s;
-            }}
-            a:hover {{ 
-                background: #e8eaed;
-                text-decoration: none;
-            }}
-        </style>
-        """
+    
+    return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Google Calendar Availability Checker</title>
+            <link href='https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap' rel='stylesheet'>
+            <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+            <style>
+                body {
+                    font-family: 'Google Sans', Roboto, Arial, sans-serif;
+                    max-width: 900px;
+                    margin: 0 auto;
+                    padding: 2rem;
+                    line-height: 1.6;
+                    color: #202124;
+                    background-color: #f8f9fa;
+                }
+                h1 {
+                    color: #1a73e8;
+                    margin-bottom: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                }
+                .features {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 1.5rem;
+                    margin-top: 2rem;
+                }
+                .feature-card {
+                    background: white;
+                    border: 1px solid #dadce0;
+                    border-radius: 8px;
+                    padding: 1.5rem;
+                    transition: box-shadow 0.2s;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .feature-card:hover {
+                    box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+                }
+                .feature-card h3 {
+                    margin: 0 0 0.75rem 0;
+                    color: #1a73e8;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+                .feature-card p {
+                    color: #5f6368;
+                    margin: 0 0 1.5rem 0;
+                    flex-grow: 1;
+                }
+                .btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.625rem 1.25rem;
+                    background-color: #1a73e8;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 0.9375rem;
+                    font-weight: 500;
+                    text-decoration: none;
+                    cursor: pointer;
+                    transition: background-color 0.2s, box-shadow 0.2s;
+                    width: 100%;
+                    box-sizing: border-box;
+                    text-align: center;
+                }
+                .btn:hover {
+                    background-color: #1557b0;
+                    box-shadow: 0 1px 2px 0 rgba(26, 115, 232, 0.3), 0 2px 6px 2px rgba(26, 115, 232, 0.15);
+                }
+                .btn .material-icons-round {
+                    margin-right: 0.5rem;
+                    font-size: 1.25rem;
+                }
+                .header-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-bottom: 1.5rem;
+                }
+                .btn-outline {
+                    background: transparent;
+                    color: #1a73e8;
+                    border: 1px solid #dadce0;
+                }
+                .btn-outline:hover {
+                    background: #f1f3f4;
+                    border-color: #1a73e8;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header-actions">
+                <a href="/clear" class="btn btn-outline">
+                    <span class="material-icons-round">logout</span>
+                    Sign Out
+                </a>
+            </div>
+            
+            <h1>
+                <span class="material-icons-round" style="color: #1a73e8;">event_available</span>
+                Welcome to Calendar Availability
+            </h1>
+            
+            <p>Select an option below to get started:</p>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <h3><span class="material-icons-round">search</span> Find Available Times</h3>
+                    <p>Let us suggest the best meeting times based on your calendar availability and preferences.</p>
+                    <a href="/suggest-times" class="btn">
+                        <span class="material-icons-round">schedule</span>
+                        Find Times
+                    </a>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="material-icons-round">calendar_view_week</span> Check Multiple Calendars</h3>
+                    <p>View and compare availability across multiple calendars in a visual calendar interface.</p>
+                    <a href="/check-availability-form" class="btn">
+                        <span class="material-icons-round">compare_arrows</span>
+                        Compare Calendars
+                    </a>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="material-icons-round">list_alt</span> View All Calendars</h3>
+                    <p>See a list of all your Google Calendars and manage your calendar subscriptions.</p>
+                    <a href="/calendars" class="btn">
+                        <span class="material-icons-round">view_list</span>
+                        View Calendars
+                    </a>
+                </div>
+            </div>
+        </body>
+        </html>
+    ''')
 
 
 # Step 1: send user to Google for OAuth consent
@@ -174,7 +346,21 @@ def create_test_event():
         return redirect(url_for("authorize"))
 
     if request.method == "GET":
-        return render_template_string(CREATE_FORM_HTML)
+        # Pre-fill form if query params are present
+        pre_title = request.args.get("title", "")
+        pre_start = request.args.get("start", "")
+        pre_end = request.args.get("end", "")
+        
+        # Simple string replacement to pre-fill values (since it's a string template)
+        form_html = CREATE_FORM_HTML
+        if pre_title:
+            form_html = form_html.replace('name="title" required', f'name="title" value="{pre_title}" required')
+        if pre_start:
+            form_html = form_html.replace('name="start" required', f'name="start" value="{pre_start}" required')
+        if pre_end:
+            form_html = form_html.replace('name="end" required', f'name="end" value="{pre_end}" required')
+            
+        return render_template_string(form_html)
 
     # Parse form
     title = request.form["title"]
@@ -298,6 +484,14 @@ def clear_credentials():
     session.clear()
     return 'Session cleared. <a href="/">Go back</a>'
 
+def ensure_timezone_aware(dt_obj):
+    """Ensure a datetime object is timezone-aware, defaulting to UTC if not."""
+    if dt_obj is None:
+        return None
+    if dt_obj.tzinfo is None:
+        return dt_obj.replace(tzinfo=dt.timezone.utc)
+    return dt_obj
+
 def compute_free_slots(busy_slots, start_time, end_time):
     """
     Calculate free time slots between busy slots.
@@ -311,31 +505,39 @@ def compute_free_slots(busy_slots, start_time, end_time):
         List of free time slots as (start, end) datetime tuples
     """
     # Ensure all datetimes are timezone-aware
-    if start_time.tzinfo is None:
-        start_time = start_time.replace(tzinfo=dt.timezone.utc)
-    if end_time.tzinfo is None:
-        end_time = end_time.replace(tzinfo=dt.timezone.utc)
+    start_time = ensure_timezone_aware(start_time)
+    end_time = ensure_timezone_aware(end_time)
     
-    # Extract and sort busy periods
-    busy_periods = [(slot['start'], slot['end']) for slot in busy_slots]
+    # Extract and sort busy periods, ensuring all datetimes are timezone-aware
+    busy_periods = []
+    for slot in busy_slots:
+        busy_start = ensure_timezone_aware(slot.get('start'))
+        busy_end = ensure_timezone_aware(slot.get('end'))
+        if busy_start and busy_end:  # Only add if both start and end are valid
+            busy_periods.append((busy_start, busy_end))
+    
+    # Sort busy periods by start time
     busy_periods.sort()
     
     free_slots = []
     previous_end = start_time
     
     for busy_start, busy_end in busy_periods:
-        # Ensure busy times are timezone-aware
-        if busy_start.tzinfo is None:
-            busy_start = busy_start.replace(tzinfo=dt.timezone.utc)
-        if busy_end.tzinfo is None:
-            busy_end = busy_end.replace(tzinfo=dt.timezone.utc)
+        # Ensure busy times are timezone-aware (should be already, but just in case)
+        busy_start = ensure_timezone_aware(busy_start)
+        busy_end = ensure_timezone_aware(busy_end)
+        
+        # Skip invalid busy periods
+        if busy_start is None or busy_end is None:
+            continue
             
         # If there's a gap between the previous end and current start, it's free time
         if previous_end < busy_start:
             free_slots.append((previous_end, busy_start))
             
         # Update previous_end to the end of the current busy period
-        previous_end = max(previous_end, busy_end)
+        if busy_end > previous_end:
+            previous_end = busy_end
     
     # Add the free time after the last busy period
     if previous_end < end_time:
@@ -346,15 +548,34 @@ def compute_free_slots(busy_slots, start_time, end_time):
 
 def parse_datetime(dt_str):
     """Parse a datetime string from Google Calendar API to timezone-aware datetime"""
-    # Remove the 'Z' and parse
-    if dt_str.endswith('Z'):
-        dt_obj = dt.datetime.fromisoformat(dt_str[:-1] + '+00:00')
-    else:
-        dt_obj = dt.datetime.fromisoformat(dt_str)
-    # Ensure it's timezone-aware
-    if dt_obj.tzinfo is None:
-        dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
-    return dt_obj
+    try:
+        # Handle 'Z' timezone (UTC)
+        if dt_str.endswith('Z'):
+            dt_obj = dt.datetime.fromisoformat(dt_str[:-1] + '+00:00')
+        # Handle datetime with timezone offset (e.g., '+00:00')
+        elif '+' in dt_str or dt_str.count('-') > 2:
+            dt_obj = dt.datetime.fromisoformat(dt_str)
+        # Handle naive datetime (no timezone)
+        else:
+            dt_obj = dt.datetime.fromisoformat(dt_str)
+            # Assume UTC if no timezone is provided
+            dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+        
+        # Ensure it's timezone-aware
+        if dt_obj.tzinfo is None:
+            dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+            
+        return dt_obj
+    except ValueError as e:
+        # Fallback to dateutil's parser if isoformat fails
+        try:
+            from dateutil import parser
+            dt_obj = parser.isoparse(dt_str)
+            if dt_obj.tzinfo is None:
+                dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+            return dt_obj
+        except:
+            raise ValueError(f"Could not parse datetime string: {dt_str}") from e
 
 def find_common_free_time(calendar_ids, start_time, end_time, service):
     """
@@ -494,14 +715,520 @@ def check_availability_form():
         return f"An error occurred: {str(e)}"
 
 
-@app.route('/check-multiple-availability', methods=['POST'])
-def check_multiple_availability():
-    """Show common free time across selected calendars"""
-    if 'calendars' not in request.form:
-        return 'No calendars selected', 400
+def suggest_optimal_times(
+    free_slots: list,
+    duration_minutes: int,
+    event_title: str = "meeting",
+    num_suggestions: int = 3
+) -> list:
+    """
+    Use LLM to suggest optimal meeting times from free slots.
+    
+    Args:
+        free_slots: List of free time slots
+        duration_minutes: Duration of the meeting in minutes
+        event_title: Title/type of the event
+        num_suggestions: Number of time suggestions to return
         
-    calendar_ids = request.form.getlist('calendars')
-    days = int(request.form.get('days', 7))
+    Returns:
+        Dict containing:
+        - suggestions: List of suggested times with explanations
+        - status: 'success' or 'error'
+        - message: Additional status information
+    """
+    def create_fallback_suggestions(slots, message):
+        """Create fallback suggestions with the given message"""
+        return {
+            'suggestions': [
+                {
+                    'time': f"{slot['start'].strftime('%A, %b %d at %I:%M %p')} - {slot['end'].strftime('%I:%M %p')}",
+                    'explanation': f'Available time slot ({message})'
+                }
+                for slot in sorted(slots, key=lambda x: x['start'])[:num_suggestions]
+            ],
+            'status': 'success' if not message else 'warning',
+            'message': message or 'Using fallback time suggestions'
+        }
+    
+    # Input validation
+    if not free_slots:
+        return {
+            'suggestions': [{'time': 'No available slots', 'explanation': 'No free time slots found.'}],
+            'status': 'error',
+            'message': 'No free time slots available in the selected range'
+        }
+    
+    # Check if LLM is enabled
+    if not ENABLE_LLM:
+        print("LLM not enabled, using fallback time suggestions")
+        return {
+            **create_fallback_suggestions(free_slots, 'LLM not enabled'),
+            'llm_enabled': False
+        }
+    
+    # Format the free slots for the LLM
+    formatted_slots = []
+    for slot in free_slots:
+        try:
+            start = slot['start']
+            end = slot['end']
+            duration = (end - start).total_seconds() / 60  # in minutes
+            
+            if duration >= duration_minutes:
+                formatted_slots.append({
+                    'start': start.strftime('%A, %B %d at %I:%M %p'),
+                    'end': end.strftime('%I:%M %p'),
+                    'duration_minutes': duration,
+                    'original_start': start,
+                    'original_end': end
+                })
+        except Exception as e:
+            print(f"Error formatting slot: {e}")
+            continue
+    
+    if not formatted_slots:
+        return {
+            'suggestions': [{'time': 'No suitable slots', 'explanation': 'No time slots long enough for the meeting.'}],
+            'status': 'error',
+            'message': 'No time slots meet the duration requirement',
+            'llm_enabled': True
+        }
+    
+    try:
+        # Prepare the prompt for the LLM
+        prompt = f"""You are an AI assistant that helps schedule meetings. Given the following available time slots, 
+suggest the {min(num_suggestions, 5)} best times for a {duration_minutes}-minute {event_title}. 
+Consider typical work hours, time of day, and day of week preferences.
+
+Available time slots:
+{json.dumps(formatted_slots, indent=2, default=str)}
+
+Respond with a JSON array of objects, each with 'time' and 'explanation' keys.
+Example:
+[
+    {{
+        "time": "Monday, Jan 1 at 2:00 PM - 2:30 PM",
+        "explanation": "Early afternoon is often a productive time for meetings."
+    }}
+]"""
+        
+        print("Sending request to LLM...")
+        start_time = datetime.now()
+        
+        # Call the LLM with timeout
+        response = openai.ChatCompletion.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": "You are a helpful AI assistant that helps schedule meetings. Respond with a JSON array of suggested times."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=500,
+            request_timeout=15  # 15 second timeout
+        )
+        
+        processing_time = (datetime.now() - start_time).total_seconds()
+        print(f"Received LLM response in {processing_time:.2f} seconds")
+        
+        if not response.choices or not response.choices[0].message.content:
+            raise ValueError("Empty response from LLM")
+            
+        content = response.choices[0].message.content
+        print(f"LLM Response (first 200 chars): {content[:200]}...")
+        
+        # Try to parse the JSON response
+        try:
+            # Clean the response to extract JSON
+            content = content.strip()
+            if '```json' in content:
+                content = content.split('```json')[1].split('```')[0].strip()
+            elif '```' in content:
+                content = content.split('```')[1].strip()
+            
+            # Parse the JSON
+            suggestions = json.loads(content)
+            
+            # Validate the response format
+            if not isinstance(suggestions, list):
+                suggestions = [suggestions]  # Handle single object response
+                
+            valid_suggestions = []
+            for s in suggestions:
+                if isinstance(s, dict) and 'time' in s and 'explanation' in s:
+                    valid_suggestions.append({
+                        'time': str(s['time']),
+                        'explanation': str(s['explanation'])
+                    })
+                if len(valid_suggestions) >= num_suggestions:
+                    break
+            
+            if not valid_suggestions:
+                raise ValueError("No valid suggestions in response")
+                
+            return {
+                'suggestions': valid_suggestions[:num_suggestions],
+                'status': 'success',
+                'message': f'Found {len(valid_suggestions)} suggestions',
+                'llm_enabled': True,
+                'processing_time': processing_time
+            }
+            
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            print(f"Error parsing LLM response: {e}")
+            print(f"Raw response (first 500 chars): {content[:500]}")
+            return {
+                **create_fallback_suggestions(free_slots, 'Error parsing LLM response'),
+                'llm_enabled': True,
+                'error': str(e)
+            }
+            
+    except Exception as e:
+        error_msg = f"LLM Error: {str(e)}"
+        print(error_msg)
+        return {
+            **create_fallback_suggestions(free_slots, 'LLM service unavailable'),
+            'llm_enabled': True,
+            'error': error_msg
+        }
+
+
+def get_busy_slots(calendar_ids, start_time, end_time, service):
+    """Get all busy slots from the specified calendars"""
+    # Ensure start_time and end_time are timezone-aware
+    if start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=dt.timezone.utc)
+    if end_time.tzinfo is None:
+        end_time = end_time.replace(tzinfo=dt.timezone.utc)
+        
+    all_busy_slots = []
+    
+    for calendar_id in calendar_ids:
+        try:
+            # Format time range for the API
+            time_min = start_time.isoformat()
+            time_max = end_time.isoformat()
+            
+            # Get free/busy information for this calendar
+            body = {
+                "timeMin": time_min,
+                "timeMax": time_max,
+                "items": [{"id": calendar_id}],
+                "timeZone": "UTC"  # Request times in UTC for consistency
+            }
+            
+            result = service.freebusy().query(body=body).execute()
+            
+            if 'calendars' in result and calendar_id in result['calendars']:
+                busy = result['calendars'][calendar_id].get('busy', [])
+                # Convert all datetimes to timezone-aware
+                for slot in busy:
+                    slot['start'] = parse_datetime(slot['start'])
+                    slot['end'] = parse_datetime(slot['end'])
+                all_busy_slots.extend(busy)
+                
+        except Exception as e:
+            print(f"Error fetching busy slots for calendar {calendar_id}: {e}")
+    
+    # Sort all busy slots by start time
+    all_busy_slots.sort(key=lambda x: x['start'])
+    return all_busy_slots
+
+@app.route('/suggest-times', methods=['GET'])
+def suggest_times_page():
+    """Render the suggest times page"""
+    if 'credentials' not in session:
+        return redirect('/')
+        
+    # Handle case where credentials might already be a dict or a JSON string
+    credentials = session['credentials']
+    if isinstance(credentials, str):
+        try:
+            credentials = json.loads(credentials)
+        except json.JSONDecodeError:
+            return 'Invalid credentials format', 401
+    
+    if not credentials or not isinstance(credentials, dict) or 'token' not in credentials:
+        return 'Invalid credentials', 401
+        
+    return render_template('suggest_times.html')
+
+@app.route('/api/suggest-times', methods=['POST'])
+def suggest_times():
+    """API endpoint to get suggested meeting times with LLM optimization"""
+    if 'credentials' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+        
+    # Handle case where credentials might already be a dict or a JSON string
+    credentials = session['credentials']
+    if isinstance(credentials, str):
+        try:
+            credentials = json.loads(credentials)
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Invalid credentials format'}), 401
+    
+    if not credentials or not isinstance(credentials, dict) or 'token' not in credentials:
+        return jsonify({'error': 'Invalid credentials'}), 401
+        
+    try:
+        data = request.get_json()
+        duration = int(data.get('duration', 30))  # Default to 30 minutes
+        time_range = data.get('time_range', 'this_week')
+        event_title = data.get('event_title', 'meeting')
+        calendar_ids = data.get('calendar_ids', [])  # Get selected calendar IDs
+        
+        # Handle date range - prefer explicit start/end dates if provided
+        # Use timezone-aware UTC "now" to avoid naive/aware comparison issues
+        now = dt.datetime.now(dt.timezone.utc)
+        
+        # Check if custom dates are provided
+        if 'start_date' in data and 'end_date' in data:
+            try:
+                if isinstance(data['start_date'], str):
+                    start_date = parse_datetime(data['start_date'])
+                else:
+                    start_date = now
+                
+                if isinstance(data['end_date'], str):
+                    end_date = parse_datetime(data['end_date'])
+                else:
+                    end_date = now + timedelta(days=7)  # Default to one week if end date not provided
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing dates: {e}")
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Invalid date format: {str(e)}',
+                    'llm_enabled': ENABLE_LLM
+                }), 400
+        else:
+            # Fall back to time_range if no explicit dates provided
+            start_date = now
+            
+            if time_range == 'today':
+                end_date = now.replace(hour=23, minute=59, second=59)
+            elif time_range == 'tomorrow':
+                start_date = now + timedelta(days=1)
+                start_date = start_date.replace(hour=0, minute=0, second=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59)
+            elif time_range == 'this_week':
+                end_date = now + timedelta(days=(6 - now.weekday()) % 7)  # End of week
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+            elif time_range == 'next_week':
+                start_date = now + timedelta(days=(7 - now.weekday()))  # Next Monday
+                start_date = start_date.replace(hour=0, minute=0, second=0)
+                end_date = start_date + timedelta(days=6)  # Next Sunday
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+            elif time_range == 'next_two_weeks':
+                end_date = now + timedelta(days=14)
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+            else:  # Default to one week
+                end_date = now + timedelta(days=7)
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+
+        # Ensure all key datetimes are timezone-aware
+        start_date = ensure_timezone_aware(start_date)
+        end_date = ensure_timezone_aware(end_date)
+        now = ensure_timezone_aware(now)
+
+        # Ensure start_date is in the future
+        if start_date < now:
+            start_date = now
+        
+        # Get calendar service
+        try:
+            calendar_service = get_calendar_service()
+            
+            # Get list of calendars if none provided, otherwise filter by provided IDs
+            calendars_result = calendar_service.calendarList().list().execute()
+            all_calendars = calendars_result.get('items', [])
+            
+            # If specific calendar IDs are provided, filter the calendars
+            if calendar_ids:
+                all_calendars = [cal for cal in all_calendars if cal['id'] in calendar_ids]
+            
+            calendar_ids = [cal['id'] for cal in all_calendars]
+            
+            if not calendar_ids:
+                return jsonify({
+                    'suggestions': [{
+                        'time': 'No calendars found',
+                        'explanation': 'Please select at least one calendar to find available times.'
+                    }],
+                    'status': 'error',
+                    'message': 'No calendars found or selected',
+                    'llm_enabled': ENABLE_LLM
+                })
+            
+            # Get busy slots
+            busy_slots = get_busy_slots(calendar_ids, start_date, end_date, calendar_service)
+            
+            # Sort busy slots by start time
+            busy_slots.sort(key=lambda x: x['start'])
+            
+            # Find free slots (inverse of busy slots)
+            free_slots = []
+            current_time = start_date
+            
+            for busy in busy_slots:
+                busy_start = busy['start'] if isinstance(busy['start'], datetime) else parse_datetime(busy['start'])
+                busy_end = busy['end'] if isinstance(busy['end'], datetime) else parse_datetime(busy['end'])
+
+                # Ensure busy times are timezone-aware
+                busy_start = ensure_timezone_aware(busy_start)
+                busy_end = ensure_timezone_aware(busy_end)
+                current_time = ensure_timezone_aware(current_time)
+                end_date = ensure_timezone_aware(end_date)
+                
+                # If there's a gap between current_time and busy_start, it's free
+                if current_time < busy_start:
+                    free_slots.append({
+                        'start': current_time,
+                        'end': busy_start
+                    })
+                
+                # Move current_time to the end of this busy slot
+                if busy_end > current_time:
+                    current_time = busy_end
+            
+            # Add the remaining time as free
+            if current_time < end_date:
+                free_slots.append({
+                    'start': current_time,
+                    'end': end_date
+                })
+            
+            # Filter free slots that are at least as long as the requested duration
+            duration_td = timedelta(minutes=duration)
+            suitable_slots = [
+                {
+                    'start': slot['start'],
+                    'end': slot['end'],
+                    'duration_minutes': (slot['end'] - slot['start']).total_seconds() / 60
+                }
+                for slot in free_slots 
+                if (slot['end'] - slot['start']) >= duration_td
+            ]
+            
+            if not suitable_slots:
+                return jsonify({
+                    'suggestions': [{
+                        'time': 'No available slots',
+                        'explanation': 'No suitable time slots found for the given duration.'
+                    }],
+                    'status': 'error',
+                    'message': 'No available time slots found',
+                    'llm_enabled': ENABLE_LLM
+                })
+            
+            # Limit the number of slots to process to avoid excessive LLM usage
+            max_slots_to_process = 20  # Limit to prevent excessive LLM usage
+            if len(suitable_slots) > max_slots_to_process:
+                # Take a sample of the slots to avoid hitting rate limits
+                import random
+                suitable_slots = random.sample(suitable_slots, max_slots_to_process)
+                
+                # Sort the sampled slots by start time
+                suitable_slots.sort(key=lambda x: x['start'])
+            
+            try:
+                # Get LLM-suggested optimal times
+                llm_result = suggest_optimal_times(
+                    suitable_slots,
+                    duration_minutes=duration,
+                    event_title=event_title,
+                    num_suggestions=min(3, len(suitable_slots) or 1)  # Don't ask for more suggestions than available slots
+                )
+                
+                # If LLM is disabled or returned an error, use a simple fallback
+                if not llm_result.get('suggestions') or llm_result.get('status') != 'success':
+                    return jsonify({
+                        'suggestions': [{
+                            'time': 'No suggestions available',
+                            'explanation': 'Could not generate time suggestions. Please try different parameters.'
+                        }],
+                        'status': 'error',
+                        'message': llm_result.get('message', 'Failed to generate suggestions'),
+                        'llm_enabled': ENABLE_LLM,
+                        'time_range': {
+                            'start': start_date.isoformat(),
+                            'end': end_date.isoformat()
+                        },
+                        'total_free_slots': len(suitable_slots)
+                    })
+                
+                # Convert datetime objects to ISO format for JSON serialization
+                for suggestion in llm_result.get('suggestions', []):
+                    if 'start' in suggestion and isinstance(suggestion['start'], datetime):
+                        suggestion['start'] = suggestion['start'].isoformat()
+                    if 'end' in suggestion and isinstance(suggestion['end'], datetime):
+                        suggestion['end'] = suggestion['end'].isoformat()
+                
+                return jsonify({
+                    **llm_result,
+                    'time_range': {
+                        'start': start_date.isoformat(),
+                        'end': end_date.isoformat()
+                    },
+                    'total_free_slots': len(suitable_slots)
+                })
+                
+            except Exception as e:
+                print(f"Error in LLM suggestion: {str(e)}")
+                # Return a helpful error message with the available slots
+                return jsonify({
+                    'suggestions': [{
+                        'time': 'Error generating suggestions',
+                        'explanation': f'An error occurred: {str(e)[:200]}...'  # Truncate long error messages
+                    }],
+                    'status': 'error',
+                    'message': f'Error generating suggestions: {str(e)[:200]}',
+                    'llm_enabled': ENABLE_LLM,
+                    'time_range': {
+                        'start': start_date.isoformat(),
+                        'end': end_date.isoformat()
+                    },
+                    'total_free_slots': len(suitable_slots)
+                })
+            
+        except Exception as e:
+            print(f"Error in calendar operations: {str(e)}")
+            return jsonify({
+                'suggestions': [{
+                    'time': 'Error',
+                    'explanation': f'Failed to fetch calendar data: {str(e)}'
+                }],
+                'status': 'error',
+                'message': str(e),
+                'llm_enabled': ENABLE_LLM
+            }), 500
+            
+    except Exception as e:
+        print(f"Error in suggest_times: {str(e)}")
+        return jsonify({
+            'suggestions': [{
+                'time': 'Error',
+                'explanation': f'An error occurred: {str(e)}'
+            }],
+            'status': 'error',
+            'message': str(e),
+            'llm_enabled': ENABLE_LLM
+        }), 500
+
+@app.route('/check-multiple-availability', methods=['GET', 'POST'])
+def check_multiple_availability():
+    """Show common free time across selected calendars with calendar view option"""
+    # Handle both form submission and direct GET requests
+    if request.method == 'POST':
+        if 'calendars' not in request.form:
+            return 'No calendars selected', 400
+        calendar_ids = request.form.getlist('calendars')
+        days = int(request.form.get('days', 7))
+        view = request.form.get('view', 'list')
+    else:  # GET request
+        calendar_ids = request.args.getlist('calendars')
+        if not calendar_ids:
+            return redirect(url_for('check_availability_form'))
+        days = int(request.args.get('days', 7))
+        view = request.args.get('view', 'list')  # 'list' or 'calendar'
     
     service = get_calendar_service()
     if service is None:
@@ -512,20 +1239,60 @@ def check_multiple_availability():
         now = dt.datetime.now(dt.timezone.utc)
         end_time = now + dt.timedelta(days=days)
         
-        # Find common free time
-        free_slots = find_common_free_time(calendar_ids, now, end_time, service)
+        # Get busy slots from all selected calendars
+        busy_slots = get_busy_slots(calendar_ids, now, end_time, service)
         
-        # Format the results
+        # Find common free time
+        free_slots = compute_free_slots(busy_slots, now, end_time)
+        
+        # Format times for display
+        def format_for_display(dt_obj):
+            if dt_obj.tzinfo is None:
+                dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+            return dt_obj.isoformat()
+        
+        # Prepare data for the template
+        formatted_busy_slots = [
+            {
+                'start': format_for_display(slot['start']),
+                'end': format_for_display(slot['end'])
+            }
+            for slot in busy_slots
+        ]
+        
+        formatted_free_slots = [
+            {
+                'start': format_for_display(slot[0]),
+                'end': format_for_display(slot[1])
+            }
+            for slot in free_slots if (slot[1] - slot[0]).total_seconds() >= 1800  # Only include slots >= 30 minutes
+        ]
+        
+        # If calendar view is requested, render the calendar template
+        if view == 'calendar':
+            from flask import render_template
+            return render_template(
+                'calendar_view.html',
+                busy_slots=formatted_busy_slots,
+                free_slots=formatted_free_slots,
+                days=days,
+                calendar_count=len(calendar_ids),
+                calendar_ids=calendar_ids
+            )
+        
+        # Otherwise, show the list view
+        # Create URL parameters for the calendar view
+        calendar_params = '&'.join([f'calendars={cal_id}' for cal_id in calendar_ids])
         result = [
             "<h1>Common Free Time</h1>",
-            f"<p>Showing free time for the next {days} days across {len(calendar_ids)} selected calendars</p>"
+            f"<p>Showing free time for the next {days} days across {len(calendar_ids)} selected calendars</p>",
+            f"<p><a href='/check-multiple-availability?{calendar_params}&days={days}&view=calendar' class='button'>View as Calendar</a></p>"
         ]
         
         if free_slots:
             result.append("<h2>Available Time Slots:</h2><ul>")
             for slot in free_slots:
                 start, end = slot
-                # Ensure we're working with timezone-aware datetimes for display
                 if start.tzinfo is None:
                     start = start.replace(tzinfo=dt.timezone.utc)
                 if end.tzinfo is None:
@@ -533,7 +1300,6 @@ def check_multiple_availability():
                     
                 duration = end - start
                 if duration.total_seconds() >= 1800:  # Only show slots >= 30 minutes
-                    # Convert to local time for display
                     local_tz = dt.datetime.now(dt.timezone.utc).astimezone().tzinfo
                     local_start = start.astimezone(local_tz)
                     local_end = end.astimezone(local_tz)
