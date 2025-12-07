@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../App';
+import { Link } from 'react-router-dom';
 import { getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
 import './EventsPage.css';
@@ -46,8 +45,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export const EventsPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { user: authUser } = useAuth();
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
   const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
   const [loading, setLoading] = useState(true);

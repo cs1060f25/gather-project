@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../App';
+import { useParams, Link } from 'react-router-dom';
 import { getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
 import './EventPage.css';
@@ -40,8 +39,6 @@ interface GoogleEvent {
 
 export const EventPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const navigate = useNavigate();
-  const { user: authUser } = useAuth();
   const [event, setEvent] = useState<GatherlyEvent | null>(null);
   const [googleEvent, setGoogleEvent] = useState<GoogleEvent | null>(null);
   const [loading, setLoading] = useState(true);
