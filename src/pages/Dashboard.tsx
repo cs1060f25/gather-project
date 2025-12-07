@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
-import { parseSchedulingMessage, getSuggestedTimes, type ParsedSchedulingData } from '../lib/openai';
 import { createInvites, sendInviteEmails } from '../lib/invites';
-import { Calendar } from '../components/Calendar';
-import { GlassChatBar } from '../components/GlassChatBar';
+import { WeeklyCalendar, type CalendarEvent, type GoogleCalendar, type TimeOption } from '../components/WeeklyCalendar';
+import { CreateEventPanel, type CreateEventData, type AvailabilityOption } from '../components/CreateEventPanel';
 import { ProfileSidebar } from '../components/ProfileSidebar';
-import { LocalInfo } from '../components/LocalInfo';
 import { DayNightToggle } from '../components/DayNightToggle';
-import { SchedulingModal, type ParsedEventData, type ScheduledEventData } from '../components/SchedulingModal';
 import './Dashboard.css';
 
 // Gatherly Logo SVG Component
@@ -40,13 +37,14 @@ interface Contact {
   isGatherly?: boolean;
 }
 
-interface PendingEvent {
+interface GatherlyEvent {
   id: string;
   title: string;
-  date: string;
-  time?: string;
-  invitees: string[];
-  status: 'waiting' | 'partial';
+  options: AvailabilityOption[];
+  participants: string[];
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+  confirmedOption?: AvailabilityOption;
 }
 
 export const Dashboard: React.FC = () => {
@@ -54,20 +52,18 @@ export const Dashboard: React.FC = () => {
   const { user: authUser, signOut, loading: authLoading } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [showPending, setShowPending] = useState(false);
-  const [chatInput, setChatInput] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
-  // No mock data - start with empty pending events
-  const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
-  const [, setCalendarSynced] = useState(false);
-  const [, setContactsSynced] = useState(false);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
+  const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
   
-  // Scheduling modal state
-  const [showSchedulingModal, setShowSchedulingModal] = useState(false);
-  const [schedulingData, setSchedulingData] = useState<ParsedEventData | null>(null);
-  const [suggestedTimes, setSuggestedTimes] = useState<string[]>([]);
-  const [isParsingChat, setIsParsingChat] = useState(false);
+  // Editing state
+  const [editingMode, setEditingMode] = useState(false);
+  const [selectedTimeOptions, setSelectedTimeOptions] = useState<TimeOption[]>([]);
+  const [suggestedEventData] = useState<Partial<CreateEventData> | undefined>();
+  const [isCreating, setIsCreating] = useState(false);
 
+  // Load user data on auth
   useEffect(() => {
     if (authUser) {
       setUser({
@@ -78,16 +74,13 @@ export const Dashboard: React.FC = () => {
         phone: authUser.user_metadata?.phone || '',
       });
       
-      // Load contacts from Supabase
       loadContacts();
-      
-      // Sync Google Calendar if connected
-      syncGoogleCalendar();
-      // Sync Google Contacts if connected
-      syncGoogleContacts();
+      syncGoogleCalendars();
+      loadGatherlyEvents();
     }
   }, [authUser]);
 
+  // Load contacts from Supabase
   const loadContacts = async () => {
     if (!authUser) return;
     
@@ -111,6 +104,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Sync Google Contacts
   const syncGoogleContacts = async () => {
     const providerToken = getGoogleToken();
     if (!providerToken) return;
@@ -123,17 +117,11 @@ export const Dashboard: React.FC = () => {
           sortOrder: 'FIRST_NAME_ASCENDING',
           pageSize: '200'
         }),
-        {
-          headers: {
-            Authorization: `Bearer ${providerToken}`
-          }
-        }
+        { headers: { Authorization: `Bearer ${providerToken}` } }
       );
 
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('gatherly_google_token');
-        }
+        if (response.status === 401) localStorage.removeItem('gatherly_google_token');
         return;
       }
 
@@ -156,92 +144,117 @@ export const Dashboard: React.FC = () => {
         });
         return merged;
       });
-      setContactsSynced(true);
-
-      // Persist new contacts to Supabase
-      if (authUser) {
-        const rows = googleContacts.map(c => ({
-          user_id: authUser.id,
-          name: c!.name,
-          email: c!.email,
-          phone: c!.phone,
-          is_gatherly: false,
-        }));
-        await supabase.from('contacts').upsert(rows, { onConflict: 'email' });
-      }
     } catch (error) {
       console.error('Error syncing Google Contacts:', error);
     }
   };
 
-  const syncGoogleCalendar = async () => {
-    // Get the stored Google token
+  // Sync all Google Calendars (not just primary)
+  const syncGoogleCalendars = async () => {
     const providerToken = getGoogleToken();
-    
     if (!providerToken) {
       console.log('No Google token found, skipping calendar sync');
+      // Set default calendar even without token
+      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
       return;
     }
 
     try {
-      console.log('Syncing Google Calendar...');
-      
-      // Fetch events from Google Calendar
-      const response = await fetch(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events?' + 
-        new URLSearchParams({
-          timeMin: new Date().toISOString(),
-          maxResults: '50',
-          singleEvents: 'true',
-          orderBy: 'startTime'
-        }),
-        {
-          headers: {
-            Authorization: `Bearer ${providerToken}`
-          }
-        }
+      // First, get list of all calendars
+      const calendarListResponse = await fetch(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+        { headers: { Authorization: `Bearer ${providerToken}` } }
       );
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Fetched', data.items?.length || 0, 'events from Google Calendar');
+
+      if (!calendarListResponse.ok) {
+        if (calendarListResponse.status === 401) localStorage.removeItem('gatherly_google_token');
+        setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+        return;
+      }
+
+      const calendarListData = await calendarListResponse.json();
+      const googleCalendars: GoogleCalendar[] = (calendarListData.items || []).map((cal: any) => ({
+        id: cal.id,
+        name: cal.summary || 'Unnamed Calendar',
+        color: cal.backgroundColor || '#4285f4',
+        selected: cal.selected !== false // Default to selected
+      }));
+
+      // Add Gatherly events calendar
+      googleCalendars.unshift({
+        id: 'gatherly',
+        name: 'Gatherly Events',
+        color: '#22c55e',
+        selected: true
+      });
+
+      setCalendars(googleCalendars);
+
+      // Fetch events from all selected calendars
+      const allEvents: CalendarEvent[] = [];
+      const now = new Date();
+      const timeMin = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
+      const timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString();
+
+      for (const cal of googleCalendars) {
+        if (cal.id === 'gatherly') continue; // Skip Gatherly calendar for Google fetch
         
-        // Convert Google events to our format
-        const events = data.items?.map((item: any) => ({
-          id: `gcal-${item.id}`,
-          title: item.summary || 'Untitled Event',
-          date: item.start?.date || item.start?.dateTime?.split('T')[0],
-          time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-          category: categorizeEvent(item.summary || ''),
-          source: 'google',
-          attendees: (item.attendees || [])
-            .filter((a: any) => a.email)
-            .map((a: any) => a.email),
-          important: true,
-        })) || [];
-        
-        // Get existing local events (non-google)
-        const existingEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
-        const localEvents = existingEvents.filter((e: any) => !e.id.startsWith('gcal-'));
-        
-        // Merge local events with Google events
-        localStorage.setItem('gatherly_events', JSON.stringify([...localEvents, ...events]));
-        
-        // Trigger calendar refresh
-        window.dispatchEvent(new Event('gatherly_events_updated'));
-        setCalendarSynced(true);
-      } else {
-        const errorText = await response.text();
-        console.error('Google Calendar API error:', response.status, errorText);
-        
-        // Token might be expired - clear it
-        if (response.status === 401) {
-          localStorage.removeItem('gatherly_google_token');
+        try {
+          const eventsResponse = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?` +
+            new URLSearchParams({
+              timeMin,
+              timeMax,
+              maxResults: '100',
+              singleEvents: 'true',
+              orderBy: 'startTime'
+            }),
+            { headers: { Authorization: `Bearer ${providerToken}` } }
+          );
+
+          if (eventsResponse.ok) {
+            const eventsData = await eventsResponse.json();
+            const calEvents = (eventsData.items || []).map((item: any) => ({
+              id: `gcal-${item.id}`,
+              title: item.summary || 'Untitled Event',
+              date: item.start?.date || item.start?.dateTime?.split('T')[0],
+              time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+              endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+              category: categorizeEvent(item.summary || ''),
+              source: 'google' as const,
+              calendarId: cal.id,
+              calendarName: cal.name,
+              attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
+              location: item.location,
+              description: item.description,
+              important: true,
+            }));
+            allEvents.push(...calEvents);
+          }
+        } catch (err) {
+          console.error(`Error fetching events for calendar ${cal.name}:`, err);
         }
       }
+
+      setEvents(allEvents);
     } catch (error) {
       console.error('Error syncing Google Calendar:', error);
+      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
     }
+  };
+
+  // Load Gatherly events from localStorage (would be Supabase in production)
+  const loadGatherlyEvents = () => {
+    const stored = localStorage.getItem('gatherly_created_events');
+    if (stored) {
+      setGatherlyEvents(JSON.parse(stored));
+    }
+  };
+
+  // Save Gatherly events
+  const saveGatherlyEvents = (events: GatherlyEvent[]) => {
+    setGatherlyEvents(events);
+    localStorage.setItem('gatherly_created_events', JSON.stringify(events));
   };
 
   const categorizeEvent = (title: string): 'work' | 'personal' | 'travel' => {
@@ -255,140 +268,106 @@ export const Dashboard: React.FC = () => {
     return 'personal';
   };
 
+  // Toggle calendar visibility
+  const handleCalendarToggle = useCallback((calendarId: string) => {
+    setCalendars(prev => prev.map(cal => 
+      cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
+    ));
+  }, []);
+
+  // Handle editing mode change from CreateEventPanel
+  const handleEditingModeChange = useCallback((editing: boolean) => {
+    setEditingMode(editing);
+    if (!editing) {
+      setSelectedTimeOptions([]);
+    }
+  }, []);
+
+  // Handle field changes for real-time calendar preview
+  const handleFieldChange = useCallback((data: Partial<CreateEventData>) => {
+    if (data.availabilityOptions) {
+      setSelectedTimeOptions(data.availabilityOptions.map(opt => ({
+        date: opt.day,
+        time: opt.time,
+        duration: opt.duration,
+        color: opt.color
+      })));
+    }
+  }, []);
+
+  // Handle event creation
+  const handleCreateEvent = async (data: CreateEventData) => {
+    setIsCreating(true);
+    
+    try {
+      const eventId = crypto.randomUUID();
+      
+      // Create Gatherly event
+      const gatherlyEvent: GatherlyEvent = {
+        id: eventId,
+        title: data.eventName,
+        options: data.availabilityOptions,
+        participants: data.participants,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+      
+      saveGatherlyEvents([...gatherlyEvents, gatherlyEvent]);
+
+      // Create invites for participants
+      if (data.participants.length > 0 && user) {
+        const { invites, errors } = await createInvites(
+          eventId,
+          {
+            title: data.eventName,
+            date: data.availabilityOptions[0].day,
+            time: data.availabilityOptions[0].time,
+            location: data.location,
+          },
+          user.full_name || user.email?.split('@')[0] || 'Someone',
+          user.email || '',
+          data.participants
+        );
+        
+        if (errors.length > 0) {
+          console.error('Some invites failed:', errors);
+        }
+        
+        if (invites.length > 0) {
+          await sendInviteEmails(invites);
+          invites.forEach(invite => {
+            console.log(`Invite for ${invite.invitee_email}: ${window.location.origin}/invite/${invite.token}`);
+          });
+        }
+      }
+
+      setEditingMode(false);
+      setSelectedTimeOptions([]);
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Handle event click
+  const handleEventClick = (event: CalendarEvent) => {
+    console.log('Event clicked:', event);
+    // Could open event details modal
+  };
+
+  // Handle time slot click
+  const handleTimeSlotClick = (date: string, time: string) => {
+    console.log('Time slot clicked:', date, time);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  const handleChatSubmit = async (message: string) => {
-    console.log('Schedule request:', message);
-    setIsParsingChat(true);
-    
-    try {
-      // Use OpenAI to parse the message
-      const contactNames = contacts.map(c => c.name);
-      const parsed: ParsedSchedulingData = await parseSchedulingMessage(message, contactNames);
-      
-      console.log('Parsed scheduling data:', parsed);
-      
-      if (!parsed.isSchedulingRequest) {
-        // Not a scheduling request, just log it
-        console.log('Not recognized as a scheduling request');
-        setIsParsingChat(false);
-        setChatInput('');
-        return;
-      }
-      
-      // Convert participants to emails
-      const participantEmails = parsed.participants.map(name => {
-        const contact = contacts.find(c => 
-          c.name.toLowerCase() === name.toLowerCase() || 
-          c.email.toLowerCase() === name.toLowerCase()
-        );
-        return contact?.email || name;
-      });
-      
-      // Get calendar events for time suggestions
-      const calendarEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
-      const targetDate = parsed.suggestedDate || new Date().toISOString().split('T')[0];
-      const timeSuggestions = getSuggestedTimes(calendarEvents, targetDate, parsed.duration || 60);
-      setSuggestedTimes(timeSuggestions);
-      
-      // Prepare data for scheduling modal
-      const eventData: ParsedEventData = {
-        title: parsed.title,
-        participants: participantEmails,
-        dates: parsed.suggestedDate ? [parsed.suggestedDate] : undefined,
-        time: parsed.suggestedTime,
-        duration: parsed.duration,
-        location: parsed.location,
-        priority: parsed.priority,
-        notes: parsed.notes
-      };
-      
-      setSchedulingData(eventData);
-      setShowSchedulingModal(true);
-      setChatInput('');
-    } catch (error) {
-      console.error('Error parsing chat:', error);
-    } finally {
-      setIsParsingChat(false);
-    }
-  };
-
-  const handleScheduleSubmit = async (eventData: ScheduledEventData) => {
-    const eventId = crypto.randomUUID();
-    const newEvent = {
-      id: eventId,
-      title: eventData.title,
-      date: eventData.date,
-      time: eventData.startTime || eventData.time,
-      endTime: eventData.endTime,
-      category: eventData.priority === 'must' ? 'work' : eventData.priority === 'should' ? 'personal' : 'travel',
-      attendees: eventData.participants,
-      location: eventData.location,
-      description: eventData.notes,
-      important: eventData.priority !== 'maybe',
-      source: 'chat' as const
-    };
-    
-    // Add to localStorage
-    const existingEvents = JSON.parse(localStorage.getItem('gatherly_events') || '[]');
-    localStorage.setItem('gatherly_events', JSON.stringify([...existingEvents, newEvent]));
-    
-    // Create and send invites if there are participants
-    if (eventData.participants.length > 0 && user) {
-      const pending: PendingEvent = {
-        id: eventId,
-        title: eventData.title,
-        date: eventData.date,
-        time: eventData.startTime,
-        invitees: eventData.participants,
-        status: 'waiting'
-      };
-      setPendingEvents(prev => [...prev, pending]);
-      
-      // Create invites in database
-      const { invites, errors } = await createInvites(
-        eventId,
-        {
-          title: eventData.title,
-          date: eventData.date,
-          time: eventData.startTime,
-          location: eventData.location,
-        },
-        user.full_name || user.email?.split('@')[0] || 'Someone',
-        user.email || '',
-        eventData.participants
-      );
-      
-      if (errors.length > 0) {
-        console.error('Some invites failed:', errors);
-      }
-      
-      if (invites.length > 0) {
-        // Send invite emails
-        const { sent, failed } = await sendInviteEmails(invites);
-        console.log(`Sent ${sent} invites, ${failed} failed`);
-        
-        // Show invite links in console for demo
-        invites.forEach(invite => {
-          console.log(`Invite for ${invite.invitee_email}: ${window.location.origin}/invite/${invite.token}`);
-        });
-      }
-    }
-    
-    // Trigger calendar refresh
-    window.dispatchEvent(new Event('gatherly_events_updated'));
-    
-    setShowSchedulingModal(false);
-    setSchedulingData(null);
-  };
-
   const handleAddContact = (contact: Contact) => {
     setContacts(prev => [...prev, contact]);
-    
-    // Save to Supabase
     if (authUser) {
       supabase.from('contacts').insert({
         user_id: authUser.id,
@@ -400,6 +379,29 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Combine Google events with Gatherly events for calendar display
+  const allCalendarEvents = useMemo(() => {
+    const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.flatMap(ge => 
+      ge.options.map((opt, idx) => ({
+        id: `gatherly-${ge.id}-${idx}`,
+        date: opt.day,
+        time: opt.time,
+        endTime: undefined,
+        title: ge.title,
+        category: 'gatherly' as const,
+        duration: opt.duration,
+        attendees: ge.participants,
+        source: 'gatherly' as const,
+        calendarId: 'gatherly',
+        isGatherlyEvent: true,
+        status: ge.status,
+        suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color }))
+      }))
+    );
+    
+    return [...events, ...gatherlyCalEvents];
+  }, [events, gatherlyEvents]);
+
   if (authLoading) {
     return (
       <div className="dashboard-loading">
@@ -408,10 +410,6 @@ export const Dashboard: React.FC = () => {
       </div>
     );
   }
-
-  const dismissPendingEvent = (id: string) => {
-    setPendingEvents(prev => prev.filter(e => e.id !== id));
-  };
 
   return (
     <div className="dashboard">
@@ -428,59 +426,17 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
         <div className="header-center">
-          <div className="pending-wrapper">
-            <button 
-              className="pending-events-btn"
-              onClick={() => setShowPending(!showPending)}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              <span>Pending</span>
-              {pendingEvents.length > 0 && (
-                <span className="pending-badge">{pendingEvents.length}</span>
-              )}
-            </button>
-            
-            {showPending && (
-              <div className="pending-dropdown">
-                <div className="pending-dropdown-header">
-                  <h3>Pending Invitations</h3>
-                  <button className="close-btn" onClick={() => setShowPending(false)}>✕</button>
-                </div>
-                {pendingEvents.length === 0 ? (
-                  <div className="pending-empty">
-                    <p>No pending events! 🎉</p>
-                  </div>
-                ) : (
-                  <ul className="pending-list">
-                    {pendingEvents.map(event => (
-                      <li key={event.id} className="pending-item">
-                        <div className="pending-item-content">
-                          <strong>{event.title}</strong>
-                          <span className="pending-date">
-                            {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                            {event.time && ` at ${event.time}`}
-                          </span>
-                          <span className={`pending-status ${event.status}`}>
-                            {event.status === 'partial' ? '1/' + event.invitees.length + ' responded' : 'Waiting for responses'}
-                          </span>
-                        </div>
-                        <div className="pending-item-actions">
-                          <button className="btn-send-reminder">Remind</button>
-                          <button className="btn-dismiss" onClick={() => dismissPendingEvent(event.id)}>✕</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
+          <Link to="/events" className="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Events
+          </Link>
         </div>
         <div className="header-right">
-          <LocalInfo minimal />
           <DayNightToggle />
           <button 
             className="profile-button"
@@ -501,12 +457,35 @@ export const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content - Calendar */}
+      {/* Main Content */}
       <main className="dashboard-main">
-        <Calendar contacts={contacts} />
+        {/* Calendar - 2/3 width */}
+        <div className="calendar-section">
+          <WeeklyCalendar
+            events={allCalendarEvents}
+            calendars={calendars}
+            onCalendarToggle={handleCalendarToggle}
+            selectedTimeOptions={selectedTimeOptions}
+            editingMode={editingMode}
+            onEventClick={handleEventClick}
+            onTimeSlotClick={handleTimeSlotClick}
+          />
+        </div>
+
+        {/* Create Event Panel - 1/3 width */}
+        <div className="create-event-section">
+          <CreateEventPanel
+            contacts={contacts}
+            onSubmit={handleCreateEvent}
+            onFieldChange={handleFieldChange}
+            onEditingModeChange={handleEditingModeChange}
+            suggestedData={suggestedEventData}
+            isLoading={isCreating}
+          />
+        </div>
       </main>
 
-      {/* Profile Sidebar */}
+      {/* Profile Sidebar - opens as overlay, not blocking right panel */}
       <ProfileSidebar 
         isOpen={showProfile}
         user={user}
@@ -516,28 +495,8 @@ export const Dashboard: React.FC = () => {
         onAddContact={handleAddContact}
         onImportContacts={syncGoogleContacts}
       />
-
-      {/* Scheduling Modal */}
-      <SchedulingModal
-        isOpen={showSchedulingModal}
-        onClose={() => {
-          setShowSchedulingModal(false);
-          setSchedulingData(null);
-        }}
-        initialData={schedulingData}
-        contacts={contacts.map(c => ({ id: c.id, name: c.name, email: c.email }))}
-        onSubmit={handleScheduleSubmit}
-        suggestedTimes={suggestedTimes}
-      />
-
-      {/* Chat Bar */}
-      <GlassChatBar 
-        value={chatInput}
-        onChange={setChatInput}
-        onSubmit={handleChatSubmit}
-        contacts={contacts}
-        isLoading={isParsingChat}
-      />
     </div>
   );
 };
+
+export default Dashboard;

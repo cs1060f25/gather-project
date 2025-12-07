@@ -486,10 +486,214 @@
   box-shadow: 4px 4px 0 0 #111;
 }
 
-/* Responsive */
-@media (max-width: 420px) {
+/* Dark Mode */
+.dark-mode .profile-sidebar {
+  background: #2A2A2A;
+  border-color: #FFF;
+  box-shadow: -10px 0 0 0 #FFF;
+}
+
+.dark-mode .sidebar-header {
+  background: #333;
+  border-color: #FFF;
+}
+
+.dark-mode .sidebar-header h2 {
+  color: #FFF;
+}
+
+.dark-mode .close-btn {
+  background: #2A2A2A;
+  border-color: #FFF;
+  color: #FFF;
+  box-shadow: 3px 3px 0 0 #FFF;
+}
+
+.dark-mode .tab {
+  background: #2A2A2A;
+  color: #FFF;
+  border-color: #FFF;
+}
+
+.dark-mode .tab:hover {
+  background: #333;
+}
+
+.dark-mode .tab.active {
+  background: #22c55e;
+}
+
+.dark-mode .sidebar-content {
+  background: #2A2A2A;
+}
+
+.dark-mode .profile-card {
+  background: #333;
+  border-color: #FFF;
+  box-shadow: 6px 6px 0 0 #FFF;
+}
+
+.dark-mode .profile-info h3 {
+  color: #FFF;
+}
+
+.dark-mode .stat {
+  background: #333;
+  border-color: #FFF;
+  color: #FFF;
+  box-shadow: 4px 4px 0 0 #FFF;
+}
+
+.dark-mode .calendar-connection h4 {
+  color: #FFF;
+}
+
+.dark-mode .connection-item {
+  background: #333;
+  border-color: #FFF;
+  color: #FFF;
+  box-shadow: 4px 4px 0 0 #FFF;
+}
+
+.dark-mode .add-contact-form {
+  background: #333;
+  border-color: #FFF;
+}
+
+.dark-mode .add-contact-form input {
+  background: #2A2A2A;
+  border-color: #FFF;
+  color: #FFF;
+}
+
+.dark-mode .contact-item {
+  background: #333;
+  border-color: #FFF;
+  box-shadow: 4px 4px 0 0 #FFF;
+}
+
+.dark-mode .contact-name {
+  color: #FFF;
+}
+
+.dark-mode .setting-item {
+  background: #333;
+  border-color: #FFF;
+  color: #FFF;
+}
+
+.dark-mode .toggle {
+  background: #555;
+  border-color: #FFF;
+}
+
+.dark-mode .toggle::before {
+  background: #FFF;
+}
+
+.dark-mode .toggle:checked {
+  background: #22c55e;
+}
+
+.dark-mode .settings-select {
+  background: #2A2A2A;
+  border-color: #FFF;
+  color: #FFF;
+  box-shadow: 4px 4px 0 0 #FFF;
+}
+
+.dark-mode .settings-group h4 {
+  color: #FFF;
+}
+
+.dark-mode .people-header h4 {
+  color: #FFF;
+}
+
+.dark-mode .sidebar-footer {
+  background: #333;
+  border-color: #FFF;
+}
+
+.dark-mode .sign-out-btn {
+  border-color: #FFF;
+  box-shadow: 6px 6px 0 0 #FFF;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
   .profile-sidebar {
     width: 100%;
+    max-width: 380px;
+    box-shadow: -6px 0 0 0 #111;
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 480px) {
+  .profile-sidebar {
+    width: 100%;
+    max-width: none;
+    border-left: none;
+    box-shadow: none;
+  }
+
+  .sidebar-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .sidebar-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .tab {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .sidebar-content {
+    padding: 1rem;
+  }
+
+  .profile-card {
+    padding: 0.75rem;
+    box-shadow: 4px 4px 0 0 #111;
+  }
+
+  .profile-image,
+  .profile-image-placeholder {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+
+  .stat {
+    padding: 0.5rem;
+    box-shadow: 3px 3px 0 0 #111;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .contact-item {
+    padding: 0.6rem;
+    box-shadow: 3px 3px 0 0 #111;
+  }
+
+  .contact-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
+
+  .sidebar-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .sign-out-btn {
+    padding: 0.6rem;
+    box-shadow: 4px 4px 0 0 #111;
   }
 }
 

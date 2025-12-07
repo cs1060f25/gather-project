@@ -3,8 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// Use placeholder values if credentials are missing to prevent crashes
+// The app will still load but auth features won't work
+const finalSupabaseUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const finalSupabaseAnonKey = supabaseAnonKey || 'placeholder-key';
+
 if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase credentials not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.');
+    console.warn('The app will load but authentication features will not work.');
 }
 
 // Parse OAuth tokens from URL hash
@@ -38,7 +44,9 @@ const parseOAuthTokens = () => {
 
 // Check if this is an OAuth callback with tokens
 const oauthTokens = parseOAuthTokens();
-const storageKey = supabaseUrl ? `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token` : '';
+const storageKey = finalSupabaseUrl && finalSupabaseUrl !== 'https://placeholder.supabase.co' 
+    ? `sb-${new URL(finalSupabaseUrl).hostname.split('.')[0]}-auth-token` 
+    : '';
 
 if (oauthTokens && storageKey) {
     console.log('OAuth callback detected, storing tokens...');
@@ -52,7 +60,7 @@ if (oauthTokens && storageKey) {
 }
 
 // Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
     auth: {
         autoRefreshToken: true,
         persistSession: true,
@@ -93,10 +101,10 @@ export const signInWithGoogle = async () => {
         provider: 'google',
         options: {
             redirectTo: `${window.location.origin}/app`,
-            scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/contacts.readonly',
+            scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly',
             queryParams: {
                 access_type: 'offline',
-                prompt: 'consent',
+                prompt: 'select_account', // Changed from 'consent' to allow remembered sessions
             }
         },
     });

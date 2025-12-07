@@ -9,6 +9,8 @@ import { AuthPage } from './pages/AuthPage';
 import { Dashboard } from './pages/Dashboard';
 import { StoryPage } from './pages/StoryPage';
 import { InvitePage } from './pages/InvitePage';
+import { EventsPage } from './pages/EventsPage';
+import { EventPage } from './pages/EventPage';
 
 // Auth Context
 interface AuthContextType {
@@ -201,6 +203,26 @@ function AppContent() {
       <Route 
         path="/invite/:token" 
         element={<InvitePage />} 
+      />
+      
+      {/* Events Page */}
+      <Route 
+        path="/events" 
+        element={
+          <ProtectedRoute>
+            <EventsPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Event Detail Page */}
+      <Route 
+        path="/event/:eventId" 
+        element={
+          <ProtectedRoute>
+            <EventPage />
+          </ProtectedRoute>
+        } 
       />
       
       {/* Catch all - redirect to home */}
