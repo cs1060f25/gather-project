@@ -36,10 +36,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { to, eventTitle, hostName, hostEmail, suggestedTimes, inviteToken, location } = req.body as InviteEmailData;
-    
-    console.log('Sending invite email to:', to);
-    console.log('Event:', eventTitle);
-    console.log('Host:', hostName, hostEmail);
 
     if (!to || !eventTitle || !hostName || !inviteToken) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -58,13 +54,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return `<li style="margin-bottom: 8px;"><strong>Option ${idx + 1}:</strong> ${dayName}, ${monthDay} at ${displayHour}:${minutes} ${ampm} (${durationText})</li>`;
     }).join('');
 
-    // Build the invite URL - use custom domain or fallback
     const baseUrl = process.env.SITE_URL || 'https://gatherly.now';
     const inviteUrl = `${baseUrl}/invite/${inviteToken}`;
 
-    // Use Resend's test domain for now, or your verified domain
-    // To use a custom domain, verify it at https://resend.com/domains
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <invites@gatherly.now>';
+    // Set RESEND_FROM_EMAIL in production after verifying domain at resend.com/domains
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <onboarding@resend.dev>';
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
@@ -133,8 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log('Email sent successfully:', data);
-    return res.status(200).json({ success: true, data });
+    return res.status(200).json({ success: true, id: data?.id });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error sending invite:', errorMessage, error);

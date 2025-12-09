@@ -1,114 +1,95 @@
 # Gatherly
 
-Gatherly is a smart scheduling app that makes it easy to coordinate meetings with friends and colleagues. It integrates with Google Calendar and uses AI to help parse natural language scheduling requests.
+**Smart scheduling made simple.** Gatherly helps you coordinate meetings with friends and colleagues using AI-powered scheduling suggestions and seamless Google Calendar integration.
+
+🌐 **Live at**: [gatherly.now](https://gatherly.now)
 
 ## Features
 
-- 📅 Google Calendar integration
-- 🤖 AI-powered scheduling (natural language parsing)
-- ✉️ Email invites via Resend
-- 🔐 Secure authentication via Supabase
-- 🌙 Dark mode support
-- 📱 Responsive design
+- 📅 **Google Calendar Integration** - Sync your calendars automatically
+- 🤖 **AI-Powered Scheduling** - Natural language parsing for quick event creation
+- ✉️ **Email Invites** - Send beautiful invites with one click
+- 🔐 **Secure Authentication** - Google OAuth via Supabase
+- 🌙 **Dark Mode** - Easy on the eyes, day or night
+- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm or pnpm
-- Supabase account
-- Google Cloud Console project (for Calendar API)
-- OpenAI API key (for AI features)
-- Resend account (for email invites)
+- [Supabase](https://supabase.com) account
+- [Google Cloud Console](https://console.cloud.google.com) project (Calendar API)
+- [OpenAI](https://platform.openai.com) API key
+- [Resend](https://resend.com) account
 
 ### Installation
 
 ```bash
 npm install
-```
-
-### Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```bash
-# Frontend Variables (exposed to browser - safe for public keys)
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# Server-side Variables (NEVER exposed to frontend)
-# These are only accessible in /api serverless functions
-OPENAI_API_KEY=sk-your-openai-api-key
-RESEND_API_KEY=re_your-resend-api-key
-```
-
-### Security Notes
-
-- **VITE_** prefixed variables are bundled into the client-side JavaScript and visible to users
-- **Non-VITE** variables (like `OPENAI_API_KEY` and `RESEND_API_KEY`) are only accessible in the `/api` serverless functions
-- The Supabase anon key is designed to be public - actual security is enforced via Row Level Security (RLS) policies
-- Never prefix sensitive API keys with `VITE_`
-
-### Development
-
-```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+App runs at `http://localhost:5173`
 
-### Building
+### Environment Variables
+
+Create `.env.local`:
 
 ```bash
-npm run build
+# Frontend (safe - bundled into client)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# Server-side (secure - only in /api functions)
+OPENAI_API_KEY=sk-your-key
+RESEND_API_KEY=re_your-key
 ```
 
-### Deployment (Vercel)
-
-1. Connect your GitHub repo to Vercel
-2. Add environment variables in Vercel dashboard:
-   - `VITE_SUPABASE_URL` - For all environments
-   - `VITE_SUPABASE_ANON_KEY` - For all environments
-   - `OPENAI_API_KEY` - For Production/Preview
-   - `RESEND_API_KEY` - For Production/Preview
+> ⚠️ Never prefix sensitive keys with `VITE_` - they would be exposed to browsers!
 
 ## Architecture
 
 ```
 gatherly/
-├── api/                    # Vercel serverless functions (server-side)
-│   ├── parse-scheduling.ts # OpenAI integration (secure)
-│   └── send-invite.ts      # Resend email integration (secure)
+├── api/                    # Serverless functions (secure)
+│   ├── parse-scheduling.ts # OpenAI integration
+│   └── send-invite.ts      # Email via Resend
 ├── src/
 │   ├── components/         # React components
-│   ├── lib/                # Client-side utilities
-│   │   ├── openai.ts       # Calls /api/parse-scheduling
-│   │   ├── invites.ts      # Calls /api/send-invite
-│   │   └── supabase.ts     # Supabase client
+│   ├── lib/                # Client utilities
 │   └── pages/              # Page components
 ├── supabase/
 │   └── migrations/         # Database schema
-└── vercel.json             # Vercel configuration
+└── public/                 # Static assets
 ```
 
-## Database Setup
+## Deployment
 
-Run the migration in your Supabase SQL Editor:
+Deployed on [Vercel](https://vercel.com). Add these environment variables:
 
-```sql
--- See supabase/migrations/001_create_invites_table.sql
-```
+| Variable | Environment |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | All |
+| `VITE_SUPABASE_ANON_KEY` | All |
+| `OPENAI_API_KEY` | Production |
+| `RESEND_API_KEY` | Production |
+| `RESEND_FROM_EMAIL` | Production (optional) |
 
 ## Tech Stack
 
-- **Frontend**: React, TypeScript, Vite
+- **Frontend**: React 19, TypeScript, Vite
 - **Styling**: CSS (Neobrutalist design)
 - **Backend**: Vercel Serverless Functions
 - **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth with Google OAuth
+- **Auth**: Supabase Auth + Google OAuth
 - **AI**: OpenAI GPT-4o-mini
 - **Email**: Resend
+
+## Team
+
+Built by the Gatherly team at Harvard.
 
 ## License
 

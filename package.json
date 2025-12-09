@@ -1,7 +1,10 @@
 {
   "name": "gatherly",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Smart scheduling app with AI-powered meeting coordination",
+  "author": "Gatherly Team",
+  "homepage": "https://gatherly.now",
   "type": "module",
   "engines": {
     "node": "20.x"
