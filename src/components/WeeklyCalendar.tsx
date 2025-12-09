@@ -113,7 +113,6 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   // Month names for picker
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   // Generate year range for picker
   const currentYear = new Date().getFullYear();

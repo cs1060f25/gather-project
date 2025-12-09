@@ -48,23 +48,6 @@ const formatLocalDate = (d: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Generate time options with a placeholder (6 AM to 11:30 PM)
-const getTimeOptions = () => {
-  const options = [{ value: '', label: 'Time' }];
-  for (let h = 6; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      const label = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-      options.push({ value: time, label });
-    }
-  }
-  return options;
-};
-
 // Duration options - includes blank default
 const DURATION_OPTIONS = [
   { value: 0, label: 'Duration' },
@@ -174,8 +157,6 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const timeOptions = useMemo(() => getTimeOptions(), []);
-  
   // Close picker when clicking outside or pressing Escape
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
