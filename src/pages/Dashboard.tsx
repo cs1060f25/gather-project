@@ -179,11 +179,19 @@ export const Dashboard: React.FC = () => {
       }
 
       const calendarListData = await calendarListResponse.json();
+      
+      // Restore saved calendar selections
+      let savedSelections: Record<string, boolean> = {};
+      try {
+        const saved = localStorage.getItem('gatherly_calendar_selections');
+        if (saved) savedSelections = JSON.parse(saved);
+      } catch {}
+      
       const googleCalendars: GoogleCalendar[] = (calendarListData.items || []).map((cal: any) => ({
         id: cal.id,
         name: cal.summary || 'Unnamed Calendar',
         color: cal.backgroundColor || '#4285f4',
-        selected: cal.selected !== false // Default to selected
+        selected: savedSelections[cal.id] !== undefined ? savedSelections[cal.id] : true
       }));
 
       // Add Gatherly events calendar
@@ -191,7 +199,7 @@ export const Dashboard: React.FC = () => {
         id: 'gatherly',
         name: 'Gatherly Events',
         color: '#22c55e',
-        selected: true
+        selected: savedSelections['gatherly'] !== undefined ? savedSelections['gatherly'] : true
       });
 
       setCalendars(googleCalendars);
@@ -344,11 +352,18 @@ export const Dashboard: React.FC = () => {
     return 'personal';
   };
 
-  // Toggle calendar visibility
+  // Toggle calendar visibility - persist to localStorage
   const handleCalendarToggle = useCallback((calendarId: string) => {
-    setCalendars(prev => prev.map(cal => 
-      cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
-    ));
+    setCalendars(prev => {
+      const updated = prev.map(cal => 
+        cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
+      );
+      // Save selected state to localStorage
+      const selectedStates: Record<string, boolean> = {};
+      updated.forEach(cal => { selectedStates[cal.id] = cal.selected; });
+      localStorage.setItem('gatherly_calendar_selections', JSON.stringify(selectedStates));
+      return updated;
+    });
   }, []);
 
   // Handle editing mode change from CreateEventPanel

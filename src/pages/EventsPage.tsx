@@ -331,26 +331,50 @@ export const EventsPage: React.FC = () => {
           ) : (
             <div className="events-list">
               {categorizedEvents.pending.map(event => (
-                <Link 
-                  key={event.id} 
-                  to={`/event/${event.id}`}
-                  className="event-card pending gatherly"
-                >
-                  <div className="event-options">
-                    {event.options.slice(0, 3).map((opt, i) => (
-                      <div key={i} className="option-chip" style={{ backgroundColor: opt.color }}>
-                        {formatDate(opt.day)}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="event-content">
-                    <h3 className="event-title">{event.title}</h3>
-                    <p className="event-participants">
-                      {event.participants.length} invited • Waiting for responses
-                    </p>
-                  </div>
-                  <span className="pending-badge">Pending</span>
-                </Link>
+                <div key={event.id} className="event-card-wrapper">
+                  <Link 
+                    to={`/event/${event.id}`}
+                    className="event-card pending gatherly"
+                  >
+                    <div className="event-options">
+                      {event.options.slice(0, 3).map((opt, i) => (
+                        <div key={i} className="option-chip" style={{ backgroundColor: opt.color }}>
+                          {formatDate(opt.day)}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="event-content">
+                      <h3 className="event-title">{event.title}</h3>
+                      <p className="event-participants">
+                        {event.participants.length} invited • Waiting for responses
+                      </p>
+                    </div>
+                    <div className="event-badges">
+                      <span className="gatherly-badge">Gatherly</span>
+                      <span className="pending-badge">Pending</span>
+                    </div>
+                  </Link>
+                  <button 
+                    className="cancel-event-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (confirm('Cancel this event?')) {
+                        const stored = localStorage.getItem('gatherly_created_events');
+                        if (stored) {
+                          const events: GatherlyEvent[] = JSON.parse(stored);
+                          const updated = events.map(e => 
+                            e.id === event.id ? { ...e, status: 'cancelled' as const } : e
+                          );
+                          localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
+                          setGatherlyEvents(updated);
+                        }
+                      }
+                    }}
+                    title="Cancel event"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           )}

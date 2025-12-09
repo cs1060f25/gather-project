@@ -63,24 +63,6 @@ const timeToMinutes = (time: string): number => {
   return h * 60 + (m || 0);
 };
 
-const getEventTop = (time?: string): number => {
-  if (!time) return 0;
-  const minutes = timeToMinutes(time);
-  const startMinutes = 7 * 60; // 7 AM
-  return ((minutes - startMinutes) / 60) * 60; // 60px per hour
-};
-
-const getEventHeight = (startTime?: string, endTime?: string, duration?: number): number => {
-  if (startTime && endTime) {
-    const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
-    return Math.max(30, (diff / 60) * 60);
-  }
-  if (duration) {
-    return Math.max(30, (duration / 60) * 60);
-  }
-  return 60; // Default 1 hour
-};
-
 export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   events,
   calendars,
