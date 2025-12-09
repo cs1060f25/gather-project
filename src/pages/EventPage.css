@@ -392,13 +392,16 @@
 }
 
 .time-option.selected {
-  background: var(--option-color, #22c55e);
+  background: #22c55e;
   color: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: 6px 6px 0 #1A1A1A;
 }
 
 .time-option.confirmed {
-  background: var(--option-color, #22c55e);
+  background: #22c55e;
   color: #FFF;
+  border-color: #1A1A1A;
 }
 
 .time-option:disabled {

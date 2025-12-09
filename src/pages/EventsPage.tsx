@@ -93,6 +93,7 @@ export const EventsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [inviteCounts, setInviteCounts] = useState<Record<string, { responded: number; total: number }>>({});
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -100,6 +101,41 @@ export const EventsPage: React.FC = () => {
     full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || '',
     avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '',
   } : null;
+
+  // Load invites for all events to get accurate response counts
+  const loadInviteCounts = async (eventIds: string[]) => {
+    if (eventIds.length === 0) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('invites')
+        .select('event_id, status')
+        .in('event_id', eventIds);
+      
+      if (!error && data) {
+        const counts: Record<string, { responded: number; total: number }> = {};
+        
+        // Initialize counts for all event IDs
+        eventIds.forEach(id => {
+          counts[id] = { responded: 0, total: 0 };
+        });
+        
+        // Count responses
+        data.forEach(invite => {
+          if (counts[invite.event_id]) {
+            counts[invite.event_id].total++;
+            if (invite.status !== 'pending') {
+              counts[invite.event_id].responded++;
+            }
+          }
+        });
+        
+        setInviteCounts(counts);
+      }
+    } catch (err) {
+      console.error('Error loading invite counts:', err);
+    }
+  };
 
   // Load events and contacts
   useEffect(() => {
@@ -240,6 +276,8 @@ export const EventsPage: React.FC = () => {
           }));
           setGatherlyEvents(events);
           localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+          // Load invite counts for all Gatherly events
+          loadInviteCounts(events.map(e => e.id));
         }
       } catch (err) {
         console.error('Error loading from Supabase:', err);
@@ -371,7 +409,7 @@ export const EventsPage: React.FC = () => {
                       {/* Only show responses for Gatherly events */}
                       {isGatherlyEvent && (
                         <span className="event-responses">
-                          {event.responses || 0}/{event.totalInvites || event.attendees?.length || 1} Responses
+                          {inviteCounts[event.id]?.responded || 0}/{inviteCounts[event.id]?.total || event.totalInvites || 0} Responses
                         </span>
                       )}
                       {!isGatherlyEvent && event.time && (
@@ -433,7 +471,7 @@ export const EventsPage: React.FC = () => {
                     <div className="pending-event-header">
                       <h3 className="event-title">{event.title}</h3>
                       <span className="event-responses">
-                        {event.responses?.length || 0}/{event.participants.length} Responses
+                        {inviteCounts[event.id]?.responded || 0}/{inviteCounts[event.id]?.total || event.participants.length} Responses
                       </span>
                     </div>
                     
