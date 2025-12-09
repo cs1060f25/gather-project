@@ -53,14 +53,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return `<li style="margin-bottom: 8px;"><strong>Option ${idx + 1}:</strong> ${dayName}, ${monthDay} at ${displayHour}:${minutes} ${ampm} (${durationText})</li>`;
     }).join('');
 
-    // Build the invite URL
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5173';
+    // Build the invite URL - use custom domain or fallback
+    const baseUrl = process.env.SITE_URL || 'https://gatherly.now';
     const inviteUrl = `${baseUrl}/invite/${inviteToken}`;
 
+    // Use Resend's test domain for now, or your verified domain
+    // To use a custom domain, verify it at https://resend.com/domains
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <onboarding@resend.dev>';
+
     const { data, error } = await resend.emails.send({
-      from: 'Gatherly <invites@gatherly.app>',
+      from: fromEmail,
       to: [to],
       replyTo: hostEmail,
       subject: `${hostName} invited you to: ${eventTitle}`,
