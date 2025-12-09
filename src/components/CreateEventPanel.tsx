@@ -39,8 +39,6 @@ interface CreateEventPanelProps {
 
 // Use subtle indicator colors that match the calendar option badges
 const OPTION_COLORS = ['#1A1A1A', '#1A1A1A', '#1A1A1A']; // All black for clean look
-// Duration values for fallback
-const DURATIONS = [15, 30, 45, 60, 90, 120];
 
 // Helper to format date as YYYY-MM-DD in local timezone (not UTC)
 const formatLocalDate = (d: Date): string => {
@@ -68,7 +66,7 @@ const getDateOptions = () => {
 
 // Generate time options with a placeholder (6 AM to 11:30 PM)
 const getTimeOptions = () => {
-  const options = [{ value: '', label: 'Time', emoji: '🕐' }];
+  const options = [{ value: '', label: 'Time' }];
   for (let h = 6; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
       const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
@@ -77,23 +75,48 @@ const getTimeOptions = () => {
         minute: '2-digit',
         hour12: true
       });
-      // Add clock emoji based on hour
-      const emoji = h < 12 ? '🌅' : h < 17 ? '☀️' : h < 20 ? '🌆' : '🌙';
-      options.push({ value: time, label, emoji });
+      options.push({ value: time, label });
     }
   }
   return options;
 };
 
-// Duration options with emoji icons
+// Duration options
 const DURATION_OPTIONS = [
-  { value: 15, label: '15m', emoji: '⚡' },
-  { value: 30, label: '30m', emoji: '⏱️' },
-  { value: 45, label: '45m', emoji: '⏳' },
-  { value: 60, label: '1h', emoji: '🕐' },
-  { value: 90, label: '1.5h', emoji: '⏰' },
-  { value: 120, label: '2h', emoji: '🕑' },
+  { value: 15, label: '15m' },
+  { value: 30, label: '30m' },
+  { value: 45, label: '45m' },
+  { value: 60, label: '1h' },
+  { value: 90, label: '1.5h' },
+  { value: 120, label: '2h' },
 ];
+
+// SVG Icons as components
+const CalendarIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
+const TimerIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="13" r="8"/>
+    <path d="M12 9v4l2 2"/>
+    <path d="M5 3L2 6"/>
+    <path d="M22 6l-3-3"/>
+    <path d="M12 2v3"/>
+  </svg>
+);
 
 const PLACEHOLDER_SUGGESTIONS = [
   "Schedule lunch with the team next Thursday...",
@@ -649,7 +672,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
               >
                 <span className="cep-option-badge">{idx + 1}</span>
                 <div className="cep-option-select-wrapper">
-                  <span className="cep-option-icon">📅</span>
+                  <span className="cep-option-icon"><CalendarIcon /></span>
                   <select
                     value={opt.day}
                     onChange={e => handleOptionChange(opt.id, 'day', e.target.value)}
@@ -662,7 +685,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   </select>
                 </div>
                 <div className="cep-option-select-wrapper">
-                  <span className="cep-option-icon">🕐</span>
+                  <span className="cep-option-icon"><ClockIcon /></span>
                   <select
                     value={opt.time}
                     onChange={e => handleOptionChange(opt.id, 'time', e.target.value)}
@@ -675,7 +698,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   </select>
                 </div>
                 <div className="cep-option-select-wrapper cep-duration-wrapper">
-                  <span className="cep-option-icon">⏱️</span>
+                  <span className="cep-option-icon"><TimerIcon /></span>
                   <select
                     value={opt.duration}
                     onChange={e => handleOptionChange(opt.id, 'duration', Number(e.target.value))}

@@ -479,8 +479,15 @@
 }
 
 .cep-option-icon {
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: #666;
+}
+
+.cep-option.filled .cep-option-icon {
+  color: #22c55e;
 }
 
 .cep-option select {
