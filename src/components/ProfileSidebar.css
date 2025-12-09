@@ -472,7 +472,7 @@
 }
 
 .setting-item.appearance-setting .day-night-toggle {
-  transform: scale(0.85);
+  transform: scale(0.55);
   transform-origin: right center;
 }
 

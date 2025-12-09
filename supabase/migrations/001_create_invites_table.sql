@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS gatherly_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
+  description TEXT,
   location TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
   options JSONB NOT NULL DEFAULT '[]',
@@ -113,6 +114,14 @@ CREATE TABLE IF NOT EXISTS gatherly_events (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add description column if it doesn't exist (for existing tables)
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gatherly_events' AND column_name = 'description') THEN
+    ALTER TABLE gatherly_events ADD COLUMN description TEXT;
+  END IF;
+END $$;
 
 -- Create indexes for gatherly_events
 CREATE INDEX IF NOT EXISTS idx_gatherly_events_user_id ON gatherly_events(user_id);

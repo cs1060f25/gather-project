@@ -20,6 +20,7 @@ export interface CalendarEvent {
   suggestedTimes?: { date: string; time: string; color: string }[];
   status?: 'pending' | 'confirmed' | 'cancelled';
   color?: string; // Calendar color for the event
+  optionNumber?: number; // 1, 2, or 3 for pending Gatherly event options
 }
 
 export interface GoogleCalendar {
@@ -281,6 +282,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         suggestedTimes: event.suggestedTimes,
         status: event.status,
         color: event.color,
+        optionNumber: event.optionNumber,
         column,
         totalColumns
       };
@@ -326,6 +328,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         suggestedTimes: event.suggestedTimes,
         status: event.status,
         color: event.color,
+        optionNumber: event.optionNumber,
         column: event.column,
         totalColumns: maxColumns
       };
@@ -632,6 +635,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                         }}
                         title={`${event.title}${event.time ? ` at ${new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}${event.location ? ` • ${event.location}` : ''}`}
                       >
+                        {/* Option number badge for pending Gatherly events */}
+                        {event.isGatherlyEvent && event.status === 'pending' && event.optionNumber && (
+                          <span className="wc-event-option-badge">{event.optionNumber}</span>
+                        )}
                         {isShortEvent ? (
                           <div className="wc-event-compact">
                             <span className="wc-event-time">
@@ -641,10 +648,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                           </div>
                         ) : (
                           <>
-                        <div className="wc-event-time">
-                          {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
-                        </div>
-                        <div className="wc-event-title">{event.title}</div>
+                            <div className="wc-event-time">
+                              {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
+                            </div>
+                            <div className="wc-event-title">{event.title}</div>
                             {event.location && heightPercent >= 7 && <div className="wc-event-location">📍 {event.location}</div>}
                           </>
                         )}

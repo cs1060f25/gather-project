@@ -56,21 +56,37 @@ export const InvitePage: React.FC = () => {
       // Load the full Gatherly event data to get all time options
       if (data.event_id) {
         try {
-          const { data: eventResult } = await supabase
+          // First try to get all fields including description
+          const { data: eventResult, error: eventError } = await supabase
             .from('gatherly_events')
             .select('options, location, description')
             .eq('id', data.event_id)
             .single();
           
-          if (eventResult) {
+          if (eventResult && !eventError) {
             setEventData({
               options: eventResult.options || [],
               location: eventResult.location || data.event_location,
               description: eventResult.description
             });
+          } else if (eventError) {
+            // Fallback: try without description column (for older tables)
+            const { data: fallbackResult } = await supabase
+              .from('gatherly_events')
+              .select('options, location')
+              .eq('id', data.event_id)
+              .single();
+            
+            if (fallbackResult) {
+              setEventData({
+                options: fallbackResult.options || [],
+                location: fallbackResult.location || data.event_location,
+                description: undefined
+              });
+            }
           }
         } catch (err) {
-          console.log('Could not load full event data');
+          console.log('Could not load full event data:', err);
         }
       }
       
@@ -343,7 +359,7 @@ export const InvitePage: React.FC = () => {
                 )}
                 
                 {/* Step-by-step flow for time options */}
-                {timeOptions.length > 0 && useStepByStep ? (
+                {timeOptions.length > 0 && useStepByStep && timeOptions[currentStep] ? (
                   <div className="step-by-step-flow">
                     <div className="step-progress">
                       <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
@@ -361,11 +377,11 @@ export const InvitePage: React.FC = () => {
                       <div className="time-option-card">
                         <span className="option-number-badge">{currentStep + 1}</span>
                         <div className="option-details">
-                          <span className="option-date">{formatDateFromISO(timeOptions[currentStep].day)}</span>
+                          <span className="option-date">{timeOptions[currentStep].day ? formatDateFromISO(timeOptions[currentStep].day) : 'Date TBD'}</span>
                           <span className="option-time-large">
-                            {formatTime(timeOptions[currentStep].time)}
+                            {timeOptions[currentStep].time ? formatTime(timeOptions[currentStep].time) : 'Time TBD'}
                           </span>
-                          <span className="option-duration">{formatDuration(timeOptions[currentStep].duration)}</span>
+                          <span className="option-duration">{timeOptions[currentStep].duration ? formatDuration(timeOptions[currentStep].duration) : ''}</span>
                         </div>
                       </div>
                       
@@ -517,8 +533,8 @@ export const InvitePage: React.FC = () => {
                 )}
               </div>
 
-              {/* Only show these buttons if not using step-by-step or no time options */}
-              {(!timeOptions.length || !useStepByStep) && !timeOptions.length && (
+              {/* Always show response buttons when no time options available */}
+              {timeOptions.length === 0 && (
                 <>
                   <p className="invite-question">Can you make it?</p>
 

@@ -21,6 +21,8 @@
   box-shadow: 8px 8px 0 #111;
   margin: auto;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
@@ -45,6 +47,8 @@
 /* Main Content */
 .invite-main {
   padding: 2rem 1.5rem;
+  flex: 1;
+  overflow: visible;
 }
 
 .invite-from {
@@ -73,6 +77,8 @@
   border: 3px solid #111;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  overflow: visible;
+  max-height: none;
 }
 
 .event-title {

@@ -9,12 +9,12 @@
   flex-direction: column;
 }
 
-/* Header */
+/* Header - Match Dashboard header exactly */
 .events-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: #FFF;
   border-bottom: 3px solid #1A1A1A;
 }
@@ -22,7 +22,8 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
+  flex: 1;
 }
 
 .events-logo {
@@ -38,7 +39,9 @@
 .header-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .profile-button {

@@ -102,12 +102,12 @@ const VideoIcon = () => (
 );
 
 const PLACEHOLDER_SUGGESTIONS = [
-  "Schedule lunch with the team next Thursday...",
-  "Coffee with Sarah tomorrow at 2pm...",
-  "Weekly standup every Monday at 9am...",
-  "Dinner with friends this Saturday evening...",
-  "Quick sync with @John about the project...",
-  "Book a meeting room for client presentation..."
+  "Lunch with team Thursday...",
+  "Coffee tomorrow at 2pm...",
+  "Standup Monday 9am...",
+  "Dinner Saturday 7pm...",
+  "Sync with @John Friday...",
+  "Meeting at Dunster 3pm..."
 ];
 
 // Custom Picker Types
@@ -131,7 +131,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [eventName, setEventName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [locationSuggestions, setLocationSuggestions] = useState<{mainText: string; secondaryText?: string; fullAddress: string}[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
   const [participantInput, setParticipantInput] = useState('');
@@ -401,7 +401,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
     // If it looks like a virtual platform query, show those first
     if (matchedPlatforms.length > 0) {
-      setLocationSuggestions(matchedPlatforms);
+      setLocationSuggestions(matchedPlatforms.map(p => ({ mainText: p, fullAddress: p })));
       setShowLocationSuggestions(true);
       return;
     }
@@ -419,7 +419,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data.predictions && data.predictions.length > 0) {
-          const placeSuggestions = data.predictions.map((p: any) => p.description).slice(0, 5);
+          const placeSuggestions = data.predictions.slice(0, 5).map((p: any) => ({
+            mainText: p.mainText || p.description.split(',')[0],
+            secondaryText: p.secondaryText || p.description.split(',').slice(1).join(',').trim(),
+            fullAddress: p.description
+          }));
           setLocationSuggestions(placeSuggestions);
           setShowLocationSuggestions(true);
           return;
@@ -429,17 +433,13 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       console.log('Places API call failed, using fallback');
     }
 
-    // Fallback suggestions if API not available or fails
-    const fallbackLocations = [
-      `${value}`,
-      `${value}, nearby`,
-    ];
-    setLocationSuggestions([...matchedPlatforms, ...fallbackLocations].slice(0, 5));
-    setShowLocationSuggestions(true);
+    // Fallback - no suggestions if API fails (don't suggest invalid locations)
+    setLocationSuggestions([]);
+    setShowLocationSuggestions(false);
   };
 
-  const selectLocation = (loc: string) => {
-    setLocation(loc);
+  const selectLocation = (loc: { mainText: string; secondaryText?: string; fullAddress: string }) => {
+    setLocation(loc.fullAddress);
     setShowLocationSuggestions(false);
   };
 
@@ -457,6 +457,12 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
   const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
+
+  // Email validation regex - standard format check
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleAddParticipant = (emailOrName: string) => {
     const trimmed = emailOrName.trim();
@@ -477,8 +483,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       setParticipantInput('');
       setShowSuggestions(false);
       setIsEditing(true);
-    } else if (trimmed.includes('@') && trimmed.includes('.')) {
-      // It's an email, add directly
+    } else if (isValidEmail(trimmed)) {
+      // It's a valid email, add directly
       if (!participants.includes(trimmed)) {
         setParticipants([...participants, trimmed]);
       }
@@ -495,7 +501,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   };
 
   const handleEmailPromptSubmit = () => {
-    if (!emailPromptFor || !pendingEmail.includes('@')) return;
+    if (!emailPromptFor || !isValidEmail(pendingEmail)) return;
     
     if (!participants.includes(pendingEmail)) {
       setParticipants([...participants, pendingEmail]);
@@ -520,19 +526,23 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const isFormComplete = useMemo(() => {
     // Check event name
     if (!eventName.trim()) return false;
-    
-    // Check that at least one participant is added
-    if (participants.length === 0) return false;
-    
+
+    // Check that at least one invitee is added (besides the organizer/current user)
+    // Participants includes current user as organizer, so we need at least 2
+    const inviteeCount = currentUserEmail 
+      ? participants.filter(p => p !== currentUserEmail).length 
+      : participants.length;
+    if (inviteeCount === 0) return false;
+
     // Check that all 3 availability options are fully filled
     for (const opt of availabilityOptions) {
       if (!opt.day || !opt.time || !opt.duration) {
         return false;
       }
     }
-    
+
     return true;
-  }, [eventName, participants.length, availabilityOptions]);
+  }, [eventName, participants, currentUserEmail, availabilityOptions]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -599,8 +609,38 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         }
         
         // Set location if parsed and different from placeholder
+        // Validate location through Places API if it's a physical location
         if (parsed.location && parsed.location !== 'TBD') {
-          setLocation(parsed.location);
+          const virtualPlatforms = ['google meet', 'zoom', 'teams', 'discord', 'slack', 'video call', 'virtual'];
+          const isVirtual = virtualPlatforms.some(p => parsed.location!.toLowerCase().includes(p));
+          
+          if (isVirtual) {
+            // Virtual locations don't need validation
+            setLocation(parsed.location);
+          } else {
+            // Validate physical location through Places API
+            try {
+              let apiUrl = `/api/places-autocomplete?input=${encodeURIComponent(parsed.location)}`;
+              if (userCoords) {
+                apiUrl += `&lat=${userCoords.lat}&lon=${userCoords.lon}`;
+              }
+              const locResponse = await fetch(apiUrl);
+              if (locResponse.ok) {
+                const locData = await locResponse.json();
+                if (locData.predictions && locData.predictions.length > 0) {
+                  // Use the first validated location
+                  setLocation(locData.predictions[0].description);
+                } else {
+                  // No match found, use TBD
+                  setLocation('TBD');
+                }
+              } else {
+                setLocation(parsed.location); // Fallback to raw value
+              }
+            } catch (err) {
+              setLocation(parsed.location); // Fallback to raw value
+            }
+          }
         }
         
         // Add participants if parsed (merge with existing)
@@ -778,23 +818,29 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           />
           {showLocationSuggestions && locationSuggestions.length > 0 && (
             <div className="cep-location-suggestions">
-              {locationSuggestions.map((loc, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  className="cep-location-suggestion"
-                  onMouseDown={() => selectLocation(loc)}
-                >
-                  <span className="cep-loc-icon">
-                    {loc.includes('Meet') || loc.includes('Zoom') || loc.includes('Teams') || loc.includes('Discord') || loc.includes('Slack') ? (
-                      <VideoIcon />
-                    ) : (
-                      <LocationPinIcon />
-                    )}
-                  </span>
-                  {loc}
-                </button>
-              ))}
+              {locationSuggestions.map((loc, idx) => {
+                const isVirtual = loc.mainText.includes('Meet') || loc.mainText.includes('Zoom') || 
+                                  loc.mainText.includes('Teams') || loc.mainText.includes('Discord') || 
+                                  loc.mainText.includes('Slack');
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="cep-location-suggestion"
+                    onMouseDown={() => selectLocation(loc)}
+                  >
+                    <span className="cep-loc-icon">
+                      {isVirtual ? <VideoIcon /> : <LocationPinIcon />}
+                    </span>
+                    <span className="cep-loc-text">
+                      <span className="cep-loc-main">{loc.mainText}</span>
+                      {loc.secondaryText && (
+                        <span className="cep-loc-secondary">{loc.secondaryText}</span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1021,9 +1067,28 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                     </svg>
                   </button>
                   <div className="cep-time-display">
-                    <span className="cep-time-value">
-                      {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedPeriod}
-                    </span>
+                    <button 
+                      type="button"
+                      className="cep-time-value-btn cep-time-hour"
+                      onClick={() => setSelectedHour(prev => prev === 12 ? 1 : prev + 1)}
+                    >
+                      {selectedHour}
+                    </button>
+                    <span className="cep-time-colon">:</span>
+                    <button 
+                      type="button"
+                      className="cep-time-value-btn cep-time-minute"
+                      onClick={() => setSelectedMinute(prev => prev === 45 ? 0 : prev + 15)}
+                    >
+                      {selectedMinute.toString().padStart(2, '0')}
+                    </button>
+                    <button 
+                      type="button"
+                      className="cep-time-value-btn cep-time-period"
+                      onClick={() => setSelectedPeriod(prev => prev === 'AM' ? 'PM' : 'AM')}
+                    >
+                      {selectedPeriod}
+                    </button>
                   </div>
                   
                   {/* Analog Clock Face */}
@@ -1188,7 +1253,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           disabled={!isFormComplete || isLoading}
           title={
             !eventName.trim() ? 'Enter an event name' :
-            participants.length === 0 ? 'Add at least one participant' :
+            (currentUserEmail ? participants.filter(p => p !== currentUserEmail).length : participants.length) === 0 
+              ? 'Add at least one invitee' :
             !availabilityOptions.every(opt => opt.day && opt.time && opt.duration) ? 'Fill in all 3 availability options (date, time, and duration)' :
             'Create event'
           }

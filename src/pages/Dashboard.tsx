@@ -362,17 +362,14 @@ export const Dashboard: React.FC = () => {
     }
     
     try {
-      // Only save fields that exist in the schema
-      // description and location are stored in the options/localStorage for now
+      // Save all fields including location and description
       const { error } = await supabase.from('gatherly_events').insert({
         id: event.id,
         user_id: authUser.id,
         title: event.title,
-        options: event.options.map(opt => ({
-          ...opt,
-          // Store location in options metadata
-          location: event.location || 'TBD'
-        })),
+        description: event.description || null,
+        location: event.location || 'TBD',
+        options: event.options,
         participants: event.participants,
         status: event.status,
         created_at: event.createdAt
@@ -587,19 +584,20 @@ export const Dashboard: React.FC = () => {
       for (let idx = 0; idx < ge.options.length; idx++) {
         const opt = ge.options[idx];
         const calEvent: CalendarEvent = {
-        id: `gatherly-${ge.id}-${idx}`,
-        date: opt.day,
-        time: opt.time,
-        endTime: undefined,
-        title: ge.title,
+          id: `gatherly-${ge.id}-${idx}`,
+          date: opt.day,
+          time: opt.time,
+          endTime: undefined,
+          title: ge.title,
           category: 'gatherly',
-        duration: opt.duration,
-        attendees: ge.participants,
+          duration: opt.duration,
+          attendees: ge.participants,
           source: 'gatherly',
-        calendarId: 'gatherly',
-        isGatherlyEvent: true,
-        status: ge.status,
-        suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color }))
+          calendarId: 'gatherly',
+          isGatherlyEvent: true,
+          status: ge.status,
+          suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color })),
+          optionNumber: idx + 1 // 1, 2, or 3 for pending event options
         };
         gatherlyCalEvents.push(calEvent);
       }

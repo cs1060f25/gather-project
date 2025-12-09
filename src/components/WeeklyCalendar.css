@@ -563,6 +563,12 @@
   position: absolute;
 }
 
+/* Pending Gatherly events should be yellow */
+.wc-event.gatherly-event.pending {
+  background: linear-gradient(135deg, #FCD34D 0%, #FBBF24 100%);
+  color: #1A1A1A;
+}
+
 /* Gatherly badge on events */
 .wc-event.gatherly-event::after {
   content: '';
@@ -586,9 +592,44 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
+/* Pending events styling */
 .wc-event.pending {
-  opacity: 0.75;
+  opacity: 0.85;
   border-style: dashed;
+}
+
+/* Pending Gatherly events text should be dark */
+.wc-event.gatherly-event.pending .wc-event-time,
+.wc-event.gatherly-event.pending .wc-event-location,
+.wc-event.gatherly-event.pending .wc-event-title {
+  color: #1A1A1A;
+}
+
+/* Option number badge for pending Gatherly events */
+.wc-event-option-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: #1A1A1A;
+  color: #FFF;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.wc-event.short-event .wc-event-option-badge {
+  width: 14px;
+  height: 14px;
+  font-size: 0.55rem;
+  top: 1px;
+  right: 1px;
 }
 
 .wc-event.short-event {

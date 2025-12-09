@@ -184,7 +184,31 @@
 }
 
 .cep-loc-icon {
-  font-size: 1rem;
+  flex-shrink: 0;
+  color: #666;
+}
+
+.cep-loc-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.cep-loc-main {
+  font-weight: 600;
+  color: #1A1A1A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cep-loc-secondary {
+  font-size: 0.75rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* People Field */
@@ -705,6 +729,18 @@
   background: #333;
 }
 
+.dark-mode .cep-loc-main {
+  color: #F0F0F0;
+}
+
+.dark-mode .cep-loc-secondary {
+  color: #888;
+}
+
+.dark-mode .cep-loc-icon {
+  color: #888;
+}
+
 .dark-mode .cep-field input::placeholder {
   color: #666;
 }
@@ -1134,7 +1170,10 @@
 }
 
 .cep-time-display {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   margin-bottom: 16px;
   padding: 12px;
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -1142,12 +1181,39 @@
   border-radius: 8px;
 }
 
-.cep-time-value {
+.cep-time-value-btn {
   font-size: 1.75rem;
   font-weight: 700;
   color: #FFF;
   font-family: 'JetBrains Mono', monospace;
   text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.cep-time-value-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.cep-time-value-btn:active {
+  background: rgba(255,255,255,0.3);
+}
+
+.cep-time-colon {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #FFF;
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+.cep-time-period {
+  font-size: 1.25rem;
+  margin-left: 6px;
 }
 
 /* Analog Clock Face */
@@ -1785,9 +1851,18 @@
     padding: 8px;
     margin-bottom: 12px;
   }
-  
-  .cep-time-value {
+
+  .cep-time-value-btn {
     font-size: 1.4rem;
+    padding: 2px 4px;
+  }
+  
+  .cep-time-colon {
+    font-size: 1.4rem;
+  }
+  
+  .cep-time-period {
+    font-size: 1rem;
   }
   
   .cep-minute-options {
