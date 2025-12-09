@@ -206,9 +206,22 @@
   background: #1A1A1A;
 }
 
+.dark-mode .dashboard-loading {
+  background: #1A1A1A;
+}
+
+.dark-mode .dashboard-loading p {
+  color: #999;
+}
+
+.dark-mode .dashboard-loading .loading-spinner {
+  border-color: #444;
+  border-top-color: #22c55e;
+}
+
 .dark-mode .dashboard-header {
-  background: #2A2A2A;
-  border-color: #FFF;
+  background: #252525;
+  border-color: #444;
 }
 
 .dark-mode .dashboard-logo .logo-text {
