@@ -208,6 +208,11 @@ export const Dashboard: React.FC = () => {
                 // Check if this event was created via Gatherly
                 const isGatherlyScheduled = item.description?.includes('[Scheduled with Gatherly]') || false;
                 
+                // Debug: Log Gatherly-scheduled events
+                if (isGatherlyScheduled) {
+                  console.log('[Gatherly] Found Gatherly-scheduled event:', item.summary, '| isGatherlyScheduled:', isGatherlyScheduled);
+                }
+                
                 return {
                   id: `gcal-${item.id}`,
                   title: item.summary || 'Untitled Event',
