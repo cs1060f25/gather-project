@@ -60,11 +60,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Use verified domain gatherly.now for sending emails
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <invites@gatherly.now>';
 
+    // Generate unique message ID to prevent email threading
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [to],
       replyTo: hostEmail,
       subject: `${hostName} invited you to: ${eventTitle}`,
+      headers: {
+        'X-Entity-Ref-ID': uniqueId,
+        'Message-ID': `<${uniqueId}@gatherly.now>`,
+      },
       html: `
 <!DOCTYPE html>
 <html>

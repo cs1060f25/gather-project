@@ -481,6 +481,50 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
 
+  // Recently interacted people (from localStorage)
+  const [recentPeople, setRecentPeople] = useState<{email: string; name?: string}[]>([]);
+  
+  // Load recent people from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('gatherly_recent_people');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setRecentPeople(parsed.slice(0, 5)); // Keep only 5 most recent
+        }
+      }
+    } catch (e) {
+      console.error('Error loading recent people:', e);
+    }
+  }, []);
+
+  // Save recent people when participants change on successful submit
+  const saveRecentPeople = (emails: string[]) => {
+    try {
+      const stored = localStorage.getItem('gatherly_recent_people');
+      let existing: {email: string; name?: string}[] = [];
+      if (stored) {
+        existing = JSON.parse(stored) || [];
+      }
+      
+      // Add new emails to the front, removing duplicates
+      const newRecent = emails.map(email => {
+        // Try to find name from contacts
+        const contact = contacts.find(c => c.email === email);
+        return { email, name: contact?.name };
+      });
+      
+      const merged = [...newRecent, ...existing.filter(e => !emails.includes(e.email))];
+      const trimmed = merged.slice(0, 10); // Keep 10 max
+      
+      localStorage.setItem('gatherly_recent_people', JSON.stringify(trimmed));
+      setRecentPeople(trimmed.slice(0, 5));
+    } catch (e) {
+      console.error('Error saving recent people:', e);
+    }
+  };
+
   // Email validation regex - standard format check
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -573,6 +617,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
     // Use TBD if no location specified
     const finalLocation = location.trim() || 'TBD';
+
+    // Save participants to recent people before submitting
+    if (participants.length > 0) {
+      saveRecentPeople(participants);
+    }
 
     onSubmit({
       eventName,
@@ -971,6 +1020,33 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Recent people - show when no input and have recent interactions */}
+          {!participantInput && recentPeople.length > 0 && !showSuggestions && (
+            <div className="cep-suggestions cep-recent-section">
+              <div className="cep-recent-header">Recent</div>
+              {recentPeople
+                .filter(p => !participants.includes(p.email))
+                .slice(0, 3)
+                .map((person, idx) => (
+                <button
+                  key={`recent-${idx}`}
+                  type="button"
+                  className="cep-suggestion"
+                  onMouseDown={() => handleAddParticipant(person.email)}
+                >
+                  <div className="cep-suggestion-avatar cep-recent-avatar">
+                    {(person.name || person.email)[0].toUpperCase()}
+                  </div>
+                  <div className="cep-suggestion-info">
+                    <span className="cep-suggestion-name">{person.name || person.email.split('@')[0]}</span>
+                    <span className="cep-suggestion-email">{person.email}</span>
+                  </div>
+                  <span className="cep-recent-badge">⏱</span>
+                </button>
+              ))}
             </div>
           )}
 

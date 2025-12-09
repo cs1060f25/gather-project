@@ -541,6 +541,14 @@
   letter-spacing: 0.05em;
 }
 
+/* All-day spacer for time column */
+.wc-all-day-spacer {
+  height: 28px;
+  min-height: 28px;
+  background: var(--wc-time-bg, #FAFAFA);
+  border-bottom: 1px solid var(--wc-grid, #E5E5E5);
+}
+
 /* All-day events (holidays, etc.) */
 .wc-all-day-events {
   display: flex;
@@ -549,8 +557,9 @@
   padding: 3px 4px;
   background: var(--wc-header-bg, #FFF);
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
-  min-height: 24px;
-  max-height: 60px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
   overflow: hidden;
 }
 

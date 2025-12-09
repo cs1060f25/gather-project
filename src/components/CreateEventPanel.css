@@ -322,6 +322,31 @@
   font-size: 1rem;
 }
 
+/* Recent section */
+.cep-recent-section {
+  margin-top: 0.5rem;
+}
+
+.cep-recent-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem 0.25rem;
+  background: #F9F9F9;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.cep-recent-avatar {
+  background: #6366f1 !important;
+}
+
+.cep-recent-badge {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
 /* Participants List */
 .cep-participants {
   display: flex;
@@ -772,6 +797,12 @@
 
 .dark-mode .cep-suggestion-email {
   color: #888;
+}
+
+.dark-mode .cep-recent-header {
+  background: #333;
+  color: #999;
+  border-color: #444;
 }
 
 .dark-mode .cep-participant {

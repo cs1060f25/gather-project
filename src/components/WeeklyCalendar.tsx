@@ -362,6 +362,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return filteredEvents.filter(e => e.date === dateISO && !e.time);
   };
 
+  // Check if any day in the current week has all-day events
+  const hasAnyAllDayEvents = useMemo(() => {
+    return weekDays.some(date => getAllDayEventsForDay(date).length > 0);
+  }, [weekDays, filteredEvents]);
+
   // Extended time option with index
   interface IndexedTimeOption extends TimeOption {
     globalIdx: number;
@@ -598,6 +603,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         {/* Time column */}
         <div className="wc-time-column">
           <div className="wc-day-header-spacer"></div>
+          {/* All-day spacer - must match height of all-day events row */}
+          {hasAnyAllDayEvents && <div className="wc-all-day-spacer"></div>}
           <div className="wc-time-slots-container">
           {HOURS.map(hour => (
             <div key={hour} className="wc-time-slot">
@@ -626,8 +633,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   </span>
                 </div>
 
-                {/* All-day events (holidays, etc.) */}
-                {allDayEvents.length > 0 && (
+                {/* All-day events row - shown on all columns when any day has all-day events */}
+                {hasAnyAllDayEvents && (
                   <div className="wc-all-day-events">
                     {allDayEvents.slice(0, 2).map((event) => (
                       <div
