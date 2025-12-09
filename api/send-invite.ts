@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Use Resend's test domain for now, or your verified domain
     // To use a custom domain, verify it at https://resend.com/domains
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <onboarding@resend.dev>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <invites@gatherly.now>';
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
