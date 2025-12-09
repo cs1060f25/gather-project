@@ -301,23 +301,41 @@ export const EventsPage: React.FC = () => {
     }
 
     // Convert Gatherly events to calendar events format
-    const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.map(ge => ({
-      id: ge.id,
-      title: ge.title,
-      date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
-      time: ge.confirmedOption?.time || ge.options[0]?.time,
-      location: ge.location || ge.options?.[0]?.location || 'TBD',
-      attendees: ge.participants,
-      source: 'gatherly' as const,
-      status: ge.status,
-      isGatherly: true,
-      calendarName: 'Gatherly',
-      calendarColor: '#22c55e',
-      responses: ge.responses?.length || 0,
-      totalInvites: ge.participants.length
-    }));
+    // Track confirmed Gatherly events to filter out duplicates from Google Calendar
+    const confirmedGatherlyKeys = new Set<string>();
+    
+    const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.map(ge => {
+      // Track confirmed events for duplicate detection
+      if (ge.status === 'confirmed' && ge.confirmedOption) {
+        const key = `${ge.confirmedOption.day}|${ge.confirmedOption.time}|${ge.title.toLowerCase().trim()}`;
+        confirmedGatherlyKeys.add(key);
+      }
+      
+      return {
+        id: ge.id,
+        title: ge.title,
+        date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
+        time: ge.confirmedOption?.time || ge.options[0]?.time,
+        location: ge.location || ge.options?.[0]?.location || 'TBD',
+        attendees: ge.participants,
+        source: 'gatherly' as const,
+        status: ge.status,
+        isGatherly: true,
+        calendarName: 'Gatherly',
+        calendarColor: '#22c55e',
+        responses: ge.responses?.length || 0,
+        totalInvites: ge.participants.length
+      };
+    });
 
-    const allEvents = [...googleEvents, ...gatherlyCalEvents];
+    // Filter Google events to remove duplicates of confirmed Gatherly events
+    const filteredGoogleEvents = googleEvents.filter(e => {
+      if (!e.date || !e.time || !e.title) return true;
+      const key = `${e.date}|${e.time}|${e.title.toLowerCase().trim()}`;
+      return !confirmedGatherlyKeys.has(key);
+    });
+
+    const allEvents = [...filteredGoogleEvents, ...gatherlyCalEvents];
 
     // Sort upcoming: Gatherly events first, then by date/time
     // Cap at 6 events max to look nice on screen

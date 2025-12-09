@@ -633,6 +633,9 @@ export const Dashboard: React.FC = () => {
   const allCalendarEvents = useMemo((): CalendarEvent[] => {
     // Convert Gatherly events to calendar events
     const gatherlyCalEvents: CalendarEvent[] = [];
+    
+    // Track confirmed Gatherly events to filter out duplicates from Google Calendar
+    const confirmedGatherlyKeys = new Set<string>();
 
     for (const ge of gatherlyEvents) {
       // For confirmed events, only show the confirmed option
@@ -653,6 +656,11 @@ export const Dashboard: React.FC = () => {
           status: 'confirmed'
         };
         gatherlyCalEvents.push(calEvent);
+        
+        // Create a key to identify this event for duplicate detection
+        // Key format: date|time|title (lowercased and trimmed)
+        const key = `${ge.confirmedOption.day}|${ge.confirmedOption.time}|${ge.title.toLowerCase().trim()}`;
+        confirmedGatherlyKeys.add(key);
       } else if (ge.status === 'pending') {
         // For pending events, show all options with option numbers - use 'gatherly-pending' calendar
         for (let idx = 0; idx < ge.options.length; idx++) {
@@ -679,8 +687,26 @@ export const Dashboard: React.FC = () => {
       }
     }
 
-    // Merge with Google calendar events
-    const merged: CalendarEvent[] = [...events, ...gatherlyCalEvents];
+    // Filter Google Calendar events to remove duplicates of confirmed Gatherly events
+    // This ensures the Gatherly event displays OVER the personal calendar event
+    const filteredGoogleEvents = events.filter(e => {
+      // Only filter events that could be duplicates (have date, time, title)
+      if (!e.date || !e.time || !e.title) return true;
+      
+      // Create the same key format
+      const key = `${e.date}|${e.time}|${e.title.toLowerCase().trim()}`;
+      
+      // If this matches a confirmed Gatherly event, filter it out
+      if (confirmedGatherlyKeys.has(key)) {
+        console.log(`[Gatherly] Filtering duplicate Google Calendar event: ${e.title} on ${e.date} at ${e.time}`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    // Merge with filtered Google calendar events
+    const merged: CalendarEvent[] = [...filteredGoogleEvents, ...gatherlyCalEvents];
     return merged;
   }, [events, gatherlyEvents]);
 
