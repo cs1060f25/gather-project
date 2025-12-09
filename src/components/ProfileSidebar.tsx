@@ -24,6 +24,7 @@ interface ProfileSidebarProps {
   onClose: () => void;
   onSignOut: () => void;
   onAddContact: (contact: Contact) => void;
+  onRemoveContact?: (contactId: string) => void;
   onImportContacts?: () => void;
 }
 
@@ -34,14 +35,34 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   onClose, 
   onSignOut,
   onAddContact,
+  onRemoveContact,
   onImportContacts
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'people' | 'settings'>('profile');
   const [newContact, setNewContact] = useState({ name: '', email: '' });
   const [showAddContact, setShowAddContact] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   
   // Use real contacts only - no mock data
   const contacts = propContacts;
+  
+  const handleImportContacts = async () => {
+    if (!onImportContacts) return;
+    setIsImporting(true);
+    try {
+      await onImportContacts();
+    } finally {
+      setIsImporting(false);
+    }
+  };
+  
+  const handleRemoveContact = (contactId: string) => {
+    if (onRemoveContact) {
+      onRemoveContact(contactId);
+    }
+    setConfirmDelete(null);
+  };
 
   if (!isOpen) return null;
 
@@ -138,22 +159,25 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           {activeTab === 'people' && (
             <div className="people-section">
               <div className="people-header">
-                <h4>Your Contacts</h4>
-                <button 
-                  className="btn-small"
-                  onClick={() => setShowAddContact(!showAddContact)}
-                >
-                  {showAddContact ? 'Cancel' : '+ Add'}
-                </button>
-                {onImportContacts && (
+                <h4>Your Contacts ({contacts.length})</h4>
+                <div className="people-actions">
                   <button 
-                    className="btn-small import-btn"
-                    onClick={onImportContacts}
-                    title="Import from Google"
+                    className="btn-small"
+                    onClick={() => setShowAddContact(!showAddContact)}
                   >
-                    Import Google
+                    {showAddContact ? 'Cancel' : '+ Add'}
                   </button>
-                )}
+                  {onImportContacts && (
+                    <button 
+                      className="btn-small import-btn"
+                      onClick={handleImportContacts}
+                      disabled={isImporting}
+                      title="Import from Google Contacts"
+                    >
+                      {isImporting ? 'Importing...' : '📥 Google'}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {showAddContact && (
@@ -193,7 +217,35 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                         <span className="contact-email">{contact.email}</span>
                       </div>
                       {contact.isGatherly && (
-                        <span className="gatherly-badge">📅 Gatherly</span>
+                        <span className="gatherly-user-badge">📅</span>
+                      )}
+                      {onRemoveContact && (
+                        <>
+                          {confirmDelete === contact.id ? (
+                            <div className="confirm-delete">
+                              <button 
+                                className="btn-confirm-delete"
+                                onClick={() => handleRemoveContact(contact.id)}
+                              >
+                                Remove
+                              </button>
+                              <button 
+                                className="btn-cancel-delete"
+                                onClick={() => setConfirmDelete(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button 
+                              className="btn-remove-contact"
+                              onClick={() => setConfirmDelete(contact.id)}
+                              title="Remove contact"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   ))

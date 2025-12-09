@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getGoogleToken } from '../lib/supabase';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../App';
+import { supabase, getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
+import { getEventInvites, type Invite } from '../lib/invites';
 import './EventPage.css';
 
 // Gatherly Logo SVG Component
@@ -39,12 +41,16 @@ interface GoogleEvent {
 
 export const EventPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState<GatherlyEvent | null>(null);
   const [googleEvent, setGoogleEvent] = useState<GoogleEvent | null>(null);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGatherlyEvent, setIsGatherlyEvent] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -58,7 +64,40 @@ export const EventPage: React.FC = () => {
 
     setLoading(true);
 
-    // First check Gatherly events
+    // First try to load from Supabase
+    try {
+      const { data: supabaseEvent, error } = await supabase
+        .from('gatherly_events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (!error && supabaseEvent) {
+        const gatherlyEvent: GatherlyEvent = {
+          id: supabaseEvent.id,
+          title: supabaseEvent.title,
+          options: supabaseEvent.options || [],
+          participants: supabaseEvent.participants || [],
+          status: supabaseEvent.status,
+          createdAt: supabaseEvent.created_at,
+          confirmedOption: supabaseEvent.confirmed_option,
+          responses: supabaseEvent.responses
+        };
+        setEvent(gatherlyEvent);
+        setIsGatherlyEvent(true);
+        
+        // Load invites for this event
+        const eventInvites = await getEventInvites(eventId);
+        setInvites(eventInvites);
+        
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error('Error loading from Supabase:', err);
+    }
+
+    // Fallback: Check localStorage Gatherly events
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
       const gatherlyEvents: GatherlyEvent[] = JSON.parse(stored);
@@ -66,6 +105,11 @@ export const EventPage: React.FC = () => {
       if (found) {
         setEvent(found);
         setIsGatherlyEvent(true);
+        
+        // Load invites for this event
+        const eventInvites = await getEventInvites(eventId);
+        setInvites(eventInvites);
+        
         setLoading(false);
         return;
       }
@@ -93,9 +137,24 @@ export const EventPage: React.FC = () => {
     setLoading(false);
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (!event) return;
 
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('gatherly_events')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', event.id);
+      
+      if (error) {
+        console.error('Error cancelling event in Supabase:', error);
+      }
+    } catch (err) {
+      console.error('Error cancelling event:', err);
+    }
+
+    // Also update localStorage
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
       const events: GatherlyEvent[] = JSON.parse(stored);
@@ -103,18 +162,79 @@ export const EventPage: React.FC = () => {
         e.id === event.id ? { ...e, status: 'cancelled' as const } : e
       );
       localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
-      setEvent({ ...event, status: 'cancelled' });
     }
-
+    
+    setEvent({ ...event, status: 'cancelled' });
     setShowCancelConfirm(false);
   };
 
   const handleConfirmTime = async () => {
     if (!event || selectedOption === null) return;
-
+    
+    setIsConfirming(true);
     const confirmedOption = event.options[selectedOption];
     
-    // Update local storage
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('gatherly_events')
+        .update({ 
+          status: 'confirmed', 
+          confirmed_option: confirmedOption,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', event.id);
+      
+      if (error) {
+        console.error('Error confirming event in Supabase:', error);
+      }
+      
+      // Try to create Google Calendar event
+      const providerToken = getGoogleToken();
+      if (providerToken && confirmedOption) {
+        try {
+          const startDate = new Date(`${confirmedOption.day}T${confirmedOption.time}`);
+          const endDate = new Date(startDate.getTime() + (confirmedOption.duration || 60) * 60000);
+          
+          const calendarEvent = {
+            summary: event.title,
+            start: {
+              dateTime: startDate.toISOString(),
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            },
+            end: {
+              dateTime: endDate.toISOString(),
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            },
+            attendees: event.participants.map(email => ({ email }))
+          };
+          
+          const response = await fetch(
+            'https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all',
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${providerToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(calendarEvent)
+            }
+          );
+          
+          if (response.ok) {
+            console.log('Google Calendar event created successfully');
+          } else {
+            console.error('Failed to create Google Calendar event');
+          }
+        } catch (gcalError) {
+          console.error('Error creating Google Calendar event:', gcalError);
+        }
+      }
+    } catch (err) {
+      console.error('Error confirming event:', err);
+    }
+    
+    // Update localStorage
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
       const events: GatherlyEvent[] = JSON.parse(stored);
@@ -122,12 +242,10 @@ export const EventPage: React.FC = () => {
         e.id === event.id ? { ...e, status: 'confirmed' as const, confirmedOption } : e
       );
       localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
-      setEvent({ ...event, status: 'confirmed', confirmedOption });
     }
-
-    // TODO: Create Google Calendar event and send invites
-    // This would use the Google Calendar API to create the event
-    // and send calendar invites to all participants
+    
+    setEvent({ ...event, status: 'confirmed', confirmedOption });
+    setIsConfirming(false);
   };
 
   const formatDate = (dateStr: string) => {
@@ -182,15 +300,10 @@ export const EventPage: React.FC = () => {
       {/* Header */}
       <header className="event-header">
         <div className="header-left">
-          <Link to="/events" className="back-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </Link>
-          <div className="event-logo">
+          <Link to="/app" className="event-logo">
             <GatherlyLogo size={28} />
             <span>Gatherly</span>
-          </div>
+          </Link>
         </div>
         <div className="header-center">
           <h1>Event</h1>
@@ -205,6 +318,23 @@ export const EventPage: React.FC = () => {
             </button>
           )}
           <DayNightToggle />
+          <button 
+            className="profile-button"
+            onClick={() => navigate('/app')}
+            title="Back to Calendar"
+          >
+            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+              <img 
+                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                alt="Profile" 
+                className="profile-avatar"
+              />
+            ) : (
+              <div className="profile-avatar-placeholder">
+                {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'U')[0].toUpperCase()}
+              </div>
+            )}
+          </button>
         </div>
       </header>
 
@@ -217,6 +347,15 @@ export const EventPage: React.FC = () => {
               {event.status === 'pending' && '⏳ Waiting for responses'}
               {event.status === 'confirmed' && '✅ Event confirmed'}
               {event.status === 'cancelled' && '❌ Event cancelled'}
+            </div>
+
+            <div className="event-nav">
+              <Link to="/events" className="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Back to Events
+              </Link>
             </div>
 
             <div className="event-title-section">
@@ -247,42 +386,39 @@ export const EventPage: React.FC = () => {
                 <button 
                   className="confirm-btn"
                   onClick={handleConfirmTime}
-                  disabled={selectedOption === null}
+                  disabled={selectedOption === null || isConfirming}
                 >
-                  Confirm Selected Time
+                  {isConfirming ? 'Confirming...' : 'Confirm Selected Time'}
                 </button>
               )}
             </div>
 
             {/* Responses */}
             <div className="event-section">
-              <h3>Responses</h3>
+              <h3>Responses ({invites.filter(i => i.status !== 'pending').length}/{event.participants.length})</h3>
               <div className="responses-list">
                 {event.participants.map(email => {
-                  const response = event.responses?.find(r => r.email === email);
+                  const invite = invites.find(i => i.invitee_email.toLowerCase() === email.toLowerCase());
+                  const status = invite?.status || 'pending';
+                  
                   return (
                     <div key={email} className="response-item">
-                      <div className="response-avatar">
+                      <div className={`response-avatar ${status}`}>
                         {email[0].toUpperCase()}
                       </div>
                       <div className="response-info">
                         <span className="response-email">{email}</span>
-                        <span className={`response-status ${response ? 'responded' : 'pending'}`}>
-                          {response ? 'Responded' : 'Waiting...'}
+                        <span className={`response-status ${status}`}>
+                          {status === 'accepted' && '✓ Accepted'}
+                          {status === 'declined' && '✗ Declined'}
+                          {status === 'maybe' && '? Maybe'}
+                          {status === 'pending' && 'Waiting...'}
                         </span>
                       </div>
-                      {response && (
-                        <div className="response-selections">
-                          {response.selectedOptions.map(idx => (
-                            <span 
-                              key={idx} 
-                              className="selection-chip"
-                              style={{ backgroundColor: event.options[idx]?.color }}
-                            >
-                              Option {idx + 1}
-                            </span>
-                          ))}
-                        </div>
+                      {invite?.responded_at && (
+                        <span className="response-time">
+                          {new Date(invite.responded_at).toLocaleDateString()}
+                        </span>
                       )}
                     </div>
                   );
@@ -293,6 +429,15 @@ export const EventPage: React.FC = () => {
         ) : googleEvent ? (
           // Google Calendar Event View
           <div className="event-content google-event">
+            <div className="event-nav">
+              <Link to="/events" className="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Back to Events
+              </Link>
+            </div>
+
             <div className="event-title-section">
               <h2>{googleEvent.summary}</h2>
               <span className="google-tag">Google Calendar</span>

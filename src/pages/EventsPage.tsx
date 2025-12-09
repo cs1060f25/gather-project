@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../App';
 import { getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
 import './EventsPage.css';
@@ -45,6 +46,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export const EventsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
   const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,21 +168,33 @@ export const EventsPage: React.FC = () => {
       {/* Header */}
       <header className="events-header">
         <div className="header-left">
-          <Link to="/app" className="back-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </Link>
-          <div className="events-logo">
+          <Link to="/app" className="events-logo">
             <GatherlyLogo size={28} />
             <span>Gatherly</span>
-          </div>
+          </Link>
         </div>
         <div className="header-center">
           <h1>Events</h1>
         </div>
         <div className="header-right">
           <DayNightToggle />
+          <button 
+            className="profile-button"
+            onClick={() => navigate('/app')}
+            title="Back to Calendar"
+          >
+            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+              <img 
+                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                alt="Profile" 
+                className="profile-avatar"
+              />
+            ) : (
+              <div className="profile-avatar-placeholder">
+                {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'U')[0].toUpperCase()}
+              </div>
+            )}
+          </button>
         </div>
       </header>
 

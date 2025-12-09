@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import './WeeklyCalendar.css';
 
 export interface CalendarEvent {
@@ -19,6 +19,7 @@ export interface CalendarEvent {
   isGatherlyEvent?: boolean;
   suggestedTimes?: { date: string; time: string; color: string }[];
   status?: 'pending' | 'confirmed' | 'cancelled';
+  color?: string; // Calendar color for the event
 }
 
 export interface GoogleCalendar {
@@ -33,6 +34,7 @@ export interface TimeOption {
   time: string;
   duration: number;
   color: string;
+  label?: string;
 }
 
 interface WeeklyCalendarProps {
@@ -94,6 +96,20 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     d.setDate(d.getDate() - d.getDay()); // Go to Sunday
     return d;
   });
+  const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowCalendarDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Get the 7 days of current week
   const weekDays = useMemo(() => {
@@ -125,66 +141,161 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   // Filter events for selected calendars
   const filteredEvents = useMemo(() => {
     const selectedCalendarIds = calendars.filter(c => c.selected).map(c => c.id);
+    const gatherlyCalendar = calendars.find(c => c.id === 'gatherly');
+    const showGatherlyEvents = gatherlyCalendar?.selected !== false;
+
     return events.filter(e => {
-      if (e.isGatherlyEvent) return true; // Always show Gatherly events
+      // Handle Gatherly events based on Gatherly Events toggle
+      if (e.isGatherlyEvent || e.calendarId === 'gatherly') {
+        return showGatherlyEvents;
+      }
       if (!e.calendarId) return true; // Show events without calendar ID
       return selectedCalendarIds.includes(e.calendarId);
     });
   }, [events, calendars]);
 
-  // Get events for a specific day
-  const getEventsForDay = (date: Date) => {
-    const dateISO = fmtDateISO(date);
-    return filteredEvents.filter(e => e.date === dateISO);
+  // Get calendar color for an event
+  const getEventColor = (event: CalendarEvent): string => {
+    if (event.color) return event.color;
+    if (event.calendarId) {
+      const cal = calendars.find(c => c.id === event.calendarId);
+      if (cal) return cal.color;
+    }
+    // Default colors based on category
+    switch (event.category) {
+      case 'gatherly': return '#22c55e';
+      case 'work': return '#3b82f6';
+      case 'travel': return '#f59e0b';
+      default: return '#3b82f6';
+    }
   };
 
-  // Get time options for a specific day
+  // Get events for a specific day with overlap handling
+  const getEventsForDay = (date: Date) => {
+    const dateISO = fmtDateISO(date);
+    const dayEvents = filteredEvents.filter(e => e.date === dateISO);
+    
+    // Sort by start time
+    dayEvents.sort((a, b) => {
+      const aTime = a.time ? timeToMinutes(a.time) : 0;
+      const bTime = b.time ? timeToMinutes(b.time) : 0;
+      return aTime - bTime;
+    });
+    
+    // Calculate overlap groups for positioning
+    const positioned = dayEvents.map((event, idx) => {
+      const eventStart = event.time ? timeToMinutes(event.time) : 0;
+      const eventEnd = event.endTime ? timeToMinutes(event.endTime) : 
+                       event.duration ? eventStart + event.duration : eventStart + 60;
+      
+      // Find overlapping events
+      let column = 0;
+      let totalColumns = 1;
+      
+      for (let i = 0; i < idx; i++) {
+        const prevEvent = dayEvents[i];
+        const prevStart = prevEvent.time ? timeToMinutes(prevEvent.time) : 0;
+        const prevEnd = prevEvent.endTime ? timeToMinutes(prevEvent.endTime) :
+                       prevEvent.duration ? prevStart + prevEvent.duration : prevStart + 60;
+        
+        // Check if overlapping
+        if (eventStart < prevEnd && eventEnd > prevStart) {
+          column = Math.max(column, (positioned[i]?.column || 0) + 1);
+          totalColumns = Math.max(totalColumns, column + 1);
+        }
+      }
+      
+      return { ...event, column, totalColumns };
+    });
+    
+    // Update totalColumns for all overlapping events
+    return positioned.map(event => {
+      const eventStart = event.time ? timeToMinutes(event.time) : 0;
+      const eventEnd = event.endTime ? timeToMinutes(event.endTime) :
+                       event.duration ? eventStart + event.duration : eventStart + 60;
+      
+      let maxColumns = event.totalColumns;
+      for (const other of positioned) {
+        if (other.id === event.id) continue;
+        const otherStart = other.time ? timeToMinutes(other.time) : 0;
+        const otherEnd = other.endTime ? timeToMinutes(other.endTime) :
+                        other.duration ? otherStart + other.duration : otherStart + 60;
+        
+        if (eventStart < otherEnd && eventEnd > otherStart) {
+          maxColumns = Math.max(maxColumns, other.totalColumns);
+        }
+      }
+      
+      return { ...event, totalColumns: maxColumns };
+    });
+  };
+
+  // Get time options for a specific day with their global index
   const getTimeOptionsForDay = (date: Date) => {
     const dateISO = fmtDateISO(date);
-    return selectedTimeOptions.filter(opt => opt.date === dateISO);
+    return selectedTimeOptions
+      .map((opt, globalIdx) => ({ ...opt, globalIdx }))
+      .filter(opt => opt.date === dateISO);
   };
 
   const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+  const selectedCalendarCount = calendars.filter(c => c.selected).length;
+
   return (
     <div className={`weekly-calendar ${editingMode ? 'editing-mode' : ''}`}>
-      {/* Header */}
-      <header className="wc-header">
-        <div className="wc-header-left">
-          <h2 className="wc-month">{monthLabel}</h2>
+      {/* Floating Navigation */}
+      <div className="wc-floating-nav">
+        <h2 className="wc-month">{monthLabel}</h2>
+        <div className="wc-nav">
+          <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button className="wc-today-btn" onClick={goToday}>Today</button>
+          <button className="wc-nav-btn" onClick={goNext} aria-label="Next week">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
-        <div className="wc-header-center">
-          <div className="wc-nav">
-            <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
-            </button>
-            <button className="wc-today-btn" onClick={goToday}>Today</button>
-            <button className="wc-nav-btn" onClick={goNext} aria-label="Next week">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </button>
-          </div>
+        
+        {/* Calendar Dropdown */}
+        <div className="wc-calendar-dropdown" ref={dropdownRef}>
+          <button 
+            className="wc-dropdown-toggle"
+            onClick={() => setShowCalendarDropdown(!showCalendarDropdown)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Views ({selectedCalendarCount})</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={showCalendarDropdown ? 'rotated' : ''}>
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          
+          {showCalendarDropdown && (
+            <div className="wc-dropdown-menu">
+              {calendars.map(cal => (
+                <label key={cal.id} className="wc-dropdown-item" style={{ '--cal-color': cal.color } as React.CSSProperties}>
+                  <input
+                    type="checkbox"
+                    checked={cal.selected}
+                    onChange={() => onCalendarToggle(cal.id)}
+                  />
+                  <span className="wc-cal-checkbox"></span>
+                  <span className="wc-cal-name">{cal.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="wc-header-right">
-          {/* Calendar toggles */}
-          <div className="wc-calendar-toggles">
-            {calendars.map(cal => (
-              <label key={cal.id} className="wc-cal-toggle" style={{ '--cal-color': cal.color } as React.CSSProperties}>
-                <input
-                  type="checkbox"
-                  checked={cal.selected}
-                  onChange={() => onCalendarToggle(cal.id)}
-                />
-                <span className="wc-cal-checkbox"></span>
-                <span className="wc-cal-name">{cal.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </header>
+      </div>
 
       {/* Week Grid */}
       <div className="wc-grid-container">
@@ -227,45 +338,68 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   ))}
 
                   {/* Events */}
-                  {dayEvents.map(event => {
+                  {dayEvents.map((event: any) => {
                     const top = getEventTop(event.time);
                     const height = getEventHeight(event.time, event.endTime, event.duration);
+                    const eventColor = getEventColor(event);
+                    const width = event.totalColumns > 1 ? `${100 / event.totalColumns - 2}%` : 'calc(100% - 8px)';
+                    const left = event.totalColumns > 1 ? `${(event.column / event.totalColumns) * 100 + 1}%` : '4px';
+                    const isShortEvent = height < 40;
                     
                     return (
                       <div
                         key={event.id}
-                        className={`wc-event ${event.category} ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.status === 'pending' ? 'pending' : ''}`}
-                        style={{ top: `${top}px`, height: `${height}px` }}
+                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.status === 'pending' ? 'pending' : ''} ${isShortEvent ? 'short-event' : ''}`}
+                        style={{ 
+                          top: `${top}px`, 
+                          height: `${Math.max(height, 24)}px`,
+                          width,
+                          left,
+                          right: 'auto',
+                          '--event-color': eventColor
+                        } as React.CSSProperties}
                         onClick={(e) => {
                           e.stopPropagation();
                           onEventClick?.(event);
                         }}
+                        title={`${event.title}${event.time ? ` at ${new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}${event.location ? ` • ${event.location}` : ''}`}
                       >
-                        <div className="wc-event-time">
-                          {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
-                        </div>
-                        <div className="wc-event-title">{event.title}</div>
-                        {event.location && <div className="wc-event-location">📍 {event.location}</div>}
+                        {isShortEvent ? (
+                          <div className="wc-event-compact">
+                            <span className="wc-event-time">
+                              {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''}
+                            </span>
+                            <span className="wc-event-title">{event.title}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="wc-event-time">
+                              {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
+                            </div>
+                            <div className="wc-event-title">{event.title}</div>
+                            {event.location && height >= 60 && <div className="wc-event-location">📍 {event.location}</div>}
+                          </>
+                        )}
                       </div>
                     );
                   })}
 
-                  {/* Time option indicators (during editing) */}
-                  {editingMode && dayTimeOptions.map((opt, idx) => {
+                  {/* Time option indicators (during editing) - show above existing events */}
+                  {editingMode && dayTimeOptions.map((opt: any) => {
                     const top = getEventTop(opt.time);
                     const height = getEventHeight(opt.time, undefined, opt.duration);
+                    const optionNumber = opt.globalIdx + 1;
                     
                     return (
                       <div
-                        key={`opt-${idx}`}
+                        key={`opt-${opt.globalIdx}`}
                         className="wc-time-option"
                         style={{ 
                           top: `${top}px`, 
                           height: `${height}px`,
-                          '--option-color': opt.color
                         } as React.CSSProperties}
                       >
-                        <span className="wc-option-label">Option {idx + 1}</span>
+                        <span className="wc-option-badge">{optionNumber}</span>
                         <span className="wc-option-time">
                           {new Date(`2000-01-01T${opt.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                         </span>

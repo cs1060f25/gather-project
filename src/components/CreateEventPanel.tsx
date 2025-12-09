@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import './CreateEventPanel.css';
 
 interface Contact {
@@ -30,9 +30,11 @@ interface CreateEventPanelProps {
   onEditingModeChange?: (editing: boolean) => void;
   suggestedData?: Partial<CreateEventData>;
   isLoading?: boolean;
+  events?: any[]; // Calendar events for finding free times
 }
 
-const OPTION_COLORS = ['#22c55e', '#3b82f6', '#f59e0b'];
+// Use subtle indicator colors that match the calendar option badges
+const OPTION_COLORS = ['#1A1A1A', '#1A1A1A', '#1A1A1A']; // All black for clean look
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
 // Generate next 14 days
@@ -83,7 +85,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   onFieldChange,
   onEditingModeChange,
   suggestedData,
-  isLoading = false
+  isLoading = false,
+  events = []
 }) => {
   const [eventName, setEventName] = useState('');
   const [location, setLocation] = useState('');
@@ -98,10 +101,27 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [chatInput, setChatInput] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [isProcessingChat, setIsProcessingChat] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const dateOptions = useMemo(() => getDateOptions(), []);
   const timeOptions = useMemo(() => getTimeOptions(), []);
+
+  // Handle click outside to exit editing mode
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    if (panelRef.current && !panelRef.current.contains(event.target as Node) && isEditing) {
+      // Don't reset if there's content
+      if (!eventName && !location && participants.length === 0) {
+        setIsEditing(false);
+      }
+    }
+  }, [isEditing, eventName, location, participants]);
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [handleClickOutside]);
 
   // Cycle through placeholder suggestions
   useEffect(() => {
@@ -203,13 +223,88 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     setIsEditing(false);
   };
 
-  const handleChatSubmit = (e: React.FormEvent) => {
+  const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
-    // This would trigger AI parsing - for now just set as event name
-    setEventName(chatInput);
+    if (!chatInput.trim() || isProcessingChat) return;
+    
+    setIsProcessingChat(true);
+    const message = chatInput;
     setChatInput('');
-    setIsEditing(true);
+    
+    try {
+      // Import and use OpenAI parsing
+      const { parseSchedulingMessage, getSuggestedTimes } = await import('../lib/openai');
+      
+      const contactNames = contacts.map(c => c.name);
+      const parsed = await parseSchedulingMessage(message, contactNames);
+      
+      if (parsed.isSchedulingRequest) {
+        // Set event name from parsed title
+        if (parsed.title) {
+          setEventName(parsed.title);
+        }
+        
+        // Set location if parsed
+        if (parsed.location) {
+          setLocation(parsed.location);
+        }
+        
+        // Add participants if parsed
+        if (parsed.participants && parsed.participants.length > 0) {
+          const emails = parsed.participants.map(p => {
+            // Try to find contact by name
+            const contact = contacts.find(c => 
+              c.name.toLowerCase().includes(p.toLowerCase()) ||
+              c.email.toLowerCase().includes(p.toLowerCase())
+            );
+            return contact?.email || p;
+          });
+          setParticipants(prev => [...new Set([...prev, ...emails])]);
+        }
+        
+        // Update availability options if we have date/time suggestions
+        if (parsed.suggestedDate || parsed.suggestedTime) {
+          const newOptions = [...availabilityOptions];
+          
+          if (parsed.suggestedDate) {
+            newOptions[0] = { ...newOptions[0], day: parsed.suggestedDate };
+          }
+          if (parsed.suggestedTime) {
+            newOptions[0] = { ...newOptions[0], time: parsed.suggestedTime };
+          }
+          if (parsed.duration) {
+            newOptions[0] = { ...newOptions[0], duration: parsed.duration };
+          }
+          
+          // Try to get additional free time suggestions
+          if (events.length > 0) {
+            const targetDate = parsed.suggestedDate || newOptions[0].day;
+            const freeTimes = getSuggestedTimes(events, targetDate, parsed.duration || 60);
+            
+            freeTimes.slice(0, 3).forEach((time, idx) => {
+              if (newOptions[idx]) {
+                newOptions[idx] = { ...newOptions[idx], time };
+              }
+            });
+          }
+          
+          setAvailabilityOptions(newOptions);
+        }
+        
+        setIsEditing(true);
+      } else {
+        // Not a scheduling request, just set as event name
+        setEventName(message);
+        setIsEditing(true);
+      }
+    } catch (error) {
+      console.error('Error processing chat:', error);
+      // Fallback: just set as event name
+      setEventName(message);
+      setIsEditing(true);
+    } finally {
+      setIsProcessingChat(false);
+    }
   };
 
   const handleFocus = () => {
@@ -217,11 +312,22 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   };
 
   return (
-    <div className={`create-event-panel ${isEditing ? 'editing' : ''}`}>
+    <div ref={panelRef} className={`create-event-panel ${isEditing ? 'editing' : ''}`}>
       <div className="cep-header">
         <h2>Create Event</h2>
         {isEditing && (
-          <span className="cep-editing-badge">Editing</span>
+          <button 
+            className="cep-cancel-btn"
+            onClick={() => {
+              setEventName('');
+              setLocation('');
+              setParticipants([]);
+              setIsEditing(false);
+            }}
+            type="button"
+          >
+            Cancel
+          </button>
         )}
       </div>
 
@@ -335,9 +441,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
               <div 
                 key={opt.id} 
                 className="cep-option"
-                style={{ '--option-color': opt.color } as React.CSSProperties}
               >
-                <span className="cep-option-label">Option {idx + 1}:</span>
+                <span className="cep-option-badge">{idx + 1}</span>
                 <select
                   value={opt.day}
                   onChange={e => handleOptionChange(opt.id, 'day', e.target.value)}
@@ -404,14 +509,25 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             type="text"
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
-            placeholder={PLACEHOLDER_SUGGESTIONS[placeholderIndex]}
+            placeholder={isProcessingChat ? 'Processing...' : PLACEHOLDER_SUGGESTIONS[placeholderIndex]}
             className="cep-chat-input"
+            disabled={isProcessingChat}
           />
-          <button type="submit" className="cep-chat-submit" disabled={!chatInput.trim()}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
+          <button 
+            type="submit" 
+            className="cep-chat-submit" 
+            disabled={!chatInput.trim() || isProcessingChat}
+          >
+            {isProcessingChat ? (
+              <svg className="cep-chat-spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="30 70" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            )}
           </button>
         </form>
       </div>

@@ -243,18 +243,88 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Load Gatherly events from localStorage (would be Supabase in production)
-  const loadGatherlyEvents = () => {
-    const stored = localStorage.getItem('gatherly_created_events');
-    if (stored) {
-      setGatherlyEvents(JSON.parse(stored));
+  // Load Gatherly events from Supabase
+  const loadGatherlyEvents = async () => {
+    if (!authUser) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('gatherly_events')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error loading Gatherly events:', error);
+        // Fallback to localStorage
+        const stored = localStorage.getItem('gatherly_created_events');
+        if (stored) {
+          setGatherlyEvents(JSON.parse(stored));
+        }
+        return;
+      }
+      
+      if (data) {
+        const events: GatherlyEvent[] = data.map(e => ({
+          id: e.id,
+          title: e.title,
+          options: e.options || [],
+          participants: e.participants || [],
+          status: e.status,
+          createdAt: e.created_at,
+          confirmedOption: e.confirmed_option,
+          responses: e.responses
+        }));
+        setGatherlyEvents(events);
+        // Also update localStorage for offline access
+        localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+      }
+    } catch (err) {
+      console.error('Error loading Gatherly events:', err);
+      // Fallback to localStorage
+      const stored = localStorage.getItem('gatherly_created_events');
+      if (stored) {
+        setGatherlyEvents(JSON.parse(stored));
+      }
     }
   };
 
-  // Save Gatherly events
-  const saveGatherlyEvents = (events: GatherlyEvent[]) => {
-    setGatherlyEvents(events);
-    localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+  // Save Gatherly event to Supabase
+  const saveGatherlyEvent = async (event: GatherlyEvent) => {
+    if (!authUser) {
+      // Fallback to localStorage only
+      const events = [...gatherlyEvents, event];
+      setGatherlyEvents(events);
+      localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.from('gatherly_events').insert({
+        id: event.id,
+        user_id: authUser.id,
+        title: event.title,
+        options: event.options,
+        participants: event.participants,
+        status: event.status,
+        created_at: event.createdAt
+      });
+      
+      if (error) {
+        console.error('Error saving event to Supabase:', error);
+      }
+      
+      // Update local state regardless
+      const events = [...gatherlyEvents, event];
+      setGatherlyEvents(events);
+      localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+    } catch (err) {
+      console.error('Error saving event:', err);
+      // Still update local state
+      const events = [...gatherlyEvents, event];
+      setGatherlyEvents(events);
+      localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+    }
   };
 
   const categorizeEvent = (title: string): 'work' | 'personal' | 'travel' => {
@@ -312,7 +382,7 @@ export const Dashboard: React.FC = () => {
         createdAt: new Date().toISOString()
       };
       
-      saveGatherlyEvents([...gatherlyEvents, gatherlyEvent]);
+      await saveGatherlyEvent(gatherlyEvent);
 
       // Create invites for participants
       if (data.participants.length > 0 && user) {
@@ -366,16 +436,52 @@ export const Dashboard: React.FC = () => {
     navigate('/');
   };
 
-  const handleAddContact = (contact: Contact) => {
+  const handleAddContact = async (contact: Contact) => {
+    // Check if contact already exists
+    if (contacts.find(c => c.email.toLowerCase() === contact.email.toLowerCase())) {
+      console.log('Contact already exists');
+      return;
+    }
+    
     setContacts(prev => [...prev, contact]);
+    
     if (authUser) {
-      supabase.from('contacts').insert({
-        user_id: authUser.id,
-        name: contact.name,
-        email: contact.email,
-        phone: contact.phone,
-        is_gatherly: contact.isGatherly
-      });
+      try {
+        const { error } = await supabase.from('contacts').insert({
+          id: contact.id,
+          user_id: authUser.id,
+          name: contact.name,
+          email: contact.email,
+          phone: contact.phone,
+          is_gatherly: contact.isGatherly
+        });
+        
+        if (error) {
+          console.error('Error saving contact:', error);
+        }
+      } catch (err) {
+        console.error('Error saving contact:', err);
+      }
+    }
+  };
+
+  const handleRemoveContact = async (contactId: string) => {
+    setContacts(prev => prev.filter(c => c.id !== contactId));
+    
+    if (authUser) {
+      try {
+        const { error } = await supabase
+          .from('contacts')
+          .delete()
+          .eq('id', contactId)
+          .eq('user_id', authUser.id);
+        
+        if (error) {
+          console.error('Error removing contact:', error);
+        }
+      } catch (err) {
+        console.error('Error removing contact:', err);
+      }
     }
   };
 
@@ -481,6 +587,7 @@ export const Dashboard: React.FC = () => {
             onEditingModeChange={handleEditingModeChange}
             suggestedData={suggestedEventData}
             isLoading={isCreating}
+            events={allCalendarEvents}
           />
         </div>
       </main>
@@ -493,6 +600,7 @@ export const Dashboard: React.FC = () => {
         onClose={() => setShowProfile(false)}
         onSignOut={handleSignOut}
         onAddContact={handleAddContact}
+        onRemoveContact={handleRemoveContact}
         onImportContacts={syncGoogleContacts}
       />
     </div>

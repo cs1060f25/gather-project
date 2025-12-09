@@ -99,3 +99,49 @@ CREATE POLICY "Users can delete their own contacts" ON contacts
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- Create gatherly_events table for storing created events
+CREATE TABLE IF NOT EXISTS gatherly_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  location TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+  options JSONB NOT NULL DEFAULT '[]',
+  participants TEXT[] DEFAULT '{}',
+  confirmed_option JSONB,
+  responses JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for gatherly_events
+CREATE INDEX IF NOT EXISTS idx_gatherly_events_user_id ON gatherly_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_gatherly_events_status ON gatherly_events(status);
+
+-- Enable RLS on gatherly_events
+ALTER TABLE gatherly_events ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can view their own events
+CREATE POLICY "Users can view their own events" ON gatherly_events
+  FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Policy: Users can create their own events
+CREATE POLICY "Users can create their own events" ON gatherly_events
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Users can update their own events
+CREATE POLICY "Users can update their own events" ON gatherly_events
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Policy: Users can delete their own events
+CREATE POLICY "Users can delete their own events" ON gatherly_events
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
