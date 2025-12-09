@@ -1,5 +1,13 @@
 // Scheduling helper - uses server-side API to keep API keys secure
 
+// Helper to format date as YYYY-MM-DD in local timezone (not UTC)
+const formatLocalDate = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export interface ParsedSchedulingData {
   title: string;
   participants: string[];
@@ -87,13 +95,13 @@ function basicParse(message: string, contactNames: string[]): ParsedSchedulingDa
   if (lowerMessage.includes('tomorrow')) {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    suggestedDate = tomorrow.toISOString().split('T')[0];
+    suggestedDate = formatLocalDate(tomorrow);
   } else if (lowerMessage.includes('next week')) {
     const nextWeek = new Date(today);
     nextWeek.setDate(nextWeek.getDate() + 7);
-    suggestedDate = nextWeek.toISOString().split('T')[0];
+    suggestedDate = formatLocalDate(nextWeek);
   } else if (lowerMessage.includes('today')) {
-    suggestedDate = today.toISOString().split('T')[0];
+    suggestedDate = formatLocalDate(today);
   }
 
   // Try to parse time

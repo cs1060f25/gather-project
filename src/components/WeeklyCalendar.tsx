@@ -316,24 +316,45 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return result;
   };
 
-  const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'short' });
 
   const selectedCalendarCount = calendars.filter(c => c.selected).length;
 
+  // Calculate position as percentage of total hours
+  const getEventTopPercent = (time?: string): number => {
+    if (!time) return 0;
+    const minutes = timeToMinutes(time);
+    const startMinutes = 7 * 60; // 7 AM
+    const totalMinutes = 15 * 60; // 15 hours (7 AM - 10 PM)
+    return ((minutes - startMinutes) / totalMinutes) * 100;
+  };
+
+  const getEventHeightPercent = (startTime?: string, endTime?: string, duration?: number): number => {
+    const totalMinutes = 15 * 60; // 15 hours
+    if (startTime && endTime) {
+      const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
+      return Math.max(2, (diff / totalMinutes) * 100);
+    }
+    if (duration) {
+      return Math.max(2, (duration / totalMinutes) * 100);
+    }
+    return (60 / totalMinutes) * 100; // Default 1 hour
+  };
+
   return (
     <div className={`weekly-calendar ${editingMode ? 'editing-mode' : ''}`}>
-      {/* Floating Navigation */}
-      <div className="wc-floating-nav">
-        <h2 className="wc-month">{monthLabel}</h2>
+      {/* Header Bar */}
+      <div className="wc-header-bar">
+        <span className="wc-month">{monthLabel}</span>
         <div className="wc-nav">
           <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M15 18l-6-6 6-6"/>
             </svg>
           </button>
           <button className="wc-today-btn" onClick={goToday}>Today</button>
           <button className="wc-nav-btn" onClick={goNext} aria-label="Next week">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M9 18l6-6-6-6"/>
             </svg>
           </button>
@@ -345,14 +366,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
             className="wc-dropdown-toggle"
             onClick={() => setShowCalendarDropdown(!showCalendarDropdown)}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
               <line x1="8" y1="2" x2="8" y2="6"/>
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <span>Views ({selectedCalendarCount})</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={showCalendarDropdown ? 'rotated' : ''}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={showCalendarDropdown ? 'rotated' : ''}>
               <path d="M6 9l6 6 6-6"/>
             </svg>
           </button>
@@ -380,11 +401,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         {/* Time column */}
         <div className="wc-time-column">
           <div className="wc-day-header-spacer"></div>
-          {HOURS.map(hour => (
-            <div key={hour} className="wc-time-slot">
-              <span>{fmtTimeLabel(hour)}</span>
-            </div>
-          ))}
+          <div className="wc-time-slots-container">
+            {HOURS.map(hour => (
+              <div key={hour} className="wc-time-slot">
+                <span>{fmtTimeLabel(hour)}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Day columns */}
@@ -420,22 +443,22 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     const eventTime = event.time;
                     const eventEndTime = event.endTime;
                     const eventDuration = event.duration;
-                    const top = getEventTop(eventTime);
-                    const height = getEventHeight(eventTime, eventEndTime, eventDuration);
+                    const topPercent = getEventTopPercent(eventTime);
+                    const heightPercent = getEventHeightPercent(eventTime, eventEndTime, eventDuration);
                     const eventColor = getEventColor(event);
                     const cols = event.totalColumns || 1;
                     const col = event.column || 0;
-                    const width = cols > 1 ? `${100 / cols - 2}%` : 'calc(100% - 8px)';
-                    const left = cols > 1 ? `${(col / cols) * 100 + 1}%` : '4px';
-                    const isShortEvent = height < 40;
+                    const width = cols > 1 ? `${100 / cols - 2}%` : 'calc(100% - 4px)';
+                    const left = cols > 1 ? `${(col / cols) * 100 + 1}%` : '2px';
+                    const isShortEvent = heightPercent < 5;
                     
                     return (
                       <div
                         key={event.id}
                         className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.status === 'pending' ? 'pending' : ''} ${isShortEvent ? 'short-event' : ''}`}
                         style={{ 
-                          top: `${top}px`, 
-                          height: `${Math.max(height, 24)}px`,
+                          top: `${topPercent}%`, 
+                          height: `${Math.max(heightPercent, 2.5)}%`,
                           width,
                           left,
                           right: 'auto',
@@ -460,7 +483,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                               {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
                             </div>
                             <div className="wc-event-title">{event.title}</div>
-                            {event.location && height >= 60 && <div className="wc-event-location">📍 {event.location}</div>}
+                            {event.location && heightPercent >= 7 && <div className="wc-event-location">📍 {event.location}</div>}
                           </>
                         )}
                       </div>
@@ -471,8 +494,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   {editingMode && dayTimeOptions.map((opt) => {
                     const optTime = opt.time;
                     const optDuration = opt.duration;
-                    const top = getEventTop(optTime);
-                    const height = getEventHeight(optTime, undefined, optDuration);
+                    const topPercent = getEventTopPercent(optTime);
+                    const heightPercent = getEventHeightPercent(optTime, undefined, optDuration);
                     const optionNumber = (opt.globalIdx || 0) + 1;
                     
                     return (
@@ -480,8 +503,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                         key={`opt-${opt.globalIdx}`}
                         className="wc-time-option"
                         style={{ 
-                          top: `${top}px`, 
-                          height: `${height}px`,
+                          top: `${topPercent}%`, 
+                          height: `${heightPercent}%`,
                         } as React.CSSProperties}
                       >
                         <span className="wc-option-badge">{optionNumber}</span>

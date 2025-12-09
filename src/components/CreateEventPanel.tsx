@@ -37,6 +37,14 @@ interface CreateEventPanelProps {
 const OPTION_COLORS = ['#1A1A1A', '#1A1A1A', '#1A1A1A']; // All black for clean look
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
+// Helper to format date as YYYY-MM-DD in local timezone (not UTC)
+const formatLocalDate = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Generate next 14 days
 const getDateOptions = () => {
   const options = [];
@@ -45,7 +53,7 @@ const getDateOptions = () => {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     options.push({
-      value: d.toISOString().split('T')[0],
+      value: formatLocalDate(d), // Use local date, not UTC
       label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
       shortLabel: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
     });

@@ -1,6 +1,7 @@
-/* Weekly Calendar - Neo-brutalist Design */
+/* Weekly Calendar - Neo-brutalist Design - Viewport-fit Layout */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+/* ===== MAIN CONTAINER ===== */
 .weekly-calendar {
   display: flex;
   flex-direction: column;
@@ -8,48 +9,43 @@
   background: #FAFAFA;
   font-family: 'Space Grotesk', sans-serif;
   overflow: hidden;
-  position: relative;
 }
 
-/* Floating Navigation Overlay */
-.wc-floating-nav {
-  position: absolute;
-  top: 1rem;
-  left: 80px;
-  right: 1rem;
-  z-index: 20;
+/* ===== HEADER BAR ===== */
+.wc-header-bar {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
-  pointer-events: none;
+  padding: 0.5rem 1rem;
+  background: #FFF;
+  border-bottom: 2px solid #1A1A1A;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 20;
 }
 
-.wc-floating-nav > * {
-  pointer-events: auto;
-}
-
+/* Month label - left side */
 .wc-month {
-  font-size: 1.25rem;
+  position: absolute;
+  left: 1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #1A1A1A;
   margin: 0;
   letter-spacing: -0.02em;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 0.5rem 1rem;
-  border: 2px solid #1A1A1A;
-  box-shadow: 3px 3px 0 #1A1A1A;
 }
 
-/* Navigation */
+/* Navigation - centered */
 .wc-nav {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .wc-nav-btn {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,40 +67,41 @@
 }
 
 .wc-today-btn {
-  padding: 0.4rem 1rem;
+  padding: 0.4rem 1.25rem;
   background: #22c55e;
   color: #FFF;
   border: 2px solid #1A1A1A;
+  border-radius: 20px;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  box-shadow: 2px 2px 0 #1A1A1A;
+  box-shadow: 3px 3px 0 #1A1A1A;
   transition: all 0.12s ease;
 }
 
 .wc-today-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #1A1A1A;
+  box-shadow: 4px 4px 0 #1A1A1A;
   background: #16a34a;
 }
 
 .wc-today-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1A1A1A;
+  box-shadow: 2px 2px 0 #1A1A1A;
 }
 
-/* Calendar Dropdown */
+/* Views dropdown - right side */
 .wc-calendar-dropdown {
-  position: relative;
-  margin-left: auto;
+  position: absolute;
+  right: 1rem;
 }
 
 .wc-dropdown-toggle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
   background: #FFF;
   border: 2px solid #1A1A1A;
   box-shadow: 2px 2px 0 #1A1A1A;
@@ -131,8 +128,8 @@
   background: #FFF;
   border: 2px solid #1A1A1A;
   box-shadow: 4px 4px 0 #1A1A1A;
-  min-width: 200px;
-  max-height: 300px;
+  min-width: 180px;
+  max-height: 280px;
   overflow-y: auto;
   z-index: 100;
 }
@@ -141,9 +138,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: #1A1A1A;
   border-bottom: 1px solid #E5E5E5;
@@ -163,8 +160,8 @@
 }
 
 .wc-cal-checkbox {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border: 2px solid #1A1A1A;
   background: var(--cal-color, #22c55e);
   display: flex;
@@ -182,10 +179,9 @@
 .wc-cal-checkbox::after {
   content: '✓';
   color: #FFF;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   opacity: 0;
-  transition: opacity 0.15s ease;
 }
 
 .wc-dropdown-item input:checked + .wc-cal-checkbox::after {
@@ -198,53 +194,65 @@
   text-overflow: ellipsis;
 }
 
-/* Grid Container */
+/* ===== GRID CONTAINER - FILLS REMAINING SPACE ===== */
 .wc-grid-container {
   flex: 1;
   display: flex;
-  overflow: hidden;
+  min-height: 0;
   background: #FFF;
-  margin-top: 0;
+  overflow: hidden;
 }
 
-/* Time Column */
+/* ===== TIME COLUMN ===== */
 .wc-time-column {
-  width: 70px;
+  width: 55px;
   flex-shrink: 0;
   border-right: 2px solid #1A1A1A;
-  background: #F5F5F5;
+  background: #F8F8F8;
+  display: flex;
+  flex-direction: column;
 }
 
 .wc-day-header-spacer {
-  height: 60px;
+  height: 44px;
+  min-height: 44px;
   border-bottom: 2px solid #1A1A1A;
+  flex-shrink: 0;
+}
+
+.wc-time-slots-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .wc-time-slot {
-  height: 60px;
+  flex: 1;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding: 4px 8px 0 0;
-  font-size: 0.7rem;
+  padding: 2px 6px 0 0;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #888;
   font-family: 'JetBrains Mono', monospace;
-  border-bottom: 1px solid #E5E5E5;
+  border-bottom: 1px solid #E8E8E8;
+  min-height: 0;
 }
 
-/* Days Container */
+/* ===== DAYS CONTAINER ===== */
 .wc-days-container {
   flex: 1;
   display: flex;
-  overflow-x: auto;
-  overflow-y: auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
-/* Day Column */
+/* ===== DAY COLUMN ===== */
 .wc-day-column {
   flex: 1;
-  min-width: 120px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #E5E5E5;
@@ -255,39 +263,33 @@
 }
 
 .wc-day-column.is-today {
-  background: rgba(34, 197, 94, 0.03);
+  background: rgba(34, 197, 94, 0.04);
 }
 
 /* Day Header */
 .wc-day-header {
-  height: 60px;
+  height: 44px;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   border-bottom: 2px solid #1A1A1A;
   background: #FFF;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.wc-day-header-spacer {
-  height: 60px;
-  border-bottom: 2px solid #1A1A1A;
-  background: #F5F5F5;
+  flex-shrink: 0;
+  gap: 1px;
 }
 
 .wc-day-name {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #888;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .wc-day-number {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #1A1A1A;
   line-height: 1;
@@ -296,38 +298,44 @@
 .wc-day-number.today {
   background: #22c55e;
   color: #FFF;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #1A1A1A;
   box-shadow: 2px 2px 0 #1A1A1A;
+  font-size: 0.9rem;
 }
 
-/* Day Slots */
+/* ===== DAY SLOTS - FILLS REMAINING HEIGHT ===== */
 .wc-day-slots {
   flex: 1;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .wc-hour-slot {
-  height: 60px;
-  border-bottom: 1px solid #E5E5E5;
+  flex: 1;
+  border-bottom: 1px solid #E8E8E8;
   cursor: pointer;
   transition: background 0.1s ease;
+  min-height: 0;
 }
 
 .wc-hour-slot:hover {
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(34, 197, 94, 0.06);
 }
 
-/* Events */
+/* ===== EVENTS ===== */
 .wc-event {
   position: absolute;
-  padding: 4px 6px;
+  left: 2px;
+  right: 2px;
+  padding: 3px 5px;
   border: 2px solid var(--event-color, #3b82f6);
-  border-radius: 0;
   cursor: pointer;
   overflow: hidden;
   z-index: 2;
@@ -359,37 +367,37 @@
 }
 
 .wc-event.pending {
-  opacity: 0.7;
+  opacity: 0.75;
   border-style: dashed;
 }
 
 /* Short events */
 .wc-event.short-event {
-  padding: 2px 6px;
+  padding: 1px 4px;
 }
 
 .wc-event-compact {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .wc-event-compact .wc-event-time {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   margin-bottom: 0;
   flex-shrink: 0;
 }
 
 .wc-event-compact .wc-event-title {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .wc-event-time {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   color: #555;
   font-family: 'JetBrains Mono', monospace;
@@ -397,10 +405,10 @@
 }
 
 .wc-event-title {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: #1A1A1A;
-  line-height: 1.2;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -411,7 +419,7 @@
 }
 
 .wc-event-location {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   color: #666;
   margin-top: 1px;
   overflow: hidden;
@@ -419,13 +427,13 @@
   white-space: nowrap;
 }
 
-/* Time Option Indicators (editing mode) - Yellow highlighter style */
+/* ===== TIME OPTIONS (EDITING MODE) ===== */
 .wc-time-option {
   position: absolute;
-  left: 4px;
-  right: 4px;
+  left: 2px;
+  right: 2px;
   background: rgba(251, 191, 36, 0.5);
-  border: 3px dashed #f59e0b;
+  border: 2px dashed #f59e0b;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -434,34 +442,30 @@
   animation: pulse-highlight 2s ease-in-out infinite;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(2px);
 }
 
 .wc-time-option:hover {
   background: rgba(251, 191, 36, 0.7);
-  transform: scale(1.02);
 }
 
 @keyframes pulse-highlight {
   0%, 100% { 
-    background: rgba(251, 191, 36, 0.4);
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+    background: rgba(251, 191, 36, 0.45);
   }
   50% { 
     background: rgba(251, 191, 36, 0.6);
-    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3);
   }
 }
 
 .wc-option-badge {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #1A1A1A;
   color: #FFF;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   border-radius: 50%;
   border: 2px solid #FFF;
@@ -469,36 +473,33 @@
 }
 
 .wc-option-time {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: #1A1A1A;
-  margin-top: 4px;
+  margin-top: 2px;
   font-family: 'JetBrains Mono', monospace;
   background: rgba(255, 255, 255, 0.9);
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 2px;
 }
 
-/* Editing Mode */
+/* ===== EDITING MODE BORDER ===== */
 .weekly-calendar.editing-mode {
-  border: 3px solid #22c55e;
-  box-shadow: inset 0 0 0 3px rgba(34, 197, 94, 0.1);
+  border: 2px solid #22c55e;
 }
 
-.weekly-calendar.editing-mode .wc-header {
-  background: #F0FDF4;
-}
-
-/* Dark Mode */
+/* ===== DARK MODE ===== */
 .dark-mode .weekly-calendar {
   background: #1A1A1A;
 }
 
-.dark-mode .wc-month {
-  background: rgba(42, 42, 42, 0.95);
+.dark-mode .wc-header-bar {
+  background: #2A2A2A;
   border-color: #FFF;
+}
+
+.dark-mode .wc-month {
   color: #FFF;
-  box-shadow: 3px 3px 0 #FFF;
 }
 
 .dark-mode .wc-nav-btn {
@@ -514,11 +515,11 @@
 
 .dark-mode .wc-today-btn {
   border-color: #FFF;
-  box-shadow: 2px 2px 0 #FFF;
+  box-shadow: 3px 3px 0 #FFF;
 }
 
 .dark-mode .wc-today-btn:hover {
-  box-shadow: 3px 3px 0 #FFF;
+  box-shadow: 4px 4px 0 #FFF;
 }
 
 .dark-mode .wc-dropdown-toggle {
@@ -565,7 +566,7 @@
 }
 
 .dark-mode .wc-time-slot {
-  color: #888;
+  color: #777;
   border-color: #333;
 }
 
@@ -574,7 +575,7 @@
 }
 
 .dark-mode .wc-day-column.is-today {
-  background: rgba(34, 197, 94, 0.08);
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .dark-mode .wc-day-header {
@@ -600,7 +601,7 @@
 }
 
 .dark-mode .wc-hour-slot:hover {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(34, 197, 94, 0.12);
 }
 
 .dark-mode .wc-event {
@@ -650,27 +651,24 @@
   color: #FFF;
 }
 
-/* Responsive */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
-  .wc-floating-nav {
-    left: 60px;
-    top: 0.75rem;
-    gap: 0.5rem;
+  .wc-header-bar {
+    padding: 0.4rem 0.75rem;
   }
 
   .wc-month {
-    font-size: 1rem;
-    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
   }
 
   .wc-nav-btn {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
   }
 
   .wc-today-btn {
-    padding: 0.3rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 0.35rem 1rem;
+    font-size: 0.8rem;
   }
 
   .wc-dropdown-toggle {
@@ -683,95 +681,125 @@
   }
 
   .wc-time-column {
-    width: 50px;
-  }
-
-  .wc-day-column {
-    min-width: 100px;
-  }
-
-  .wc-event {
-    padding: 3px 4px;
-  }
-
-  .wc-event-title {
-    font-size: 0.7rem;
-  }
-
-  .wc-event-time {
-    font-size: 0.6rem;
-  }
-}
-
-@media (max-width: 600px) {
-  .wc-floating-nav {
-    left: 50px;
-    top: 0.5rem;
-    gap: 0.35rem;
-  }
-
-  .wc-month {
-    font-size: 0.85rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .wc-nav-btn {
-    width: 28px;
-    height: 28px;
-  }
-
-  .wc-nav-btn svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .wc-today-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-  }
-
-  .wc-time-column {
-    width: 40px;
+    width: 45px;
   }
 
   .wc-time-slot {
     font-size: 0.6rem;
-    padding: 2px 4px 0 0;
-  }
-
-  .wc-day-column {
-    min-width: 80px;
+    padding: 1px 4px 0 0;
   }
 
   .wc-day-header {
-    height: 50px;
+    height: 40px;
+    min-height: 40px;
   }
 
-  .wc-day-name {
-    font-size: 0.65rem;
+  .wc-day-header-spacer {
+    height: 40px;
+    min-height: 40px;
   }
 
   .wc-day-number {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .wc-day-number.today {
-    width: 28px;
-    height: 28px;
-  }
-
-  .wc-hour-slot {
-    height: 50px;
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
   }
 
   .wc-event {
     padding: 2px 3px;
+  }
+
+  .wc-event-title {
+    font-size: 0.65rem;
+  }
+
+  .wc-event-time {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .wc-header-bar {
+    padding: 0.35rem 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .wc-month {
+    position: static;
+    font-size: 0.8rem;
+  }
+
+  .wc-nav {
+    gap: 0.35rem;
+  }
+
+  .wc-nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .wc-nav-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .wc-today-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.7rem;
+    border-radius: 14px;
+  }
+
+  .wc-calendar-dropdown {
+    position: static;
+  }
+
+  .wc-time-column {
+    width: 35px;
+  }
+
+  .wc-time-slot {
+    font-size: 0.55rem;
+    padding: 1px 2px 0 0;
+  }
+
+  .wc-day-header {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .wc-day-header-spacer {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .wc-day-name {
+    font-size: 0.55rem;
+  }
+
+  .wc-day-number {
+    font-size: 0.9rem;
+  }
+
+  .wc-day-number.today {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+    border-width: 1px;
+    box-shadow: 1px 1px 0 #1A1A1A;
+  }
+
+  .wc-event {
+    padding: 1px 2px;
     border-width: 1px;
     box-shadow: 1px 1px 0 var(--event-color, #3b82f6);
   }
 
   .wc-event-title {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   .wc-event-time,
@@ -780,13 +808,13 @@
   }
 
   .wc-option-badge {
-    width: 20px;
-    height: 20px;
-    font-size: 0.65rem;
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
   }
 
   .wc-option-time {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
+    padding: 1px 3px;
   }
 }
-

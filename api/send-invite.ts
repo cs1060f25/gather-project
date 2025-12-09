@@ -57,8 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const baseUrl = process.env.SITE_URL || 'https://gatherly.now';
     const inviteUrl = `${baseUrl}/invite/${inviteToken}`;
 
-    // Set RESEND_FROM_EMAIL in production after verifying domain at resend.com/domains
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <onboarding@resend.dev>';
+    // Use verified domain gatherly.now for sending emails
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <invites@gatherly.now>';
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
