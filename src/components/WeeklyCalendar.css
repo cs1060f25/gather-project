@@ -13,17 +13,23 @@
   position: relative;
 }
 
-/* ===== CONTROLS ROW - Thin bar at top ===== */
+/* ===== CONTROLS ROW - Floating above calendar ===== */
 .wc-floating-controls {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
-  gap: 10px;
-  flex-shrink: 0;
-  background: var(--wc-bg, #FAFAFA);
-  position: relative;
-  z-index: 10;
+  padding: 4px;
+  gap: 8px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.wc-floating-controls > * {
+  pointer-events: auto;
 }
 
 /* Navigation bubble - pill shaped */

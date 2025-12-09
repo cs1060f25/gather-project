@@ -155,12 +155,20 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
     }
   };
 
+  // Helper to format date as YYYY-MM-DD in local timezone
+  const formatLocalDate = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     onSubmit({
       title,
-      date: selectedDates[0] || new Date().toISOString().split('T')[0],
+      date: selectedDates[0] || formatLocalDate(new Date()),
       time: startTime,
       startTime,
       endTime,
@@ -181,7 +189,7 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     dateOptions.push({
-      value: date.toISOString().split('T')[0],
+      value: formatLocalDate(date),
       label: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
       dayName: date.toLocaleDateString('en-US', { weekday: 'short' })
     });

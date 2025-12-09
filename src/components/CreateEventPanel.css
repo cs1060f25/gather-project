@@ -50,6 +50,27 @@
   border-color: #FFF;
 }
 
+/* Events Link in Header */
+.cep-events-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  background: #FFF;
+  color: #1A1A1A;
+  border: 2px solid #1A1A1A;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.12s ease;
+}
+
+.cep-events-link:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(255, 255, 255, 0.4);
+}
+
 /* Form */
 .cep-form {
   flex: 1;
