@@ -190,7 +190,20 @@ export const InvitePage: React.FC = () => {
       })
       .filter(Boolean);
     
-    const result = await respondToInvite(token, overallStatus, selectedTimeStrings.length > 0 ? selectedTimeStrings : undefined);
+    // Convert timeResponses to use string keys for JSON storage
+    const optionResponses: Record<string, 'yes' | 'maybe' | 'no'> = {};
+    Object.entries(timeResponses).forEach(([idx, resp]) => {
+      if (resp && resp !== null) {
+        optionResponses[idx] = resp;
+      }
+    });
+    
+    const result = await respondToInvite(
+      token, 
+      overallStatus, 
+      selectedTimeStrings.length > 0 ? selectedTimeStrings : undefined,
+      Object.keys(optionResponses).length > 0 ? optionResponses : undefined
+    );
     
     if (result.success) {
       setSubmitted(true);
@@ -321,9 +334,9 @@ export const InvitePage: React.FC = () => {
               
               <div className="event-summary">
                 <h3>{invite.event_title}</h3>
-                <p className="event-detail">📅 {eventDate}</p>
-                {invite.event_time && <p className="event-detail">🕐 {formatTime(invite.event_time)}</p>}
-                {location && <p className="event-detail">📍 {location}</p>}
+                <p className="event-detail">{eventDate}</p>
+                {invite.event_time && <p className="event-detail">{formatTime(invite.event_time)}</p>}
+                {location && <p className="event-detail">{location}</p>}
               </div>
 
               <div className="response-actions">
@@ -352,15 +365,16 @@ export const InvitePage: React.FC = () => {
                 <h1 className="event-title">{invite.event_title}</h1>
                 
                 {location && (
-                  <div className="event-detail" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
-                    <span className="detail-icon">📍</span>
+                  <div className="event-detail" style={{ marginTop: '0.5rem' }}>
+                    <span className="detail-icon"></span>
                     <span>{location}</span>
                   </div>
                 )}
+              </div>
                 
-                {/* Step-by-step flow for time options */}
-                {timeOptions.length > 0 && useStepByStep && timeOptions[currentStep] ? (
-                  <div className="step-by-step-flow">
+              {/* Step-by-step flow for time options - OUTSIDE event card */}
+              {timeOptions.length > 0 && useStepByStep && timeOptions[currentStep] ? (
+                <div className="step-by-step-flow">
                     <div className="step-progress">
                       <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
                       <div className="step-dots">
@@ -531,7 +545,6 @@ export const InvitePage: React.FC = () => {
                     )}
                   </div>
                 )}
-              </div>
 
               {/* Always show response buttons when no time options available */}
               {timeOptions.length === 0 && (

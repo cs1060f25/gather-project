@@ -15,7 +15,8 @@ export interface Invite {
   status: 'pending' | 'accepted' | 'declined' | 'maybe';
   created_at: string;
   responded_at?: string;
-  suggested_times?: string[]; // Times the invitee suggested
+  suggested_times?: string[]; // Times the invitee suggested (yes or maybe)
+  option_responses?: Record<string, 'yes' | 'maybe' | 'no'>; // Per-option responses
 }
 
 export interface InviteResponse {
@@ -110,7 +111,8 @@ export async function getInviteByToken(token: string): Promise<Invite | null> {
 export async function respondToInvite(
   token: string,
   status: 'accepted' | 'declined' | 'maybe',
-  suggestedTimes?: string[]
+  suggestedTimes?: string[],
+  optionResponses?: Record<string, 'yes' | 'maybe' | 'no'>
 ): Promise<InviteResponse> {
   try {
     const { data, error } = await supabase
@@ -119,6 +121,7 @@ export async function respondToInvite(
         status,
         responded_at: new Date().toISOString(),
         suggested_times: suggestedTimes,
+        option_responses: optionResponses,
       })
       .eq('token', token)
       .select()

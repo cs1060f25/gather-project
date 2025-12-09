@@ -599,30 +599,52 @@ export const Dashboard: React.FC = () => {
   const allCalendarEvents = useMemo((): CalendarEvent[] => {
     // Convert Gatherly events to calendar events
     const gatherlyCalEvents: CalendarEvent[] = [];
-    
+
     for (const ge of gatherlyEvents) {
-      for (let idx = 0; idx < ge.options.length; idx++) {
-        const opt = ge.options[idx];
+      // For confirmed events, only show the confirmed option
+      if (ge.status === 'confirmed' && ge.confirmedOption) {
         const calEvent: CalendarEvent = {
-          id: `gatherly-${ge.id}-${idx}`,
-          date: opt.day,
-          time: opt.time,
+          id: `gatherly-${ge.id}-confirmed`,
+          date: ge.confirmedOption.day,
+          time: ge.confirmedOption.time,
           endTime: undefined,
           title: ge.title,
           category: 'gatherly',
-          duration: opt.duration,
+          duration: ge.confirmedOption.duration,
           attendees: ge.participants,
+          location: ge.location,
           source: 'gatherly',
           calendarId: 'gatherly',
           isGatherlyEvent: true,
-          status: ge.status,
-          suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color })),
-          optionNumber: idx + 1 // 1, 2, or 3 for pending event options
+          status: 'confirmed'
         };
         gatherlyCalEvents.push(calEvent);
+      } else if (ge.status === 'pending') {
+        // For pending events, show all options with option numbers
+        for (let idx = 0; idx < ge.options.length; idx++) {
+          const opt = ge.options[idx];
+          const calEvent: CalendarEvent = {
+            id: `gatherly-${ge.id}-${idx}`,
+            date: opt.day,
+            time: opt.time,
+            endTime: undefined,
+            title: ge.title,
+            category: 'gatherly',
+            duration: opt.duration,
+            attendees: ge.participants,
+            location: ge.location,
+            source: 'gatherly',
+            calendarId: 'gatherly',
+            isGatherlyEvent: true,
+            status: ge.status,
+            suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color })),
+            optionNumber: idx + 1 // 1, 2, or 3 for pending event options
+          };
+          gatherlyCalEvents.push(calEvent);
+        }
       }
     }
-    
+
     // Merge with Google calendar events
     const merged: CalendarEvent[] = [...events, ...gatherlyCalEvents];
     return merged;

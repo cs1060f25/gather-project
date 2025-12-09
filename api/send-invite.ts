@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       <div style="margin-bottom: 25px;">
         <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 0 0 10px 0; color: #1a1a1a;">${eventTitle}</h2>
         <p style="color: #666; margin: 0;">Organized by <strong>${hostName}</strong></p>
-        ${location ? `<p style="color: #666; margin: 5px 0 0 0;">📍 ${location}</p>` : ''}
+        ${location ? `<p style="color: #666; margin: 5px 0 0 0;">${location}</p>` : ''}
       </div>
       
       <!-- Suggested Times -->

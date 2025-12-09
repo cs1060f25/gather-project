@@ -266,7 +266,7 @@ export const EventsPage: React.FC = () => {
           const events: GatherlyEvent[] = data.map(e => ({
             id: e.id,
             title: e.title,
-            location: e.options?.[0]?.location || 'TBD',
+            location: e.location || 'TBD',
             options: e.options || [],
             participants: e.participants || [],
             status: e.status,

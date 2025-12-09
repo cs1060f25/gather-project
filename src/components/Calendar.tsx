@@ -378,7 +378,7 @@ export const Calendar: React.FC<CalendarProps> = ({ contacts }) => {
               {popover.event.time ? `Time: ${fmtTimeLabel(popover.event.time)}${popover.event.endTime ? ` — ${fmtTimeLabel(popover.event.endTime)}` : ''}` : 'All day'}
             </p>
             {popover.event.location && (
-              <p className="popover-location">📍 {popover.event.location}</p>
+              <p className="popover-location">{popover.event.location}</p>
             )}
             {popover.event.attendees && popover.event.attendees.length > 0 && (
               <div className="popover-attendees">

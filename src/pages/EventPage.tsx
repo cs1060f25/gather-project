@@ -526,6 +526,9 @@ export const EventPage: React.FC = () => {
                   const status = invite?.status || 'pending';
                   const suggestedTimes = invite?.suggested_times || [];
                   
+                  // Get per-option responses if available
+                  const optionResponses = (invite as any)?.option_responses as Record<string, 'yes' | 'maybe' | 'no'> | undefined;
+                  
                   return (
                     <div key={email} className="response-item">
                       <div className={`response-avatar ${status}`}>
@@ -539,23 +542,34 @@ export const EventPage: React.FC = () => {
                           {status === 'maybe' && '? Maybe'}
                           {status === 'pending' && 'Waiting...'}
                         </span>
-                        {/* Show which time options the invitee selected */}
-                        {status !== 'pending' && status !== 'declined' && suggestedTimes.length > 0 && (
+                        {/* Show per-option responses */}
+                        {status !== 'pending' && (
                           <div className="response-selections">
-                            {suggestedTimes.map((time, idx) => {
-                              // Parse the time string to find matching option
-                              const optionIndex = event.options.findIndex(opt => 
-                                time.includes(opt.day) && time.includes(opt.time)
-                              );
+                            {event.options.map((opt, idx) => {
+                              // Check option_responses first, fall back to suggestedTimes
+                              let optResponse: 'yes' | 'maybe' | 'no' | undefined;
+                              if (optionResponses && optionResponses[idx.toString()]) {
+                                optResponse = optionResponses[idx.toString()];
+                              } else if (suggestedTimes.length > 0) {
+                                // Fall back to old logic - check if time is in suggestedTimes
+                                const isSelected = suggestedTimes.some(t => t.includes(opt.day) && t.includes(opt.time));
+                                optResponse = isSelected ? (status === 'maybe' ? 'maybe' : 'yes') : 'no';
+                              } else if (status === 'declined') {
+                                optResponse = 'no';
+                              }
+                              
+                              if (!optResponse) return null;
+                              
                               return (
                                 <span 
                                   key={idx} 
-                                  className="selection-chip"
-                                  style={{ 
-                                    background: optionIndex >= 0 ? event.options[optionIndex]?.color || '#22c55e' : '#22c55e'
-                                  }}
+                                  className={`selection-chip ${optResponse}`}
+                                  title={`Option ${idx + 1}: ${optResponse === 'yes' ? 'Yes' : optResponse === 'maybe' ? 'Maybe' : 'No'}`}
                                 >
-                                  Option {optionIndex >= 0 ? optionIndex + 1 : idx + 1}
+                                  <span className="chip-number">{idx + 1}</span>
+                                  <span className="chip-response">
+                                    {optResponse === 'yes' ? '✓' : optResponse === 'maybe' ? '?' : '✗'}
+                                  </span>
                                 </span>
                               );
                             })}

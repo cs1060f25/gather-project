@@ -563,6 +563,13 @@
   position: absolute;
 }
 
+/* Confirmed Gatherly events - solid green with checkmark feel */
+.wc-event.gatherly-event.confirmed {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-color: #1A1A1A;
+  color: #FFF;
+}
+
 /* Pending Gatherly events should be yellow */
 .wc-event.gatherly-event.pending {
   background: linear-gradient(135deg, #FCD34D 0%, #FBBF24 100%);

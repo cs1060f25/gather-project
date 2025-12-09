@@ -180,11 +180,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     const showGatherlyEvents = gatherlyCalendar?.selected !== false;
 
     return events.filter(e => {
-      // Don't show confirmed/cancelled Gatherly events in the Gatherly calendar 
-      // (they should appear on their target calendar)
-      if (e.isGatherlyEvent && (e.status === 'confirmed' || e.status === 'cancelled')) {
+      // Don't show cancelled Gatherly events
+      if (e.isGatherlyEvent && e.status === 'cancelled') {
         return false;
       }
+      // Show confirmed Gatherly events (they appear as confirmed until synced to GCal)
       // Handle Gatherly events based on Gatherly Events toggle
       if (e.isGatherlyEvent || e.calendarId === 'gatherly') {
         return showGatherlyEvents;
@@ -620,7 +620,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     return (
                       <div
                         key={event.id}
-                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.status === 'pending' ? 'pending' : ''} ${isShortEvent ? 'short-event' : ''}`}
+                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.status === 'pending' ? 'pending' : ''} ${event.status === 'confirmed' ? 'confirmed' : ''} ${isShortEvent ? 'short-event' : ''}`}
                         style={{ 
                           top: `${topPercent}%`, 
                           height: `${Math.max(heightPercent, 2.5)}%`,
@@ -652,7 +652,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                               {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
                             </div>
                             <div className="wc-event-title">{event.title}</div>
-                            {event.location && heightPercent >= 7 && <div className="wc-event-location">📍 {event.location}</div>}
+                            {event.location && heightPercent >= 7 && <div className="wc-event-location">{event.location}</div>}
                           </>
                         )}
                       </div>
