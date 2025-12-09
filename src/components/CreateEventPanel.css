@@ -444,8 +444,8 @@
 
 /* Dark Mode */
 .dark-mode .create-event-panel {
-  background: #1A1A1A;
-  border-color: #FFF;
+  background: #1E1E1E;
+  border-color: #444;
 }
 
 .dark-mode .create-event-panel.editing {
@@ -453,25 +453,26 @@
 }
 
 .dark-mode .cep-header {
-  background: #FFF;
-  color: #1A1A1A;
+  background: #333;
+  color: #F0F0F0;
 }
 
 .dark-mode .cep-field label {
-  color: #FFF;
+  color: #DDD;
 }
 
 .dark-mode .cep-field input[type="text"],
 .dark-mode .cep-field select {
   background: #2A2A2A;
-  border-color: #FFF;
-  color: #FFF;
-  box-shadow: 4px 4px 0 #FFF;
+  border-color: #555;
+  color: #F0F0F0;
+  box-shadow: 3px 3px 0 #333;
 }
 
 .dark-mode .cep-field input[type="text"]:focus,
 .dark-mode .cep-field select:focus {
-  box-shadow: 6px 6px 0 #FFF;
+  border-color: #22c55e;
+  box-shadow: 4px 4px 0 #333;
 }
 
 .dark-mode .cep-field input::placeholder {
@@ -479,21 +480,21 @@
 }
 
 .dark-mode .cep-add-btn {
-  background: #2A2A2A;
-  border-color: #FFF;
-  color: #FFF;
-  box-shadow: 4px 4px 0 #FFF;
+  background: #333;
+  border-color: #555;
+  color: #F0F0F0;
+  box-shadow: 3px 3px 0 #333;
 }
 
 .dark-mode .cep-add-btn:hover {
   background: #22c55e;
-  box-shadow: 6px 6px 0 #FFF;
+  box-shadow: 4px 4px 0 #333;
 }
 
 .dark-mode .cep-suggestions {
   background: #2A2A2A;
-  border-color: #FFF;
-  box-shadow: 4px 4px 0 #FFF;
+  border-color: #555;
+  box-shadow: 3px 3px 0 #333;
 }
 
 .dark-mode .cep-suggestion {
@@ -505,7 +506,7 @@
 }
 
 .dark-mode .cep-suggestion-name {
-  color: #FFF;
+  color: #F0F0F0;
 }
 
 .dark-mode .cep-suggestion-email {
@@ -513,31 +514,31 @@
 }
 
 .dark-mode .cep-participant {
-  border-color: #FFF;
-  box-shadow: 2px 2px 0 #FFF;
+  border-color: #555;
+  box-shadow: 2px 2px 0 #333;
 }
 
 .dark-mode .cep-availability {
-  background: #222;
+  background: #252525;
   border-color: #444;
 }
 
 .dark-mode .cep-option {
   background: #2A2A2A;
-  border-color: #FFF;
-  box-shadow: 2px 2px 0 #FFF;
+  border-color: #555;
+  box-shadow: 2px 2px 0 #333;
 }
 
 .dark-mode .cep-option-badge {
-  background: #FFF;
-  color: #1A1A1A;
+  background: #444;
+  color: #F0F0F0;
 }
 
 .dark-mode .cep-option select {
-  background: #1A1A1A;
-  border-color: #FFF;
-  color: #FFF;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFF' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background: #222;
+  border-color: #555;
+  color: #F0F0F0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23AAA' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .dark-mode .cep-option select:focus {
@@ -545,38 +546,40 @@
 }
 
 .dark-mode .cep-cancel-btn {
-  border-color: rgba(0, 0, 0, 0.3);
-  color: #1A1A1A;
+  border-color: #555;
+  color: #AAA;
+  background: #333;
 }
 
 .dark-mode .cep-cancel-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
-  border-color: #1A1A1A;
+  background: #444;
+  color: #F0F0F0;
 }
 
 .dark-mode .cep-submit {
-  border-color: #FFF;
-  box-shadow: 5px 5px 0 #FFF;
+  border-color: #555;
+  box-shadow: 4px 4px 0 #333;
 }
 
 .dark-mode .cep-submit:hover:not(:disabled) {
-  box-shadow: 8px 8px 0 #FFF;
+  box-shadow: 6px 6px 0 #333;
 }
 
 .dark-mode .cep-chat {
-  background: #222;
-  border-color: #FFF;
+  background: #252525;
+  border-color: #444;
 }
 
 .dark-mode .cep-chat-input {
   background: #2A2A2A;
-  border-color: #FFF;
-  color: #FFF;
-  box-shadow: 3px 3px 0 #FFF;
+  border-color: #555;
+  color: #F0F0F0;
+  box-shadow: 2px 2px 0 #333;
 }
 
 .dark-mode .cep-chat-input:focus {
-  box-shadow: 5px 5px 0 #FFF;
+  border-color: #22c55e;
+  box-shadow: 3px 3px 0 #333;
 }
 
 .dark-mode .cep-chat-input::placeholder {
@@ -584,15 +587,14 @@
 }
 
 .dark-mode .cep-chat-submit {
-  background: #FFF;
-  color: #1A1A1A;
-  border-color: #FFF;
-  box-shadow: 3px 3px 0 #FFF;
+  background: #22c55e;
+  color: #FFF;
+  border-color: #555;
+  box-shadow: 2px 2px 0 #333;
 }
 
 .dark-mode .cep-chat-submit:hover:not(:disabled) {
-  background: #22c55e;
-  color: #FFF;
+  background: #16a34a;
 }
 
 /* Responsive */
