@@ -71,6 +71,129 @@ export const Dashboard: React.FC = () => {
   const [suggestedEventData] = useState<Partial<CreateEventData> | undefined>();
   const [isCreating, setIsCreating] = useState(false);
 
+  // Helper to categorize events
+  const categorizeEvent = (title: string): 'work' | 'personal' | 'travel' => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('flight') || lowerTitle.includes('trip') || lowerTitle.includes('travel')) {
+      return 'travel';
+    }
+    if (lowerTitle.includes('meeting') || lowerTitle.includes('standup') || lowerTitle.includes('sync') || lowerTitle.includes('call')) {
+      return 'work';
+    }
+    return 'personal';
+  };
+
+  // Sync all Google Calendars - defined first so it can be used in useEffect
+  const syncGoogleCalendars = useCallback(async () => {
+    const providerToken = getGoogleToken();
+    if (!providerToken) {
+      console.log('No Google token found, skipping calendar sync');
+      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+      return;
+    }
+
+    try {
+      const calendarListResponse = await fetch(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+        { headers: { Authorization: `Bearer ${providerToken}` } }
+      );
+
+      if (!calendarListResponse.ok) {
+        if (calendarListResponse.status === 401) localStorage.removeItem('gatherly_google_token');
+        setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+        return;
+      }
+
+      const calendarListData = await calendarListResponse.json();
+      
+      let savedSelections: Record<string, boolean> = {};
+      try {
+        const saved = localStorage.getItem('gatherly_calendar_selections');
+        if (saved) savedSelections = JSON.parse(saved);
+      } catch {}
+      
+      const userEmail = authUser?.email?.toLowerCase() || '';
+      const googleCalendars: GoogleCalendar[] = (calendarListData.items || []).map((cal: any) => {
+        let calName = cal.summary || 'Unnamed Calendar';
+        if (userEmail && calName.toLowerCase() === userEmail) {
+          calName = 'Personal';
+        }
+        return {
+          id: cal.id,
+          name: calName,
+          color: cal.backgroundColor || '#4285f4',
+          selected: savedSelections[cal.id] !== undefined ? savedSelections[cal.id] : true
+        };
+      });
+
+      googleCalendars.unshift({
+        id: 'gatherly',
+        name: 'Gatherly Events',
+        color: '#22c55e',
+        selected: savedSelections['gatherly'] !== undefined ? savedSelections['gatherly'] : true
+      });
+
+      setCalendars(googleCalendars);
+
+      // Fetch 1 year back and 1 year forward to ensure all events load
+      const allEvents: CalendarEvent[] = [];
+      const now = new Date();
+      const timeMin = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString();
+      const timeMax = new Date(now.getFullYear() + 1, now.getMonth() + 1, 0).toISOString();
+
+      const fetchPromises = googleCalendars
+        .filter(cal => cal.id !== 'gatherly')
+        .map(async (cal) => {
+          try {
+            const eventsResponse = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?` +
+              new URLSearchParams({
+                timeMin,
+                timeMax,
+                maxResults: '2500',
+                singleEvents: 'true',
+                orderBy: 'startTime'
+              }),
+              { headers: { Authorization: `Bearer ${providerToken}` } }
+            );
+
+            if (eventsResponse.ok) {
+              const eventsData = await eventsResponse.json();
+              return (eventsData.items || []).map((item: any) => ({
+                id: `gcal-${item.id}`,
+                title: item.summary || 'Untitled Event',
+                date: item.start?.date || item.start?.dateTime?.split('T')[0],
+                time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+                endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+                category: categorizeEvent(item.summary || ''),
+                source: 'google' as const,
+                calendarId: cal.id,
+                calendarName: cal.name,
+                color: cal.color,
+                attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
+                location: item.location,
+                description: item.description,
+                important: true,
+              }));
+            }
+            return [];
+          } catch (err) {
+            console.error(`Error fetching events for calendar ${cal.name}:`, err);
+            return [];
+          }
+        });
+
+      const results = await Promise.all(fetchPromises);
+      results.forEach(calEvents => allEvents.push(...calEvents));
+
+      setEvents(allEvents);
+      console.log(`Synced ${allEvents.length} events from Google Calendar`);
+    } catch (error) {
+      console.error('Error syncing Google Calendar:', error);
+      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+    }
+  }, [authUser?.email]);
+
   // Load user data on auth
   useEffect(() => {
     if (authUser) {
@@ -82,9 +205,8 @@ export const Dashboard: React.FC = () => {
         phone: authUser.user_metadata?.phone || '',
       });
       
-      // Load all data
+      // Load contacts and gatherly events (calendar sync handled by periodic effect)
       loadContacts();
-      syncGoogleCalendars();
       loadGatherlyEvents();
     }
   }, [authUser]);
@@ -93,14 +215,27 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && authUser) {
-        // Re-check calendar data when tab becomes visible
         syncGoogleCalendars();
       }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [authUser]);
+  }, [authUser, syncGoogleCalendars]);
+  
+  // Periodic sync - poll Google Calendar every 2 minutes for real-time updates
+  useEffect(() => {
+    if (!authUser) return;
+    
+    syncGoogleCalendars();
+    
+    const syncInterval = setInterval(() => {
+      console.log('Periodic calendar sync...');
+      syncGoogleCalendars();
+    }, 7 * 60 * 1000); // 7 minutes to limit API usage
+    
+    return () => clearInterval(syncInterval);
+  }, [authUser, syncGoogleCalendars]);
 
   // Load contacts from Supabase
   const loadContacts = async () => {
@@ -171,108 +306,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Sync all Google Calendars (not just primary)
-  const syncGoogleCalendars = async () => {
-    const providerToken = getGoogleToken();
-    if (!providerToken) {
-      console.log('No Google token found, skipping calendar sync');
-      // Set default calendar even without token
-      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
-      return;
-    }
-
-    try {
-      // First, get list of all calendars
-      const calendarListResponse = await fetch(
-        'https://www.googleapis.com/calendar/v3/users/me/calendarList',
-        { headers: { Authorization: `Bearer ${providerToken}` } }
-      );
-
-      if (!calendarListResponse.ok) {
-        if (calendarListResponse.status === 401) localStorage.removeItem('gatherly_google_token');
-        setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
-        return;
-      }
-
-      const calendarListData = await calendarListResponse.json();
-      
-      // Restore saved calendar selections
-      let savedSelections: Record<string, boolean> = {};
-      try {
-        const saved = localStorage.getItem('gatherly_calendar_selections');
-        if (saved) savedSelections = JSON.parse(saved);
-      } catch {}
-      
-      const googleCalendars: GoogleCalendar[] = (calendarListData.items || []).map((cal: any) => ({
-        id: cal.id,
-        name: cal.summary || 'Unnamed Calendar',
-        color: cal.backgroundColor || '#4285f4',
-        selected: savedSelections[cal.id] !== undefined ? savedSelections[cal.id] : true
-      }));
-
-      // Add Gatherly events calendar
-      googleCalendars.unshift({
-        id: 'gatherly',
-        name: 'Gatherly Events',
-        color: '#22c55e',
-        selected: savedSelections['gatherly'] !== undefined ? savedSelections['gatherly'] : true
-      });
-
-      setCalendars(googleCalendars);
-
-      // Fetch events from all selected calendars
-      const allEvents: CalendarEvent[] = [];
-      const now = new Date();
-      const timeMin = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
-      const timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString();
-
-      for (const cal of googleCalendars) {
-        if (cal.id === 'gatherly') continue; // Skip Gatherly calendar for Google fetch
-        
-        try {
-          const eventsResponse = await fetch(
-            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?` +
-            new URLSearchParams({
-              timeMin,
-              timeMax,
-              maxResults: '100',
-              singleEvents: 'true',
-              orderBy: 'startTime'
-            }),
-            { headers: { Authorization: `Bearer ${providerToken}` } }
-          );
-
-          if (eventsResponse.ok) {
-            const eventsData = await eventsResponse.json();
-            const calEvents = (eventsData.items || []).map((item: any) => ({
-              id: `gcal-${item.id}`,
-              title: item.summary || 'Untitled Event',
-              date: item.start?.date || item.start?.dateTime?.split('T')[0],
-              time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-              endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
-              category: categorizeEvent(item.summary || ''),
-              source: 'google' as const,
-              calendarId: cal.id,
-              calendarName: cal.name,
-              attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
-              location: item.location,
-              description: item.description,
-              important: true,
-            }));
-            allEvents.push(...calEvents);
-          }
-        } catch (err) {
-          console.error(`Error fetching events for calendar ${cal.name}:`, err);
-        }
-      }
-
-      setEvents(allEvents);
-    } catch (error) {
-      console.error('Error syncing Google Calendar:', error);
-      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
-    }
-  };
-
   // Load Gatherly events from Supabase
   const loadGatherlyEvents = async () => {
     if (!authUser) return;
@@ -330,13 +363,17 @@ export const Dashboard: React.FC = () => {
     }
     
     try {
+      // Only save fields that exist in the schema
+      // description and location are stored in the options/localStorage for now
       const { error } = await supabase.from('gatherly_events').insert({
         id: event.id,
         user_id: authUser.id,
         title: event.title,
-        description: event.description,
-        location: event.location,
-        options: event.options,
+        options: event.options.map(opt => ({
+          ...opt,
+          // Store location in options metadata
+          location: event.location || 'TBD'
+        })),
         participants: event.participants,
         status: event.status,
         created_at: event.createdAt
@@ -357,17 +394,6 @@ export const Dashboard: React.FC = () => {
     setGatherlyEvents(events);
     localStorage.setItem('gatherly_created_events', JSON.stringify(events));
     }
-  };
-
-  const categorizeEvent = (title: string): 'work' | 'personal' | 'travel' => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('flight') || lowerTitle.includes('trip') || lowerTitle.includes('travel')) {
-      return 'travel';
-    }
-    if (lowerTitle.includes('meeting') || lowerTitle.includes('standup') || lowerTitle.includes('sync') || lowerTitle.includes('call')) {
-      return 'work';
-    }
-    return 'personal';
   };
 
   // Toggle calendar visibility - persist to localStorage
@@ -429,22 +455,33 @@ export const Dashboard: React.FC = () => {
       await saveGatherlyEvent(gatherlyEvent);
 
       // Create invites for participants (not including organizer)
-      if (inviteParticipants.length > 0 && user) {
+      // Filter to only valid email addresses
+      const validEmailParticipants = inviteParticipants.filter(p => 
+        p && p.includes('@') && p.includes('.')
+      );
+      
+      if (validEmailParticipants.length > 0 && user) {
         const { invites, errors } = await createInvites(
           eventId,
           {
             title: data.eventName,
-            date: data.availabilityOptions[0].day,
-            time: data.availabilityOptions[0].time,
-            location: data.location,
+            date: data.availabilityOptions[0]?.day || '',
+            time: data.availabilityOptions[0]?.time || '',
+            location: data.location || 'TBD',
           },
           user.full_name || user.email?.split('@')[0] || 'Someone',
           user.email || '',
-          inviteParticipants
+          validEmailParticipants
         );
         
         if (errors.length > 0) {
           console.error('Some invites failed:', errors);
+        }
+        
+        // Log warning for invalid emails
+        const invalidParticipants = inviteParticipants.filter(p => !p.includes('@') || !p.includes('.'));
+        if (invalidParticipants.length > 0) {
+          console.warn('Skipped participants without valid emails:', invalidParticipants);
         }
         
         if (invites.length > 0) {
@@ -454,7 +491,7 @@ export const Dashboard: React.FC = () => {
             .map(opt => ({
               day: opt.day,
               time: opt.time,
-              duration: opt.duration
+              duration: opt.duration || 60
             }));
           
           await sendInviteEmails(invites, allSuggestedTimes);
@@ -624,7 +661,7 @@ export const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="dashboard-main">
         {/* Calendar - 2/3 width */}
-        <div className="calendar-section">
+        <div className={`calendar-section ${editingMode ? 'editing-mode' : ''}`}>
           <WeeklyCalendar
             events={allCalendarEvents}
             calendars={calendars}

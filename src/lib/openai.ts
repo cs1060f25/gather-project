@@ -13,6 +13,10 @@ export interface ParsedSchedulingData {
   participants: string[];
   suggestedDate?: string;
   suggestedTime?: string;
+  suggestedDate2?: string;
+  suggestedTime2?: string;
+  suggestedDate3?: string;
+  suggestedTime3?: string;
   duration?: number;
   location?: string;
   priority?: 'must' | 'should' | 'maybe';
@@ -59,6 +63,10 @@ export async function parseSchedulingMessage(
       participants: parsed.participants || [],
       suggestedDate: parsed.suggestedDate,
       suggestedTime: parsed.suggestedTime,
+      suggestedDate2: parsed.suggestedDate2,
+      suggestedTime2: parsed.suggestedTime2,
+      suggestedDate3: parsed.suggestedDate3,
+      suggestedTime3: parsed.suggestedTime3,
       duration: parsed.duration || 60,
       location: parsed.location,
       priority: parsed.priority || 'should',

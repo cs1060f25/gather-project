@@ -81,8 +81,9 @@ const getTimeOptions = () => {
   return options;
 };
 
-// Duration options
+// Duration options - includes blank default
 const DURATION_OPTIONS = [
+  { value: 0, label: 'Duration' },
   { value: 15, label: '15m' },
   { value: 30, label: '30m' },
   { value: 45, label: '45m' },
@@ -118,6 +119,21 @@ const TimerIcon = () => (
   </svg>
 );
 
+// Location Icons
+const LocationPinIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const VideoIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="6" width="14" height="12" rx="2"/>
+    <path d="M16 10l6-4v12l-6-4"/>
+  </svg>
+);
+
 const PLACEHOLDER_SUGGESTIONS = [
   "Schedule lunch with the team next Thursday...",
   "Coffee with Sarah tomorrow at 2pm...",
@@ -126,6 +142,13 @@ const PLACEHOLDER_SUGGESTIONS = [
   "Quick sync with @John about the project...",
   "Book a meeting room for client presentation..."
 ];
+
+// Custom Picker Types
+type PickerType = 'date' | 'time' | 'duration' | null;
+interface ActivePicker {
+  type: PickerType;
+  optionId: string;
+}
 
 export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   contacts,
@@ -146,21 +169,179 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [participants, setParticipants] = useState<string[]>([]);
   const [participantInput, setParticipantInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  // Start with blank availability options - AI will populate them intelligently
+  // Start with completely blank availability options - AI will populate them intelligently
   const [availabilityOptions, setAvailabilityOptions] = useState<AvailabilityOption[]>([
-    { id: '1', day: '', time: '', duration: 60, color: OPTION_COLORS[0] },
-    { id: '2', day: '', time: '', duration: 60, color: OPTION_COLORS[1] },
-    { id: '3', day: '', time: '', duration: 60, color: OPTION_COLORS[2] }
+    { id: '1', day: '', time: '', duration: 0, color: OPTION_COLORS[0] },
+    { id: '2', day: '', time: '', duration: 0, color: OPTION_COLORS[1] },
+    { id: '3', day: '', time: '', duration: 0, color: OPTION_COLORS[2] }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [isProcessingChat, setIsProcessingChat] = useState(false);
+  
+  // Custom picker state
+  const [activePicker, setActivePicker] = useState<ActivePicker | null>(null);
+  const [pickerMonth, setPickerMonth] = useState(new Date());
+  const [selectedHour, setSelectedHour] = useState(9);
+  const [selectedMinute, setSelectedMinute] = useState(0);
+  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const dateOptions = useMemo(() => getDateOptions(), []);
   const timeOptions = useMemo(() => getTimeOptions(), []);
+  
+  // Close picker when clicking outside or pressing Escape
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActivePicker(null);
+      }
+    };
+
+    if (activePicker) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [activePicker]);
+
+  // Handle clicking on overlay backdrop (not the card content)
+  const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      setActivePicker(null);
+    }
+  };
+
+  // Helper to format time from hour/minute/period
+  const formatTimeValue = (hour: number, minute: number, period: 'AM' | 'PM'): string => {
+    let h = hour;
+    if (period === 'PM' && hour !== 12) h += 12;
+    if (period === 'AM' && hour === 12) h = 0;
+    return `${h.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  };
+
+  // Helper to parse time string to hour/minute/period
+  const parseTimeValue = (time: string) => {
+    if (!time) return { hour: 9, minute: 0, period: 'AM' as const };
+    const [h, m] = time.split(':').map(Number);
+    const period = h >= 12 ? 'PM' as const : 'AM' as const;
+    const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    return { hour, minute: m, period };
+  };
+
+  // Open date picker
+  const openDatePicker = (optionId: string, currentValue: string) => {
+    if (currentValue) {
+      setPickerMonth(new Date(currentValue + 'T00:00:00'));
+    } else {
+      setPickerMonth(new Date());
+    }
+    setActivePicker({ type: 'date', optionId });
+    setIsEditing(true);
+  };
+
+  // Open time picker
+  const openTimePicker = (optionId: string, currentValue: string) => {
+    const { hour, minute, period } = parseTimeValue(currentValue);
+    setSelectedHour(hour);
+    setSelectedMinute(minute);
+    setSelectedPeriod(period);
+    setActivePicker({ type: 'time', optionId });
+    setIsEditing(true);
+  };
+
+  // Open duration picker
+  const openDurationPicker = (optionId: string) => {
+    setActivePicker({ type: 'duration', optionId });
+    setIsEditing(true);
+  };
+
+  // Select date from calendar
+  const selectDate = (date: Date) => {
+    if (!activePicker) return;
+    const dateStr = formatLocalDate(date);
+    handleOptionChange(activePicker.optionId, 'day', dateStr);
+    setActivePicker(null);
+  };
+
+  // Confirm time selection
+  const confirmTime = () => {
+    if (!activePicker) return;
+    const timeStr = formatTimeValue(selectedHour, selectedMinute, selectedPeriod);
+    handleOptionChange(activePicker.optionId, 'time', timeStr);
+    setActivePicker(null);
+  };
+
+  // Select duration
+  const selectDuration = (duration: number) => {
+    if (!activePicker) return;
+    handleOptionChange(activePicker.optionId, 'duration', duration);
+    setActivePicker(null);
+  };
+
+  // Generate calendar days for a month
+  const getCalendarDays = (month: Date) => {
+    const year = month.getFullYear();
+    const monthIdx = month.getMonth();
+    const firstDay = new Date(year, monthIdx, 1);
+    const lastDay = new Date(year, monthIdx + 1, 0);
+    const startPadding = firstDay.getDay();
+    const days: (Date | null)[] = [];
+    
+    // Add empty cells for padding
+    for (let i = 0; i < startPadding; i++) {
+      days.push(null);
+    }
+    
+    // Add actual days
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      days.push(new Date(year, monthIdx, d));
+    }
+    
+    return days;
+  };
+
+  // Check if date is today
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  // Check if date is in the past
+  const isPast = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  // Format display for selected date
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return 'Date';
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+  };
+
+  // Format display for selected time
+  const formatTimeDisplay = (timeStr: string) => {
+    if (!timeStr) return 'Time';
+    return new Date(`2000-01-01T${timeStr}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Format display for duration
+  const formatDurationDisplay = (duration: number) => {
+    if (!duration) return 'Dura...';
+    const opt = DURATION_OPTIONS.find(d => d.value === duration);
+    return opt?.label || 'Dura...';
+  };
 
   // Handle click outside to exit editing mode
   const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -214,7 +395,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     }
   }, [eventName, description, location, participants, availabilityOptions, isEditing, onFieldChange]);
 
-  // Location autocomplete - virtual meeting platforms and Google Places API fallback
+  // Location autocomplete - virtual meeting platforms and Google Places API
   const handleLocationChange = async (value: string) => {
     setLocation(value);
     setIsEditing(true);
@@ -225,21 +406,43 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       return;
     }
 
-    // Virtual meeting suggestions
+    // Virtual meeting suggestions - check first
     const virtualPlatforms = ['Google Meet', 'Zoom', 'Microsoft Teams', 'Discord', 'Slack Huddle'];
     const lowercaseValue = value.toLowerCase();
     const matchedPlatforms = virtualPlatforms.filter(p => 
       p.toLowerCase().includes(lowercaseValue)
     );
 
-    // Common location suggestions based on input
-    const commonLocations = [
-      `${value} (nearby)`,
-      `${value}, Office`,
-      `${value}, Downtown`,
-    ];
+    // If it looks like a virtual platform query, show those first
+    if (matchedPlatforms.length > 0) {
+      setLocationSuggestions(matchedPlatforms);
+      setShowLocationSuggestions(true);
+      return;
+    }
 
-    setLocationSuggestions([...matchedPlatforms, ...commonLocations].slice(0, 5));
+    // Otherwise, try Google Places API via serverless function
+    try {
+      const response = await fetch(`/api/places-autocomplete?input=${encodeURIComponent(value)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.predictions && data.predictions.length > 0) {
+          const placeSuggestions = data.predictions.map((p: any) => p.description).slice(0, 5);
+          setLocationSuggestions(placeSuggestions);
+          setShowLocationSuggestions(true);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('Places API call failed, using fallback');
+    }
+
+    // Fallback suggestions if API not available or fails
+    const fallbackLocations = [
+      `${value}`,
+      `${value}, nearby`,
+    ];
+    setLocationSuggestions([...matchedPlatforms, ...fallbackLocations].slice(0, 5));
     setShowLocationSuggestions(true);
   };
 
@@ -339,9 +542,9 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     setLocation('');
     setParticipants([]);
     setAvailabilityOptions([
-      { id: '1', day: '', time: '', duration: 60, color: OPTION_COLORS[0] },
-      { id: '2', day: '', time: '', duration: 60, color: OPTION_COLORS[1] },
-      { id: '3', day: '', time: '', duration: 60, color: OPTION_COLORS[2] }
+      { id: '1', day: '', time: '', duration: 0, color: OPTION_COLORS[0] },
+      { id: '2', day: '', time: '', duration: 0, color: OPTION_COLORS[1] },
+      { id: '3', day: '', time: '', duration: 0, color: OPTION_COLORS[2] }
     ]);
     setIsEditing(false);
   };
@@ -393,37 +596,51 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         // Update availability options if we have date/time suggestions
         if (parsed.suggestedDate || parsed.suggestedTime) {
           const newOptions = [...availabilityOptions];
+          const duration = parsed.duration || 60;
           
-          // Find first empty option slot or use first one
-          const emptyIndex = newOptions.findIndex(o => !o.day && !o.time);
-          const targetIndex = emptyIndex >= 0 ? emptyIndex : 0;
+          // Set first option
+          newOptions[0] = { 
+            ...newOptions[0], 
+            day: parsed.suggestedDate || '', 
+            time: parsed.suggestedTime || '',
+            duration: duration
+          };
           
-          if (parsed.suggestedDate) {
-            newOptions[targetIndex] = { ...newOptions[targetIndex], day: parsed.suggestedDate };
-          }
-          if (parsed.suggestedTime) {
-            newOptions[targetIndex] = { ...newOptions[targetIndex], time: parsed.suggestedTime };
-          }
-          if (parsed.duration) {
-            newOptions[targetIndex] = { ...newOptions[targetIndex], duration: parsed.duration };
+          // Check if API provided multiple suggestions (for better spacing)
+          if (parsed.suggestedDate2 && parsed.suggestedTime2) {
+            newOptions[1] = {
+              ...newOptions[1],
+              day: parsed.suggestedDate2,
+              time: parsed.suggestedTime2,
+              duration: duration
+            };
           }
           
-          // Try to get additional free time suggestions for other slots
-          if (events.length > 0 && parsed.suggestedDate) {
-            const targetDate = parsed.suggestedDate;
-            const freeTimes = getSuggestedTimes(events, targetDate, parsed.duration || 60);
+          if (parsed.suggestedDate3 && parsed.suggestedTime3) {
+            newOptions[2] = {
+              ...newOptions[2],
+              day: parsed.suggestedDate3,
+              time: parsed.suggestedTime3,
+              duration: duration
+            };
+          }
+          
+          // If API didn't provide multiple suggestions, try to generate them
+          // Only for unfilled slots
+          if (!parsed.suggestedDate2 && events.length > 0 && parsed.suggestedDate) {
+            const freeTimes = getSuggestedTimes(events, parsed.suggestedDate, duration);
             
-            // Fill remaining empty slots with free times
-            let freeTimeIdx = 0;
-            for (let i = 0; i < newOptions.length && freeTimeIdx < freeTimes.length; i++) {
-              if (!newOptions[i].day && !newOptions[i].time) {
-                newOptions[i] = { 
-                  ...newOptions[i], 
-                  day: targetDate, 
-                  time: freeTimes[freeTimeIdx] 
-                };
-                freeTimeIdx++;
-              }
+            // Fill slot 2 with a different time on the same or next day
+            if (!newOptions[1].day && freeTimes.length > 0) {
+              const time2 = freeTimes.find(t => t !== parsed.suggestedTime) || freeTimes[0];
+              newOptions[1] = { ...newOptions[1], day: parsed.suggestedDate, time: time2, duration };
+            }
+            
+            // Fill slot 3 with another option
+            if (!newOptions[2].day && freeTimes.length > 1) {
+              const usedTimes = [parsed.suggestedTime, newOptions[1].time];
+              const time3 = freeTimes.find(t => !usedTimes.includes(t)) || freeTimes[1];
+              newOptions[2] = { ...newOptions[2], day: parsed.suggestedDate, time: time3, duration };
             }
           }
           
@@ -452,6 +669,10 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
   const handleFocus = () => {
     setIsEditing(true);
+    // Auto-add current user as organizer when they start editing
+    if (currentUserEmail && !participants.includes(currentUserEmail)) {
+      setParticipants(prev => [currentUserEmail, ...prev]);
+    }
   };
 
   return (
@@ -468,9 +689,9 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                 setLocation('');
                 setParticipants([]);
                 setAvailabilityOptions([
-                  { id: '1', day: '', time: '', duration: 60, color: OPTION_COLORS[0] },
-                  { id: '2', day: '', time: '', duration: 60, color: OPTION_COLORS[1] },
-                  { id: '3', day: '', time: '', duration: 60, color: OPTION_COLORS[2] }
+                  { id: '1', day: '', time: '', duration: 0, color: OPTION_COLORS[0] },
+                  { id: '2', day: '', time: '', duration: 0, color: OPTION_COLORS[1] },
+                  { id: '3', day: '', time: '', duration: 0, color: OPTION_COLORS[2] }
                 ]);
                 setIsEditing(false);
               }}
@@ -541,11 +762,13 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   className="cep-location-suggestion"
                   onMouseDown={() => selectLocation(loc)}
                 >
-                  {loc.includes('Meet') || loc.includes('Zoom') || loc.includes('Teams') || loc.includes('Discord') || loc.includes('Slack') ? (
-                    <span className="cep-loc-icon">💻</span>
-                  ) : (
-                    <span className="cep-loc-icon">📍</span>
-                  )}
+                  <span className="cep-loc-icon">
+                    {loc.includes('Meet') || loc.includes('Zoom') || loc.includes('Teams') || loc.includes('Discord') || loc.includes('Slack') ? (
+                      <VideoIcon />
+                    ) : (
+                      <LocationPinIcon />
+                    )}
+                  </span>
                   {loc}
                 </button>
               ))}
@@ -671,48 +894,275 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                 className={`cep-option ${opt.day && opt.time ? 'filled' : ''}`}
               >
                 <span className="cep-option-badge">{idx + 1}</span>
-                <div className="cep-option-select-wrapper">
-                  <span className="cep-option-icon"><CalendarIcon /></span>
-                  <select
-                    value={opt.day}
-                    onChange={e => handleOptionChange(opt.id, 'day', e.target.value)}
-                    onFocus={handleFocus}
-                    className="cep-option-day"
-                  >
-                    {dateOptions.map(d => (
-                      <option key={d.value} value={d.value}>{d.shortLabel}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="cep-option-select-wrapper">
-                  <span className="cep-option-icon"><ClockIcon /></span>
-                  <select
-                    value={opt.time}
-                    onChange={e => handleOptionChange(opt.id, 'time', e.target.value)}
-                    onFocus={handleFocus}
-                    className="cep-option-time"
-                  >
-                    {timeOptions.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="cep-option-select-wrapper cep-duration-wrapper">
-                  <span className="cep-option-icon"><TimerIcon /></span>
-                  <select
-                    value={opt.duration}
-                    onChange={e => handleOptionChange(opt.id, 'duration', Number(e.target.value))}
-                    onFocus={handleFocus}
-                    className="cep-option-duration"
-                  >
-                    {DURATION_OPTIONS.map(d => (
-                      <option key={d.value} value={d.value}>{d.label}</option>
-                    ))}
-                  </select>
-                </div>
+                
+                {/* Date Picker Button */}
+                <button
+                  type="button"
+                  className={`cep-picker-btn ${opt.day ? 'has-value' : ''}`}
+                  onClick={() => openDatePicker(opt.id, opt.day)}
+                >
+                  <CalendarIcon />
+                  <span>{formatDateDisplay(opt.day)}</span>
+                </button>
+                
+                {/* Time Picker Button */}
+                <button
+                  type="button"
+                  className={`cep-picker-btn ${opt.time ? 'has-value' : ''}`}
+                  onClick={() => openTimePicker(opt.id, opt.time)}
+                >
+                  <ClockIcon />
+                  <span>{formatTimeDisplay(opt.time)}</span>
+                </button>
+                
+                {/* Duration Picker Button */}
+                <button
+                  type="button"
+                  className={`cep-picker-btn cep-duration-btn ${opt.duration ? 'has-value' : ''}`}
+                  onClick={() => openDurationPicker(opt.id)}
+                >
+                  <TimerIcon />
+                  <span>{formatDurationDisplay(opt.duration)}</span>
+                </button>
               </div>
             ))}
           </div>
+          
+          {/* Custom Picker Modals */}
+          {activePicker && (
+            <div className="cep-picker-overlay" onClick={handleOverlayClick}>
+              {/* Date Picker - Calendar View */}
+              {activePicker.type === 'date' && (
+                <div className="cep-calendar-picker">
+                  <button 
+                    type="button" 
+                    className="cep-picker-close"
+                    onClick={() => setActivePicker(null)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                  <div className="cep-calendar-header">
+                    <button 
+                      type="button"
+                      onClick={() => setPickerMonth(new Date(pickerMonth.getFullYear(), pickerMonth.getMonth() - 1))}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M15 18l-6-6 6-6"/>
+                      </svg>
+                    </button>
+                    <span className="cep-calendar-title">
+                      {pickerMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={() => setPickerMonth(new Date(pickerMonth.getFullYear(), pickerMonth.getMonth() + 1))}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="cep-calendar-weekdays">
+                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                      <span key={d}>{d}</span>
+                    ))}
+                  </div>
+                  <div className="cep-calendar-days">
+                    {getCalendarDays(pickerMonth).map((date, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`cep-calendar-day ${!date ? 'empty' : ''} ${date && isToday(date) ? 'today' : ''} ${date && isPast(date) ? 'past' : ''}`}
+                        disabled={!date || isPast(date)}
+                        onClick={() => date && selectDate(date)}
+                      >
+                        {date?.getDate()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Time Picker - Analog Clock Style */}
+              {activePicker.type === 'time' && (
+                <div className="cep-time-picker">
+                  <button 
+                    type="button" 
+                    className="cep-picker-close"
+                    onClick={() => setActivePicker(null)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                  <div className="cep-time-display">
+                    <span className="cep-time-value">
+                      {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedPeriod}
+                    </span>
+                  </div>
+                  
+                  {/* Analog Clock Face */}
+                  <div className="cep-clock-face">
+                    {/* Clock marks */}
+                    {[...Array(12)].map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="cep-clock-mark"
+                        style={{ transform: `rotate(${i * 30}deg)` }}
+                      />
+                    ))}
+                    
+                    {/* Hour numbers around the clock */}
+                    {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h, i) => {
+                      const angle = (i * 30 - 90) * (Math.PI / 180);
+                      const radiusPercent = 36; // % from center
+                      const x = 50 + radiusPercent * Math.cos(angle);
+                      const y = 50 + radiusPercent * Math.sin(angle);
+                      return (
+                        <button
+                          key={h}
+                          type="button"
+                          className={`cep-clock-hour ${selectedHour === h ? 'selected' : ''}`}
+                          style={{ left: `${x}%`, top: `${y}%` }}
+                          onClick={() => setSelectedHour(h)}
+                        >
+                          {h}
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Clock hands */}
+                    <div 
+                      className="cep-clock-hand hour-hand"
+                      style={{ transform: `rotate(${(selectedHour % 12) * 30 + selectedMinute * 0.5}deg)` }}
+                    />
+                    <div 
+                      className="cep-clock-hand minute-hand"
+                      style={{ transform: `rotate(${selectedMinute * 6}deg)` }}
+                    />
+                    <div className="cep-clock-center" />
+                  </div>
+                  
+                  {/* Minute wheel */}
+                  <div className="cep-minute-wheel">
+                    <span className="cep-minute-label">Minutes</span>
+                    <div className="cep-minute-options">
+                      {[0, 15, 30, 45].map(m => (
+                        <button
+                          key={m}
+                          type="button"
+                          className={`cep-minute-btn ${selectedMinute === m ? 'selected' : ''}`}
+                          onClick={() => setSelectedMinute(m)}
+                        >
+                          :{m.toString().padStart(2, '0')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* AM/PM Toggle */}
+                  <div className="cep-period-toggle">
+                    <button
+                      type="button"
+                      className={`cep-period-btn ${selectedPeriod === 'AM' ? 'selected' : ''}`}
+                      onClick={() => setSelectedPeriod('AM')}
+                    >
+                      <svg className="period-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                      </svg>
+                      <span>AM</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`cep-period-btn ${selectedPeriod === 'PM' ? 'selected' : ''}`}
+                      onClick={() => setSelectedPeriod('PM')}
+                    >
+                      <svg className="period-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                      </svg>
+                      <span>PM</span>
+                    </button>
+                  </div>
+                  
+                  <button type="button" className="cep-time-confirm" onClick={confirmTime}>
+                    Set Time
+                  </button>
+                </div>
+              )}
+              
+              {/* Duration Picker */}
+              {activePicker.type === 'duration' && (
+                <div className="cep-duration-picker">
+                  <button 
+                    type="button" 
+                    className="cep-picker-close"
+                    onClick={() => setActivePicker(null)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                  <div className="cep-duration-header">
+                    <div className="cep-slot-machine-frame">
+                      <span className="cep-slot-title">DURATION</span>
+                    </div>
+                  </div>
+                  <div className="cep-slot-machine">
+                    <div className="cep-slot-window">
+                      <div className="cep-slot-reel">
+                        {DURATION_OPTIONS.filter(d => d.value > 0).map((d) => {
+                          const isSelected = availabilityOptions.find(o => o.id === activePicker.optionId)?.duration === d.value;
+                          return (
+                            <button
+                              key={d.value}
+                              type="button"
+                              className={`cep-slot-item ${isSelected ? 'selected' : ''}`}
+                              onClick={() => selectDuration(d.value)}
+                            >
+                              <div className="cep-slot-content">
+                                {d.value <= 15 ? (
+                                  <svg className="cep-slot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                  </svg>
+                                ) : d.value <= 30 ? (
+                                  <svg className="cep-slot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                                    <path d="M6 1v3M10 1v3M14 1v3"/>
+                                  </svg>
+                                ) : d.value <= 60 ? (
+                                  <svg className="cep-slot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                  </svg>
+                                ) : d.value <= 90 ? (
+                                  <svg className="cep-slot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                  </svg>
+                                ) : (
+                                  <svg className="cep-slot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                  </svg>
+                                )}
+                                <span className="cep-slot-value">{d.label}</span>
+                                <span className="cep-slot-desc">
+                                  {d.value < 60 ? `${d.value} min` : d.value === 60 ? '1 hour' : `${d.value / 60}h`}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Submit Button - requires event name, at least 1 participant, and at least 1 availability option */}

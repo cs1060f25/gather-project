@@ -135,49 +135,61 @@ Known contacts: ${contactNames.join(', ') || 'none'}
 **CORE PRINCIPLES:**
 1. Infer clear event names from context ("I want to go to the movies with friends" → "Movies with Friends")
 2. Extract locations exactly as stated ("ice skating rink," "downtown bistro")
-3. Infer appropriate times of day based on the activity:
+3. **TIME INFERENCE RULES - FOLLOW STRICTLY:**
    - Breakfast: 08:00-10:00
-   - Brunch: 10:00-12:00
+   - Brunch: 10:00-12:00  
    - Lunch: 11:30-13:30
-   - Dinner/Meals in evening: 18:00-21:00
-   - Parties/Hangouts/Social: 17:00-22:00
+   - **Dinner: MUST be 18:00 or later (18:00-21:00)** - people eat dinner in the evening
+   - **Parties/Hangouts/Social: 17:00-22:00** - social events happen after work hours
    - Work meetings: 09:00-17:00
-4. When users provide explicit dates or times, use them
-5. Modify ONLY fields the user clearly intends to change, preserving all other existing values
-6. Add or remove participants ONLY when explicitly requested, matching names/emails against known contacts
-7. If the first inferred time conflicts with calendar events, automatically adjust to the nearest viable slot while maintaining the intended time-of-day category
-8. If no valid time exists, indicate no conflict-free option is available rather than forcing a suggestion
+   - Coffee/Casual: 10:00-16:00
+4. **WEEKEND HANDLING - CRITICAL:**
+   - If user says "weekend", "saturday", "sunday" - ALL suggestions should be on weekend days
+   - If user says "this weekend" - use the upcoming Saturday/Sunday
+   - If user says "next weekend" - use Saturday/Sunday of the following week
+5. When users provide explicit dates or times, use them
+6. Modify ONLY fields the user clearly intends to change, preserving existing values in the form state
+7. Add or remove participants ONLY when explicitly requested
 
 **LOCATION RULES:**
 - If specific place mentioned: use it exactly
 - If "zoom", "video call", "online", "virtual", "teams", "meet" mentioned: use "Google Meet" or the specific platform
-- If NOT specified and NOT a video call: use "TBD"
-- For MEALS: assume physical location unless stated otherwise
+- If NOT specified: use "TBD"
+- For MEALS: assume physical location unless stated otherwise → "TBD"
+
+**SUGGESTED TIMES STRATEGY:**
+- Provide 3 different time slot suggestions that are SPACED OUT:
+  - If it's a dinner → 18:00, 18:30, 19:00 (all evening, different times)
+  - If it's weekend → spread across Saturday AND Sunday
+  - Don't bunch all suggestions in the same hour
+  - Consider variety: different days if event is flexible
 
 **WHAT TO HANDLE:**
 - Creation of new events
-- Incremental updates to existing form fields
-- Clarifications and partial edits
+- Incremental updates
 - Rescheduling and location changes
 - Participant modifications
-- Correcting earlier messages
 
 **WHAT TO IGNORE:**
-- Vague or meaningless messages ("Bored," "hmm")
-- Never fabricate participants, dates, or times
+- Vague messages ("Bored," "hmm")
+- Never fabricate participants
 
-Return a JSON object with these fields:
-- isSchedulingRequest: boolean (true if this is a request to schedule something)
-- title: string (clean, concise event title - infer from context)
-- participants: string[] (names or emails mentioned, match to known contacts)
-- suggestedDate: string (ISO date YYYY-MM-DD)
-- suggestedTime: string (24h format HH:MM - must make sense for event type!)
-- duration: number (in minutes - meals 60-90min, meetings 30-60min)
-- location: string (specific place, "TBD", or platform name)
+Return JSON:
+- isSchedulingRequest: boolean
+- title: string (clean event title)
+- participants: string[] (match to contacts)
+- suggestedDate: string (YYYY-MM-DD) 
+- suggestedTime: string (HH:MM 24h - MUST match event type! Dinner=18:00+)
+- suggestedDate2: string (optional second date for variety)
+- suggestedTime2: string (optional second time)
+- suggestedDate3: string (optional third date)
+- suggestedTime3: string (optional third time)
+- duration: number (minutes)
+- location: string (specific place or "TBD")
 - priority: "must" | "should" | "maybe"
-- notes: string (any additional context)
+- notes: string
 
-Always ensure outputs are consistent, conflict-free, secure, conservative in assumption, and ready for the form to apply as isolated field updates.`
+REMEMBER: Dinner times MUST be 18:00 or later. Weekend events MUST be on Sat/Sun.`
           },
           {
             role: 'user',

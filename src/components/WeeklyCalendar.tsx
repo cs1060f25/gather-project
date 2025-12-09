@@ -47,7 +47,7 @@ interface WeeklyCalendarProps {
   onTimeSlotClick?: (date: string, time: string) => void;
 }
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
+const HOURS = Array.from({ length: 19 }, (_, i) => i + 6); // 6 AM to 12 AM (midnight)
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -79,19 +79,45 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return d;
   });
   const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+  const [pickerView, setPickerView] = useState<'months' | 'years'>('months');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowCalendarDropdown(false);
+      }
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setShowDatePicker(false);
+        setPickerView('months');
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Navigate to a specific month
+  const goToMonth = (year: number, month: number) => {
+    const d = new Date(year, month, 1);
+    // Find the Sunday of that week
+    d.setDate(d.getDate() - d.getDay());
+    setWeekStart(d);
+    setShowDatePicker(false);
+    setPickerView('months');
+  };
+
+  // Month names for picker
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // Generate year range for picker
+  const currentYear = new Date().getFullYear();
+  const yearRange = Array.from({ length: 12 }, (_, i) => pickerYear - 5 + i);
 
   // Get the 7 days of current week
   const weekDays = useMemo(() => {
@@ -166,7 +192,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   // Get events for a specific day with overlap handling
   const getEventsForDay = (date: Date): PositionedEvent[] => {
     const dateISO = fmtDateISO(date);
-    const dayEvents = filteredEvents.filter(e => e.date === dateISO);
+    // Filter events for this day AND with valid times within our display range (6 AM - midnight)
+    const dayEvents = filteredEvents.filter(e => {
+      if (e.date !== dateISO) return false;
+      if (!e.time) return false; // Skip events without time
+      const minutes = timeToMinutes(e.time);
+      // Only show events between 6 AM (360 min) and midnight (1440 min)
+      return minutes >= 360 && minutes < 1440;
+    });
     
     // Sort by start time
     dayEvents.sort((a, b) => {
@@ -307,23 +340,26 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   const selectedCalendarCount = calendars.filter(c => c.selected).length;
 
-  // Calculate position as percentage of total hours
+  // Calculate position as percentage of total hours (6 AM to midnight = 19 hours)
   const getEventTopPercent = (time?: string): number => {
     if (!time) return 0;
     const minutes = timeToMinutes(time);
     const startMinutes = 6 * 60; // 6 AM
-    const totalMinutes = 18 * 60; // 18 hours (6 AM - 12 AM)
-    return Math.max(0, Math.min(100, ((minutes - startMinutes) / totalMinutes) * 100));
+    const totalMinutes = 19 * 60; // 19 hours (6 AM - 1 AM next day)
+    const percent = ((minutes - startMinutes) / totalMinutes) * 100;
+    // Clamp to valid range - events outside 6AM-midnight should be hidden
+    if (percent < 0 || percent > 100) return -1000; // Move off-screen
+    return percent;
   };
 
   const getEventHeightPercent = (startTime?: string, endTime?: string, duration?: number): number => {
-    const totalMinutes = 18 * 60; // 18 hours
+    const totalMinutes = 19 * 60; // 19 hours
     if (startTime && endTime) {
       const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
-      return Math.max(2, (diff / totalMinutes) * 100);
+      return Math.max(2, Math.min((diff / totalMinutes) * 100, 100));
     }
     if (duration) {
-      return Math.max(2, (duration / totalMinutes) * 100);
+      return Math.max(2, Math.min((duration / totalMinutes) * 100, 100));
     }
     return (60 / totalMinutes) * 100; // Default 1 hour
   };
@@ -332,8 +368,102 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     <div className={`weekly-calendar ${editingMode ? 'editing-mode' : ''}`}>
       {/* Top Controls Bar */}
       <div className="wc-top-bar">
-        {/* Month Label - left */}
-        <div className="wc-month-label">{monthLabel}</div>
+        {/* Month Label - left (clickable date picker) */}
+        <div className="wc-date-picker-wrapper" ref={datePickerRef}>
+          <button 
+            className="wc-month-label"
+            onClick={() => {
+              setShowDatePicker(!showDatePicker);
+              setPickerYear(weekStart.getFullYear());
+              setPickerView('months');
+            }}
+          >
+            {monthLabel}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={showDatePicker ? 'rotated' : ''}>
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          
+          {showDatePicker && (
+            <div className="wc-date-picker">
+              {/* Year header */}
+              <div className="wc-picker-header">
+                <button 
+                  className="wc-picker-nav"
+                  onClick={() => setPickerYear(y => y - 1)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                </button>
+                <button 
+                  className="wc-picker-year"
+                  onClick={() => setPickerView(v => v === 'months' ? 'years' : 'months')}
+                >
+                  {pickerYear}
+                </button>
+                <button 
+                  className="wc-picker-nav"
+                  onClick={() => setPickerYear(y => y + 1)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Month grid or Year grid */}
+              {pickerView === 'months' ? (
+                <div className="wc-picker-grid wc-months-grid">
+                  {MONTHS.map((month, idx) => {
+                    const isCurrentMonth = idx === today.getMonth() && pickerYear === today.getFullYear();
+                    const isSelectedMonth = idx === weekStart.getMonth() && pickerYear === weekStart.getFullYear();
+                    return (
+                      <button
+                        key={month}
+                        className={`wc-picker-item ${isCurrentMonth ? 'current' : ''} ${isSelectedMonth ? 'selected' : ''}`}
+                        onClick={() => goToMonth(pickerYear, idx)}
+                      >
+                        {month}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="wc-picker-grid wc-years-grid">
+                  {yearRange.map((year) => {
+                    const isCurrentYear = year === currentYear;
+                    const isSelectedYear = year === pickerYear;
+                    return (
+                      <button
+                        key={year}
+                        className={`wc-picker-item ${isCurrentYear ? 'current' : ''} ${isSelectedYear ? 'selected' : ''}`}
+                        onClick={() => {
+                          setPickerYear(year);
+                          setPickerView('months');
+                        }}
+                      >
+                        {year}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* Quick actions */}
+              <div className="wc-picker-footer">
+                <button 
+                  className="wc-picker-today"
+                  onClick={() => {
+                    goToMonth(today.getFullYear(), today.getMonth());
+                  }}
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* Navigation - center */}
         <div className="wc-nav-bubble">

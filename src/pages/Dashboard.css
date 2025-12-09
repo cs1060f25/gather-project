@@ -190,6 +190,28 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Green border when calendar is in editing mode */
+.calendar-section.editing-mode {
+  position: relative;
+  overflow: visible;
+}
+
+.calendar-section.editing-mode::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 4px solid #22c55e;
+  pointer-events: none;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+/* Hide green border when picker modal is open */
+body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
+  opacity: 0;
 }
 
 .create-event-section {

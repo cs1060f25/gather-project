@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
-import { DayNightToggle } from '../components/DayNightToggle';
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import './EventsPage.css';
 
@@ -29,18 +28,23 @@ interface CalendarEvent {
   source: 'google' | 'gatherly';
   calendarId?: string;
   calendarName?: string;
+  calendarColor?: string;
   status?: 'pending' | 'confirmed' | 'cancelled';
   isGatherly?: boolean;
+  responses?: number;
+  totalInvites?: number;
 }
 
 interface GatherlyEvent {
   id: string;
   title: string;
-  options: { day: string; time: string; duration: number; color: string }[];
+  location?: string;
+  options: { day: string; time: string; duration: number; color: string; location?: string }[];
   participants: string[];
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
   confirmedOption?: { day: string; time: string; duration: number };
+  responses?: { email: string; selectedOptions: number[] }[];
 }
 
 interface Contact {
@@ -58,8 +62,28 @@ interface UserProfile {
   avatar_url?: string;
 }
 
+interface GoogleCalendar {
+  id: string;
+  name: string;
+  color: string;
+}
+
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// Helper to create lighter background from color
+const getLighterColor = (color: string): string => {
+  // Convert hex to RGB, lighten, and return
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  // Mix with white (lighter)
+  const lightR = Math.round(r + (255 - r) * 0.8);
+  const lightG = Math.round(g + (255 - g) * 0.8);
+  const lightB = Math.round(b + (255 - b) * 0.8);
+  return `rgb(${lightR}, ${lightG}, ${lightB})`;
+};
 
 export const EventsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -112,50 +136,114 @@ export const EventsPage: React.FC = () => {
   const loadEvents = async () => {
     setLoading(true);
 
-    // Load Google Calendar events
+    // Load Google Calendar events from ALL calendars
     const providerToken = getGoogleToken();
     if (providerToken) {
       try {
+        // First fetch all calendars
+        const calendarListResponse = await fetch(
+          'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+          { headers: { Authorization: `Bearer ${providerToken}` } }
+        );
+
+        let fetchedCalendars: GoogleCalendar[] = [];
+        if (calendarListResponse.ok) {
+          const calendarListData = await calendarListResponse.json();
+          fetchedCalendars = (calendarListData.items || []).map((cal: any) => ({
+            id: cal.id,
+            name: cal.summary || 'Unnamed Calendar',
+            color: cal.backgroundColor || '#4285f4'
+          }));
+        }
+
         const now = new Date();
         const timeMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
 
-        const response = await fetch(
-          'https://www.googleapis.com/calendar/v3/calendars/primary/events?' +
-          new URLSearchParams({
-            timeMin,
-            timeMax,
-            maxResults: '50',
-            singleEvents: 'true',
-            orderBy: 'startTime'
-          }),
-          { headers: { Authorization: `Bearer ${providerToken}` } }
-        );
+        // Fetch events from all calendars
+        const allEvents: CalendarEvent[] = [];
+        
+        for (const cal of fetchedCalendars) {
+          try {
+            const response = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?` +
+              new URLSearchParams({
+                timeMin,
+                timeMax,
+                maxResults: '50',
+                singleEvents: 'true',
+                orderBy: 'startTime'
+              }),
+              { headers: { Authorization: `Bearer ${providerToken}` } }
+            );
 
-        if (response.ok) {
-          const data = await response.json();
-          const events = (data.items || []).map((item: any) => ({
-            id: item.id,
-            title: item.summary || 'Untitled Event',
-            date: item.start?.date || item.start?.dateTime?.split('T')[0],
-            time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-            endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
-            location: item.location,
-            attendees: (item.attendees || []).map((a: any) => a.email),
-            source: 'google' as const,
-            isGatherly: false
-          }));
-          setGoogleEvents(events);
+            if (response.ok) {
+              const data = await response.json();
+              const events = (data.items || []).map((item: any) => ({
+                id: item.id,
+                title: item.summary || 'Untitled Event',
+                date: item.start?.date || item.start?.dateTime?.split('T')[0],
+                time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+                endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+                location: item.location || 'TBD',
+                attendees: (item.attendees || []).map((a: any) => a.email),
+                source: 'google' as const,
+                calendarId: cal.id,
+                calendarName: cal.name,
+                calendarColor: cal.color,
+                isGatherly: false
+              }));
+              allEvents.push(...events);
+            }
+          } catch (err) {
+            console.error(`Error fetching events from ${cal.name}:`, err);
+          }
         }
+        
+        setGoogleEvents(allEvents);
       } catch (error) {
         console.error('Error loading Google events:', error);
       }
     }
 
-    // Load Gatherly events
+    // Load Gatherly events from localStorage
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
-      setGatherlyEvents(JSON.parse(stored));
+      try {
+        const parsed = JSON.parse(stored);
+        setGatherlyEvents(parsed);
+      } catch (e) {
+        console.error('Error parsing Gatherly events:', e);
+      }
+    }
+
+    // Also try to load from Supabase
+    if (authUser) {
+      try {
+        const { data, error } = await supabase
+          .from('gatherly_events')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const events: GatherlyEvent[] = data.map(e => ({
+            id: e.id,
+            title: e.title,
+            location: e.options?.[0]?.location || 'TBD',
+            options: e.options || [],
+            participants: e.participants || [],
+            status: e.status,
+            createdAt: e.created_at,
+            confirmedOption: e.confirmed_option,
+            responses: e.responses || []
+          }));
+          setGatherlyEvents(events);
+          localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+        }
+      } catch (err) {
+        console.error('Error loading from Supabase:', err);
+      }
     }
 
     setLoading(false);
@@ -165,10 +253,6 @@ export const EventsPage: React.FC = () => {
   const categorizedEvents = useMemo(() => {
     const today = new Date();
     const todayISO = fmtDateISO(today);
-    
-    const weekFromNow = new Date(today);
-    weekFromNow.setDate(weekFromNow.getDate() + 7);
-    const weekFromNowISO = fmtDateISO(weekFromNow);
 
     // Convert Gatherly events to calendar events format
     const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.map(ge => ({
@@ -176,35 +260,24 @@ export const EventsPage: React.FC = () => {
       title: ge.title,
       date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
       time: ge.confirmedOption?.time || ge.options[0]?.time,
+      location: ge.location || ge.options?.[0]?.location || 'TBD',
       attendees: ge.participants,
       source: 'gatherly' as const,
       status: ge.status,
-      isGatherly: true
+      isGatherly: true,
+      calendarName: 'Gatherly',
+      calendarColor: '#22c55e',
+      responses: ge.responses?.length || 0,
+      totalInvites: ge.participants.length
     }));
 
     const allEvents = [...googleEvents, ...gatherlyCalEvents];
 
     return {
       today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled'),
-      nextWeek: allEvents.filter(e => e.date > todayISO && e.date <= weekFromNowISO && e.status !== 'cancelled'),
       pending: gatherlyEvents.filter(ge => ge.status === 'pending')
     };
   }, [googleEvents, gatherlyEvents]);
-
-  const formatTime = (time?: string) => {
-    if (!time) return 'All day';
-    const [h, m] = time.split(':').map(Number);
-    const date = new Date();
-    date.setHours(h, m);
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  };
-
-  const formatDate = (dateStr: string) => {
-    // Parse YYYY-MM-DD manually to avoid timezone issues
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day); // month is 0-indexed
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  };
 
   if (loading) {
     return (
@@ -222,25 +295,12 @@ export const EventsPage: React.FC = () => {
       {/* Header */}
       <header className="events-header">
         <div className="header-left">
-          <button 
-            className="events-back-btn"
-            onClick={() => navigate('/app')}
-            aria-label="Back to Dashboard"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </button>
           <Link to="/app" className="events-logo">
             <GatherlyLogo size={28} />
             <span>Gatherly</span>
           </Link>
         </div>
-        <div className="header-center">
-          <h1>Events</h1>
-        </div>
         <div className="header-right">
-          <DayNightToggle />
           <button 
             className="profile-button"
             onClick={() => setShowProfile(!showProfile)}
@@ -261,63 +321,67 @@ export const EventsPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Content */}
+      {/* Main Content */}
       <main className="events-main">
-        {/* Top Grid - Today and Next Week side by side */}
-        <div className="events-top-grid">
-          {/* Today's Events */}
-          <section className="events-section">
-            <h2 className="section-title">Today's Event</h2>
-            <div className="events-list">
-              {categorizedEvents.today.length === 0 ? (
-                <div className="event-card empty-card"></div>
-              ) : (
-                categorizedEvents.today.map(event => (
+        {/* Today's Events - Horizontal scroll */}
+        <section className="events-section today-section">
+          <div className="section-header">
+            <button 
+              className="back-arrow"
+              onClick={() => navigate('/app')}
+              aria-label="Back to Dashboard"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+            </button>
+            <h2 className="section-title">Today's Events</h2>
+          </div>
+          <div className="today-events-scroll">
+            {categorizedEvents.today.length === 0 ? (
+              <div className="event-card-today empty">
+                <p>No events today</p>
+              </div>
+            ) : (
+              categorizedEvents.today.map(event => {
+                // Show "Personal" if calendar name matches user's email
+                let calendarName = event.calendarName || 'Calendar';
+                if (user?.email && (calendarName === user.email || calendarName.toLowerCase() === user.email.toLowerCase())) {
+                  calendarName = 'Personal';
+                }
+                const calendarColor = event.calendarColor || '#4285f4';
+                const bgColor = getLighterColor(calendarColor);
+                return (
                   <Link 
                     key={event.id} 
                     to={`/event/${event.id}`}
-                    className={`event-card ${event.isGatherly ? 'gatherly' : ''}`}
+                    className="event-card-today"
                   >
-                    <div className="event-time">{formatTime(event.time)}</div>
-                    <div className="event-content">
-                      <h3 className="event-title">{event.title}</h3>
+                    <h3 className="event-title">{event.title}</h3>
+                    <p className="event-location">{event.location || 'TBD'}</p>
+                    <div className="event-footer">
+                      <span className="event-responses">
+                        {event.responses || 0}/{event.totalInvites || event.attendees?.length || 1} Responses
+                      </span>
+                      <span 
+                        className="event-category-badge"
+                        style={{ background: bgColor, color: calendarColor }}
+                      >
+                        {calendarName}
+                      </span>
                     </div>
+                    <div className="event-card-bottom-bar" style={{ background: calendarColor }} />
                   </Link>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* Next Week's Events */}
-          <section className="events-section">
-            <h2 className="section-title">Next Week's Events</h2>
-            <div className="events-list">
-              {categorizedEvents.nextWeek.length === 0 ? (
-                <div className="event-card empty-card"></div>
-              ) : (
-                categorizedEvents.nextWeek.map(event => (
-                  <Link 
-                    key={event.id} 
-                    to={`/event/${event.id}`}
-                    className={`event-card ${event.isGatherly ? 'gatherly' : ''}`}
-                  >
-                    <div className="event-date-time">
-                      <div className="event-date">{formatDate(event.date)}</div>
-                    </div>
-                    <div className="event-content">
-                      <h3 className="event-title">{event.title}</h3>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </section>
-        </div>
+                );
+              })
+            )}
+          </div>
+        </section>
 
         {/* Pending Events */}
-        <section className="events-section">
+        <section className="events-section pending-section">
           <h2 className="section-title">Pending</h2>
-          <div className="events-list">
+          <div className="pending-events-list">
             {categorizedEvents.pending.length === 0 ? (
               <div className="empty-state">
                 <p>No pending events</p>
@@ -327,25 +391,20 @@ export const EventsPage: React.FC = () => {
                 <Link 
                   key={event.id}
                   to={`/event/${event.id}`}
-                  className="event-card pending"
+                  className="pending-event-row"
                 >
-                  <div className="event-options">
-                    {event.options.slice(0, 3).map((opt, i) => (
-                      <span key={i} className="option-chip">{formatDate(opt.day)}</span>
-                    ))}
-                  </div>
                   <h3 className="event-title">{event.title}</h3>
-                  <p className="event-participants">{event.participants.length} invited</p>
-                  <div className="event-badges">
-                    <span className="gatherly-badge">Gatherly</span>
-                    <span className="pending-badge">Pending</span>
+                  <div className="event-meta">
+                    <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
+                    <span className="event-responses">
+                      {event.responses?.length || 0}/{event.participants.length} Responses
+                    </span>
                   </div>
                 </Link>
               ))
             )}
           </div>
         </section>
-
       </main>
 
       {/* Profile Sidebar */}
@@ -364,4 +423,3 @@ export const EventsPage: React.FC = () => {
 };
 
 export default EventsPage;
-
