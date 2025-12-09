@@ -147,26 +147,34 @@ export const InvitePage: React.FC = () => {
   };
 
   // Move to next step in step-by-step flow
-  const handleNextStep = () => {
+  // Pass the current response to handle state timing issues
+  const handleNextStep = (currentResponse?: { index: number; response: TimeOptionResponse }) => {
     const timeOptions = eventData?.options || [];
     if (currentStep < timeOptions.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      // All options reviewed, submit
-      handleFinalSubmit();
+      // All options reviewed, submit - pass the last response to ensure it's included
+      handleFinalSubmit(currentResponse);
     }
   };
 
   // Submit final response based on individual selections
-  const handleFinalSubmit = async () => {
+  // Accept optional lastResponse to handle React state timing
+  const handleFinalSubmit = async (lastResponse?: { index: number; response: TimeOptionResponse }) => {
     if (!token || responding) return;
     
     setResponding(true);
     
+    // Merge the last response with current state to handle timing issues
+    const finalResponses = { ...timeResponses };
+    if (lastResponse && lastResponse.response) {
+      finalResponses[lastResponse.index] = lastResponse.response;
+    }
+    
     // Determine overall status based on individual responses
-    const hasYes = Object.values(timeResponses).some(r => r === 'yes');
-    const hasMaybe = Object.values(timeResponses).some(r => r === 'maybe');
-    const allNo = Object.values(timeResponses).every(r => r === 'no');
+    const hasYes = Object.values(finalResponses).some(r => r === 'yes');
+    const hasMaybe = Object.values(finalResponses).some(r => r === 'maybe');
+    const allNo = Object.values(finalResponses).every(r => r === 'no');
     
     let overallStatus: 'accepted' | 'declined' | 'maybe';
     if (hasYes) {
@@ -182,7 +190,7 @@ export const InvitePage: React.FC = () => {
     setResponse(overallStatus);
     
     // Collect accepted/maybe time options
-    const selectedTimeStrings = Object.entries(timeResponses)
+    const selectedTimeStrings = Object.entries(finalResponses)
       .filter(([_, resp]) => resp === 'yes' || resp === 'maybe')
       .map(([idx]) => {
         const opt = eventData?.options[parseInt(idx)];
@@ -190,9 +198,9 @@ export const InvitePage: React.FC = () => {
       })
       .filter(Boolean);
     
-    // Convert timeResponses to use string keys for JSON storage
+    // Convert finalResponses to use string keys for JSON storage
     const optionResponses: Record<string, 'yes' | 'maybe' | 'no'> = {};
-    Object.entries(timeResponses).forEach(([idx, resp]) => {
+    Object.entries(finalResponses).forEach(([idx, resp]) => {
       if (resp && resp !== null) {
         optionResponses[idx] = resp;
       }
@@ -411,8 +419,9 @@ export const InvitePage: React.FC = () => {
                         <button
                           className={`time-btn time-btn-yes ${timeResponses[currentStep] === 'yes' ? 'selected' : ''}`}
                           onClick={() => {
-                            handleTimeResponse(currentStep, 'yes');
-                            setTimeout(handleNextStep, 300);
+                            const stepIndex = currentStep;
+                            handleTimeResponse(stepIndex, 'yes');
+                            setTimeout(() => handleNextStep({ index: stepIndex, response: 'yes' }), 300);
                           }}
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -423,8 +432,9 @@ export const InvitePage: React.FC = () => {
                         <button
                           className={`time-btn time-btn-maybe ${timeResponses[currentStep] === 'maybe' ? 'selected' : ''}`}
                           onClick={() => {
-                            handleTimeResponse(currentStep, 'maybe');
-                            setTimeout(handleNextStep, 300);
+                            const stepIndex = currentStep;
+                            handleTimeResponse(stepIndex, 'maybe');
+                            setTimeout(() => handleNextStep({ index: stepIndex, response: 'maybe' }), 300);
                           }}
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -436,8 +446,9 @@ export const InvitePage: React.FC = () => {
                         <button
                           className={`time-btn time-btn-no ${timeResponses[currentStep] === 'no' ? 'selected' : ''}`}
                           onClick={() => {
-                            handleTimeResponse(currentStep, 'no');
-                            setTimeout(handleNextStep, 300);
+                            const stepIndex = currentStep;
+                            handleTimeResponse(stepIndex, 'no');
+                            setTimeout(() => handleNextStep({ index: stepIndex, response: 'no' }), 300);
                           }}
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -468,7 +479,7 @@ export const InvitePage: React.FC = () => {
                     {allOptionsResponded() && (
                       <button
                         className="submit-responses-btn"
-                        onClick={handleFinalSubmit}
+                        onClick={() => handleFinalSubmit()}
                         disabled={responding}
                       >
                         {responding ? 'Submitting...' : 'Submit My Availability'}
