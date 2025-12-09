@@ -50,14 +50,16 @@ interface WeeklyCalendarProps {
   loading?: boolean;
 }
 
-const HOURS = Array.from({ length: 19 }, (_, i) => i + 6); // 6 AM to 12 AM (midnight)
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 12 AM to 11 PM (full 24 hours)
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const fmtTimeLabel = (hour: number) => {
-  const suffix = hour >= 12 ? 'PM' : 'AM';
-  const h = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+  // Handle midnight (24 or 0)
+  if (hour === 24 || hour === 0) return '12 AM';
+  const suffix = hour >= 12 && hour < 24 ? 'PM' : 'AM';
+  const h = hour > 12 ? hour - 12 : hour;
   return `${h} ${suffix}`;
 };
 
@@ -93,6 +95,17 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to 6 AM when component mounts
+  useEffect(() => {
+    if (gridContainerRef.current) {
+      // Calculate scroll position for 6 AM (6 hours into 24-hour day)
+      const slotHeight = 40; // --wc-slot-height
+      const scrollTo6AM = 6 * slotHeight - 20; // Scroll to just before 6 AM
+      gridContainerRef.current.scrollTop = scrollTo6AM;
+    }
+  }, []);
 
   // Close dropdowns when clicking outside - use 'click' instead of 'mousedown' 
   // to avoid interfering with button click handlers
@@ -238,13 +251,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   // Get events for a specific day with overlap handling
   const getEventsForDay = (date: Date): PositionedEvent[] => {
     const dateISO = fmtDateISO(date);
-    // Filter events for this day AND with valid times within our display range (6 AM - midnight)
+    // Filter events for this day AND with valid times within our display range (12 AM - 11:59 PM)
     const dayEvents = filteredEvents.filter(e => {
       if (e.date !== dateISO) return false;
-      if (!e.time) return false; // Skip events without time
+      if (!e.time) return false; // Skip events without time (all-day events)
       const minutes = timeToMinutes(e.time);
-      // Only show events between 6 AM (360 min) and midnight (1440 min)
-      return minutes >= 360 && minutes < 1440;
+      // Show all events from 12 AM (0 min) to 11:59 PM (1439 min)
+      return minutes >= 0 && minutes < 1440;
     });
     
     // Sort by start time
@@ -418,28 +431,31 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   const selectedCalendarCount = calendars.filter(c => c.selected).length;
 
-  // Calculate position as percentage of total hours (6 AM to midnight = 19 hours)
+  // Calculate position as percentage of total hours (12 AM to 11 PM = 24 hours)
+  const CALENDAR_START_HOUR = 0; // 12 AM
+  const CALENDAR_HOURS = 24; // 24 hours total
+  const TOTAL_MINUTES = CALENDAR_HOURS * 60;
+  const START_MINUTES = CALENDAR_START_HOUR * 60;
+
   const getEventTopPercent = (time?: string): number => {
     if (!time) return 0;
     const minutes = timeToMinutes(time);
-    const startMinutes = 6 * 60; // 6 AM
-    const totalMinutes = 19 * 60; // 19 hours (6 AM - 1 AM next day)
-    const percent = ((minutes - startMinutes) / totalMinutes) * 100;
-    // Clamp to valid range - events outside 6AM-midnight should be hidden
-    if (percent < 0 || percent > 100) return -1000; // Move off-screen
+    const percent = ((minutes - START_MINUTES) / TOTAL_MINUTES) * 100;
+    // Clamp to valid range
+    if (percent < 0) return 0;
+    if (percent > 100) return 100;
     return percent;
   };
 
   const getEventHeightPercent = (startTime?: string, endTime?: string, duration?: number): number => {
-    const totalMinutes = 19 * 60; // 19 hours
     if (startTime && endTime) {
       const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
-      return Math.max(2, Math.min((diff / totalMinutes) * 100, 100));
+      return Math.max(2, Math.min((diff / TOTAL_MINUTES) * 100, 100));
     }
     if (duration) {
-      return Math.max(2, Math.min((duration / totalMinutes) * 100, 100));
+      return Math.max(2, Math.min((duration / TOTAL_MINUTES) * 100, 100));
     }
-    return (60 / totalMinutes) * 100; // Default 1 hour
+    return (60 / TOTAL_MINUTES) * 100; // Default 1 hour
   };
 
   return (
@@ -611,7 +627,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       </div>
 
       {/* Week Grid */}
-      <div className="wc-grid-container">
+      <div className="wc-grid-container" ref={gridContainerRef}>
         {/* Time column */}
         <div className="wc-time-column">
           <div className="wc-day-header-spacer"></div>
@@ -719,8 +735,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                         {event.isGatherlyEvent && event.status === 'pending' && event.optionNumber && (
                           <span className="wc-event-option-badge">{event.optionNumber}</span>
                         )}
-                        {/* Gatherly badge for confirmed events that were scheduled via Gatherly */}
-                        {event.isGatherlyScheduled && !event.isGatherlyEvent && (
+                        {/* Gatherly badge for confirmed events scheduled via Gatherly (Google Calendar events with marker) */}
+                        {event.isGatherlyScheduled && (
                           <span className="wc-gatherly-badge" title="Scheduled with Gatherly">
                             <svg width="12" height="12" viewBox="-2 -2 28 28" fill="none">
                               <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" 

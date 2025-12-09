@@ -192,7 +192,9 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
               {/* Success Toast */}
               {showSuccess && (
                 <div className="success-toast">
-                  <span className="toast-icon">✓</span>
+                  <span className="toast-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </span>
                   <span>Event scheduled! Sarah notified.</span>
                 </div>
               )}

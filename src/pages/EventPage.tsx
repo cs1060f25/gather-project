@@ -511,7 +511,12 @@ export const EventPage: React.FC = () => {
             {/* Location */}
             {event.location && event.location !== 'TBD' && (
               <div className="event-location-display">
-                <span className="location-icon">📍</span>
+                <span className="location-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                </span>
                 <span>{event.location}</span>
               </div>
             )}
@@ -650,18 +655,30 @@ export const EventPage: React.FC = () => {
 
             <div className="event-details">
               <div className="detail-item">
-                <span className="detail-icon">📅</span>
+                <span className="detail-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </span>
                 <span>{formatDate(googleEvent.start.dateTime?.split('T')[0] || googleEvent.start.date || '')}</span>
               </div>
               {googleEvent.start.dateTime && (
                 <div className="detail-item">
-                  <span className="detail-icon">🕐</span>
+                  <span className="detail-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                    </svg>
+                  </span>
                   <span>{formatTime(googleEvent.start.dateTime.split('T')[1].slice(0, 5))}</span>
                 </div>
               )}
               {googleEvent.location && (
                 <div className="detail-item">
-                  <span className="detail-icon">📍</span>
+                  <span className="detail-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </span>
                   <span>{googleEvent.location}</span>
                 </div>
               )}

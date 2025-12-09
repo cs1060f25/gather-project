@@ -5,7 +5,7 @@
 .weekly-calendar {
   --wc-slot-height: 40px;
   --wc-header-height: 44px;
-  --wc-hours-count: 19;
+  --wc-hours-count: 24; /* Full 24 hours: 12 AM to 11 PM */
   --wc-time-column-width: 52px;
   --wc-border-width: 4px;
 }
@@ -409,10 +409,12 @@
 }
 
 .wc-cal-checkbox::after {
-  content: '✓';
-  color: #FFF;
-  font-size: 10px;
-  font-weight: 700;
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
   opacity: 0;
 }
 
@@ -668,19 +670,7 @@
   color: #1A1A1A;
 }
 
-/* Gatherly badge on events */
-.wc-event.gatherly-event::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='-2 -2 28 28' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 8.5 21.0 A 10 10 0 1 0 3.0 11.5' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M13 6V12L17 14' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  opacity: 0.7;
-}
+/* Gatherly badge is now rendered via JSX SVG element (.wc-gatherly-badge) */
 
 .wc-event.gatherly-event:hover {
   box-shadow: 2px 2px 0 #1A1A1A;

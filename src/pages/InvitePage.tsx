@@ -254,7 +254,11 @@ export const InvitePage: React.FC = () => {
     return (
       <div className="invite-page">
         <div className="invite-error">
-          <div className="error-icon">😕</div>
+          <div className="error-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+            </svg>
+          </div>
           <h1>Oops!</h1>
           <p>{error}</p>
           <a href="/" className="btn-home">Go to Gatherly</a>
@@ -323,7 +327,19 @@ export const InvitePage: React.FC = () => {
           {submitted ? (
             <div className="invite-response-success">
               <div className="success-icon">
-                {response === 'accepted' ? '🎉' : response === 'maybe' ? '🤔' : '👋'}
+                {response === 'accepted' ? (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>
+                  </svg>
+                ) : response === 'maybe' ? (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                  </svg>
+                ) : (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                )}
               </div>
               <h1>
                 {response === 'accepted' 
@@ -467,7 +483,11 @@ export const InvitePage: React.FC = () => {
                             <div key={idx} className={`response-chip ${timeResponses[idx]}`}>
                               <span className="chip-number">{idx + 1}</span>
                               <span className="chip-response">
-                                {timeResponses[idx] === 'yes' ? '✓' : timeResponses[idx] === 'no' ? '✗' : '?'}
+                                {timeResponses[idx] === 'yes' ? (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                                ) : timeResponses[idx] === 'no' ? (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                ) : '?'}
                               </span>
                             </div>
                           )
@@ -522,7 +542,9 @@ export const InvitePage: React.FC = () => {
                             </span>
                           </div>
                           {selectedOptions.includes(idx) && (
-                            <span style={{ marginLeft: 'auto' }}>✓</span>
+                            <span style={{ marginLeft: 'auto' }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                            </span>
                           )}
                         </button>
                       ))}
@@ -541,7 +563,9 @@ export const InvitePage: React.FC = () => {
                           <span className="loading-spinner-small"></span>
                         ) : (
                           <>
-                            <span className="btn-emoji">✅</span>
+                            <span className="btn-emoji">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                            </span>
                             <span>Submit</span>
                           </>
                         )}
@@ -551,12 +575,20 @@ export const InvitePage: React.FC = () => {
                 ) : (
                   <div className="event-details">
                     <div className="event-detail">
-                      <span className="detail-icon">📅</span>
+                      <span className="detail-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                      </span>
                       <span>{eventDate}</span>
                     </div>
                     {invite.event_time && (
                       <div className="event-detail">
-                        <span className="detail-icon">🕐</span>
+                        <span className="detail-icon">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                          </svg>
+                        </span>
                         <span>{formatTime(invite.event_time)}</span>
                       </div>
                     )}
@@ -578,7 +610,9 @@ export const InvitePage: React.FC = () => {
                         <span className="loading-spinner-small"></span>
                       ) : (
                         <>
-                          <span className="btn-emoji">✅</span>
+                          <span className="btn-emoji">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                          </span>
                           <span>Yes, I'm in!</span>
                         </>
                       )}
@@ -593,7 +627,9 @@ export const InvitePage: React.FC = () => {
                         <span className="loading-spinner-small"></span>
                       ) : (
                         <>
-                          <span className="btn-emoji">🤔</span>
+                          <span className="btn-emoji">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          </span>
                           <span>Maybe</span>
                         </>
                       )}
@@ -608,7 +644,9 @@ export const InvitePage: React.FC = () => {
                         <span className="loading-spinner-small"></span>
                       ) : (
                         <>
-                          <span className="btn-emoji">❌</span>
+                          <span className="btn-emoji">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                          </span>
                           <span>Can't make it</span>
                         </>
                       )}

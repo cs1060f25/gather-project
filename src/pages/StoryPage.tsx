@@ -457,17 +457,37 @@ export const StoryPage: React.FC = () => {
             </p>
             <div className="solution-features">
               <div className="feature-item">
-                <div className="feature-icon">💬</div>
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
                 <p>Just say what you need</p>
               </div>
-              <div className="feature-arrow">→</div>
+              <div className="feature-arrow">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
               <div className="feature-item">
-                <div className="feature-icon">🤖</div>
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="3"/>
+                  </svg>
+                </div>
                 <p>AI handles the coordination</p>
               </div>
-              <div className="feature-arrow">→</div>
+              <div className="feature-arrow">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
               <div className="feature-item">
-                <div className="feature-icon">✓</div>
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </div>
                 <p>Meetings that actually happen</p>
               </div>
             </div>

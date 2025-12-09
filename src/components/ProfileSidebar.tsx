@@ -169,7 +169,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               <div className="calendar-connection">
                 <h4>Connected Calendars</h4>
                 <div className="connection-item">
-                  <span className="connection-icon">📅</span>
+                  <span className="connection-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </span>
                   <span className="connection-name">Google Calendar</span>
                   <span className="connection-status connected">Connected</span>
                 </div>
@@ -203,7 +207,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                           <span className="contact-name">{person.name || person.email.split('@')[0]}</span>
                           <span className="contact-email">{person.email}</span>
                         </div>
-                        <span className="recent-badge">⏱</span>
+                        <span className="recent-badge">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                          </svg>
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -269,7 +277,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                         <span className="contact-email">{contact.email}</span>
                       </div>
                       {contact.isGatherly && (
-                        <span className="gatherly-user-badge">📅</span>
+                        <span className="gatherly-user-badge">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                        </span>
                       )}
                       {onRemoveContact && (
                         <>
