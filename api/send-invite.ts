@@ -1,9 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
 
-// Initialize Resend with server-side env variable (NOT prefixed with VITE_)
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface InviteEmailData {
   to: string;
   eventTitle: string;
@@ -28,13 +25,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.RESEND_API_KEY) {
-    console.error('RESEND_API_KEY not configured');
-    return res.status(500).json({ error: 'Email service not configured' });
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error('RESEND_API_KEY not configured in environment');
+    return res.status(500).json({ error: 'Email service not configured - missing RESEND_API_KEY' });
   }
+
+  // Initialize Resend inside the handler to ensure env var is available
+  const resend = new Resend(apiKey);
 
   try {
     const { to, eventTitle, hostName, hostEmail, suggestedTimes, inviteToken, location } = req.body as InviteEmailData;
+    
+    console.log('Sending invite email to:', to);
+    console.log('Event:', eventTitle);
+    console.log('Host:', hostName, hostEmail);
 
     if (!to || !eventTitle || !hostName || !inviteToken) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -120,13 +125,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (error) {
-      console.error('Resend error:', error);
-      return res.status(500).json({ error: 'Failed to send email', details: error });
+      console.error('Resend API error:', JSON.stringify(error, null, 2));
+      return res.status(500).json({ 
+        error: 'Failed to send email', 
+        details: error,
+        message: error.message || 'Unknown Resend error'
+      });
     }
 
+    console.log('Email sent successfully:', data);
     return res.status(200).json({ success: true, data });
-  } catch (error) {
-    console.error('Error sending invite:', error);
-    return res.status(500).json({ error: 'Failed to send invite email' });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error sending invite:', errorMessage, error);
+    return res.status(500).json({ 
+      error: 'Failed to send invite email',
+      message: errorMessage
+    });
   }
 }
