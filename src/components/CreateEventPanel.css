@@ -13,7 +13,7 @@
 
 .create-event-panel.editing {
   border-color: #22c55e;
-  box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.15);
+  box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.15), 0 0 15px rgba(34, 197, 94, 0.1);
 }
 
 /* Header */
@@ -107,7 +107,8 @@
 }
 
 .cep-field input[type="text"],
-.cep-field select {
+.cep-field select,
+.cep-field textarea {
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
   font-family: 'Space Grotesk', sans-serif;
@@ -118,8 +119,14 @@
   outline: none;
 }
 
+.cep-description {
+  resize: vertical;
+  min-height: 60px;
+}
+
 .cep-field input[type="text"]:focus,
-.cep-field select:focus {
+.cep-field select:focus,
+.cep-field textarea:focus {
   box-shadow: 6px 6px 0 #1A1A1A;
   transform: translate(-2px, -2px);
 }
@@ -132,6 +139,53 @@
 
 .cep-field input::placeholder {
   color: #999;
+}
+
+/* Location Field */
+.cep-location-field {
+  position: relative;
+}
+
+.cep-location-suggestions {
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 0;
+  right: 0;
+  background: #FFF;
+  border: 3px solid #1A1A1A;
+  border-top: none;
+  box-shadow: 4px 4px 0 #1A1A1A;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.cep-location-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid #E5E5E5;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.85rem;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: background 0.1s ease;
+}
+
+.cep-location-suggestion:last-child {
+  border-bottom: none;
+}
+
+.cep-location-suggestion:hover {
+  background: #F5F5F5;
+}
+
+.cep-loc-icon {
+  font-size: 1rem;
 }
 
 /* People Field */
@@ -290,6 +344,69 @@
   background: rgba(0, 0, 0, 0.4);
 }
 
+.cep-participant.is-organizer {
+  background: #1A1A1A;
+}
+
+/* Email prompt for new contacts */
+.cep-email-prompt {
+  background: #FFF8E1;
+  border: 2px solid #FFC107;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.cep-email-prompt p {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.cep-email-prompt-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cep-email-prompt input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: 'Space Grotesk', sans-serif;
+  border: 2px solid #1A1A1A;
+}
+
+.cep-email-prompt button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
+  background: #22c55e;
+  color: #FFF;
+  border: 2px solid #1A1A1A;
+  cursor: pointer;
+}
+
+.cep-email-prompt button.cep-cancel-email {
+  background: #FFF;
+  color: #1A1A1A;
+}
+
+.dark-mode .cep-email-prompt {
+  background: #3D3000;
+  border-color: #FFC107;
+}
+
+.dark-mode .cep-email-prompt input {
+  background: #2A2A2A;
+  color: #F0F0F0;
+  border-color: #555;
+}
+
+.dark-mode .cep-email-prompt button.cep-cancel-email {
+  background: #333;
+  color: #F0F0F0;
+}
+
 /* Availability Options */
 .cep-availability {
   background: #F8F8F8;
@@ -297,6 +414,20 @@
   padding: 1.25rem !important;
   border-top: 2px solid #E5E5E5;
   border-bottom: 2px solid #E5E5E5;
+}
+
+.cep-availability label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.cep-availability-hint {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #888;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .cep-options {
@@ -307,13 +438,19 @@
 
 .cep-option {
   display: grid;
-  grid-template-columns: auto 1fr 1fr 70px;
+  grid-template-columns: auto 1fr 1fr 90px;
   gap: 0.5rem;
   align-items: center;
   padding: 0.5rem 0.75rem;
   background: #FFF;
   border: 2px solid #1A1A1A;
   box-shadow: 2px 2px 0 #1A1A1A;
+  transition: all 0.15s ease;
+}
+
+.cep-option.filled {
+  border-color: #22c55e;
+  box-shadow: 2px 2px 0 #22c55e;
 }
 
 .cep-option-badge {
@@ -330,6 +467,22 @@
   flex-shrink: 0;
 }
 
+.cep-option.filled .cep-option-badge {
+  background: #22c55e;
+}
+
+.cep-option-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.cep-option-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
 .cep-option select {
   padding: 0.4rem 0.5rem;
   font-size: 0.8rem;
@@ -338,6 +491,7 @@
   border: 2px solid #1A1A1A;
   cursor: pointer;
   min-width: 0;
+  flex: 1;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -345,12 +499,21 @@
   background-repeat: no-repeat;
   background-position: right 0.4rem center;
   padding-right: 1.5rem;
+  transition: all 0.12s ease;
 }
 
 .cep-option select:focus {
   outline: none;
   border-color: #22c55e;
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.cep-option select:hover {
+  background-color: #F5F5F5;
+}
+
+.cep-duration-wrapper {
+  min-width: 70px;
 }
 
 /* Submit Button */
@@ -493,7 +656,8 @@
 }
 
 .dark-mode .cep-field input[type="text"],
-.dark-mode .cep-field select {
+.dark-mode .cep-field select,
+.dark-mode .cep-field textarea {
   background: #2A2A2A;
   border-color: #555;
   color: #F0F0F0;
@@ -501,9 +665,25 @@
 }
 
 .dark-mode .cep-field input[type="text"]:focus,
-.dark-mode .cep-field select:focus {
+.dark-mode .cep-field select:focus,
+.dark-mode .cep-field textarea:focus {
   border-color: #22c55e;
   box-shadow: 4px 4px 0 #333;
+}
+
+.dark-mode .cep-location-suggestions {
+  background: #2A2A2A;
+  border-color: #555;
+  box-shadow: 3px 3px 0 #333;
+}
+
+.dark-mode .cep-location-suggestion {
+  color: #F0F0F0;
+  border-color: #444;
+}
+
+.dark-mode .cep-location-suggestion:hover {
+  background: #333;
 }
 
 .dark-mode .cep-field input::placeholder {

@@ -193,31 +193,30 @@ export const EventPage: React.FC = () => {
     if (!event) return;
 
     try {
-      // Update in Supabase
+      // Delete from Supabase completely
       const { error } = await supabase
         .from('gatherly_events')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .delete()
         .eq('id', event.id);
       
       if (error) {
-        console.error('Error cancelling event in Supabase:', error);
+        console.error('Error deleting event in Supabase:', error);
       }
     } catch (err) {
-      console.error('Error cancelling event:', err);
+      console.error('Error deleting event:', err);
     }
 
-    // Also update localStorage
+    // Also delete from localStorage
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
       const events: GatherlyEvent[] = JSON.parse(stored);
-      const updated = events.map(e => 
-        e.id === event.id ? { ...e, status: 'cancelled' as const } : e
-      );
-      localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
+      const filtered = events.filter(e => e.id !== event.id);
+      localStorage.setItem('gatherly_created_events', JSON.stringify(filtered));
     }
 
-    setEvent({ ...event, status: 'cancelled' });
+    // Navigate back to events page
     setShowCancelConfirm(false);
+    navigate('/events');
   };
 
   const handleConfirmTime = async () => {
@@ -372,6 +371,15 @@ export const EventPage: React.FC = () => {
       {/* Header */}
       <header className="event-header">
         <div className="header-left">
+          <button 
+            className="event-back-btn"
+            onClick={() => navigate('/events')}
+            aria-label="Back to Events"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
           <Link to="/app" className="event-logo">
             <GatherlyLogo size={28} />
             <span>Gatherly</span>
@@ -472,6 +480,7 @@ export const EventPage: React.FC = () => {
                 {event.participants.map(email => {
                   const invite = invites.find(i => i.invitee_email.toLowerCase() === email.toLowerCase());
                   const status = invite?.status || 'pending';
+                  const suggestedTimes = invite?.suggested_times || [];
                   
                   return (
                     <div key={email} className="response-item">
@@ -486,11 +495,33 @@ export const EventPage: React.FC = () => {
                           {status === 'maybe' && '? Maybe'}
                           {status === 'pending' && 'Waiting...'}
                         </span>
+                        {/* Show which time options the invitee selected */}
+                        {status !== 'pending' && status !== 'declined' && suggestedTimes.length > 0 && (
+                          <div className="response-selections">
+                            {suggestedTimes.map((time, idx) => {
+                              // Parse the time string to find matching option
+                              const optionIndex = event.options.findIndex(opt => 
+                                time.includes(opt.day) && time.includes(opt.time)
+                              );
+                              return (
+                                <span 
+                                  key={idx} 
+                                  className="selection-chip"
+                                  style={{ 
+                                    background: optionIndex >= 0 ? event.options[optionIndex]?.color || '#22c55e' : '#22c55e'
+                                  }}
+                                >
+                                  Option {optionIndex >= 0 ? optionIndex + 1 : idx + 1}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                       {invite?.responded_at && (
                         <span className="response-time">
                           {new Date(invite.responded_at).toLocaleDateString()}
-                            </span>
+                        </span>
                       )}
                     </div>
                   );

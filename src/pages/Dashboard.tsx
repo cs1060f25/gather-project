@@ -45,6 +45,8 @@ interface GatherlyEventResponse {
 interface GatherlyEvent {
   id: string;
   title: string;
+  description?: string;
+  location?: string;
   options: AvailabilityOption[];
   participants: string[];
   status: 'pending' | 'confirmed' | 'cancelled';
@@ -80,10 +82,24 @@ export const Dashboard: React.FC = () => {
         phone: authUser.user_metadata?.phone || '',
       });
       
+      // Load all data
       loadContacts();
       syncGoogleCalendars();
       loadGatherlyEvents();
     }
+  }, [authUser]);
+  
+  // Re-sync Google calendars when returning to the page (handles token refresh)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && authUser) {
+        // Re-check calendar data when tab becomes visible
+        syncGoogleCalendars();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [authUser]);
 
   // Load contacts from Supabase
@@ -318,6 +334,8 @@ export const Dashboard: React.FC = () => {
         id: event.id,
         user_id: authUser.id,
         title: event.title,
+        description: event.description,
+        location: event.location,
         options: event.options,
         participants: event.participants,
         status: event.status,
@@ -393,20 +411,25 @@ export const Dashboard: React.FC = () => {
     try {
       const eventId = crypto.randomUUID();
       
+      // Filter out the current user from participants (they're the organizer, not invitee)
+      const inviteParticipants = data.participants.filter(p => p !== user?.email);
+      
       // Create Gatherly event
       const gatherlyEvent: GatherlyEvent = {
         id: eventId,
         title: data.eventName,
+        description: data.description,
+        location: data.location,
         options: data.availabilityOptions,
-        participants: data.participants,
+        participants: inviteParticipants,
         status: 'pending',
         createdAt: new Date().toISOString()
       };
       
       await saveGatherlyEvent(gatherlyEvent);
 
-      // Create invites for participants
-      if (data.participants.length > 0 && user) {
+      // Create invites for participants (not including organizer)
+      if (inviteParticipants.length > 0 && user) {
         const { invites, errors } = await createInvites(
           eventId,
           {
@@ -417,7 +440,7 @@ export const Dashboard: React.FC = () => {
           },
           user.full_name || user.email?.split('@')[0] || 'Someone',
           user.email || '',
-          data.participants
+          inviteParticipants
         );
         
         if (errors.length > 0) {
@@ -443,6 +466,10 @@ export const Dashboard: React.FC = () => {
 
       setEditingMode(false);
       setSelectedTimeOptions([]);
+      
+      // Reload calendars to ensure they stay in sync
+      // This prevents the calendar disassociation issue
+      await loadGatherlyEvents();
     } catch (error) {
       console.error('Error creating event:', error);
     } finally {
@@ -613,6 +640,8 @@ export const Dashboard: React.FC = () => {
         <div className="create-event-section">
           <CreateEventPanel
             contacts={contacts}
+            currentUserEmail={user?.email}
+            currentUserName={user?.full_name}
             onSubmit={handleCreateEvent}
             onFieldChange={handleFieldChange}
             onEditingModeChange={handleEditingModeChange}

@@ -352,82 +352,143 @@
   text-decoration: underline;
 }
 
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  .invite-page {
-    background: #111;
-  }
+/* Dark Mode - Using class instead of prefers-color-scheme for consistency */
+/* The invite page defaults to light mode for a clean, professional look */
+.invite-page.dark-mode {
+  background: #111;
+}
 
-  .invite-container {
-    background: #1a1a1a;
-    border-color: #fff;
-    box-shadow: 8px 8px 0 #fff;
-  }
+.invite-page.dark-mode .invite-container {
+  background: #1a1a1a;
+  border-color: #fff;
+  box-shadow: 8px 8px 0 #fff;
+}
 
-  .invite-header {
-    background: #1a1a1a;
-    border-color: #fff;
-  }
+.invite-page.dark-mode .invite-header {
+  background: #1a1a1a;
+  border-color: #fff;
+}
 
-  .gatherly-logo span,
-  .from-name,
-  .event-title,
-  .invite-question {
-    color: #fff;
-  }
+.invite-page.dark-mode .gatherly-logo span,
+.invite-page.dark-mode .from-name,
+.invite-page.dark-mode .event-title,
+.invite-page.dark-mode .invite-question {
+  color: #fff;
+}
 
-  .from-label {
-    color: #888;
-  }
+.invite-page.dark-mode .from-label {
+  color: #888;
+}
 
-  .event-card {
-    background: #222;
-    border-color: #fff;
-  }
+.invite-page.dark-mode .event-card {
+  background: #222;
+  border-color: #fff;
+}
 
-  .event-detail {
-    color: #ccc;
-  }
+.invite-page.dark-mode .event-detail {
+  color: #ccc;
+}
 
-  .btn-response {
-    border-color: #fff;
-    box-shadow: 4px 4px 0 #fff;
-  }
+.invite-page.dark-mode .btn-response {
+  border-color: #fff;
+  box-shadow: 4px 4px 0 #fff;
+}
 
-  .btn-response:hover {
-    box-shadow: 6px 6px 0 #fff;
-  }
+.invite-page.dark-mode .btn-response:hover {
+  box-shadow: 6px 6px 0 #fff;
+}
 
-  .btn-no {
-    background: #222;
-    color: #fff;
-  }
+.invite-page.dark-mode .btn-no {
+  background: #222;
+  color: #fff;
+}
 
-  .invite-footer {
-    background: #222;
-    border-color: #fff;
-  }
+.invite-page.dark-mode .invite-footer {
+  background: #222;
+  border-color: #fff;
+}
 
-  .invite-response-success h1 {
-    color: #fff;
-  }
+.invite-page.dark-mode .invite-response-success h1 {
+  color: #fff;
+}
 
-  .event-summary {
-    background: #222;
-    border-color: #fff;
-  }
+.invite-page.dark-mode .event-summary {
+  background: #222;
+  border-color: #fff;
+}
 
-  .btn-change {
-    background: #222;
-    color: #fff;
-    border-color: #fff;
-    box-shadow: 4px 4px 0 #fff;
-  }
+.invite-page.dark-mode .btn-change {
+  background: #222;
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 4px 4px 0 #fff;
+}
 
-  .btn-gatherly {
-    border-color: #fff;
-    box-shadow: 4px 4px 0 #fff;
-  }
+.invite-page.dark-mode .btn-gatherly {
+  border-color: #fff;
+  box-shadow: 4px 4px 0 #fff;
+}
+
+/* Time options grid for multiple time slots */
+.time-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.time-option-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 2px solid #111;
+  font-size: 0.9rem;
+}
+
+.time-option-badge {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #22c55e;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.time-option-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.time-option-date {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.time-option-time {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.invite-page.dark-mode .time-option-item {
+  background: #222;
+  border-color: #fff;
+}
+
+.invite-page.dark-mode .time-option-date {
+  color: #fff;
+}
+
+.invite-page.dark-mode .time-option-time {
+  color: #aaa;
 }
 
 /* Responsive */

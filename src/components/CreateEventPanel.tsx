@@ -19,6 +19,7 @@ export interface AvailabilityOption {
 
 export interface CreateEventData {
   eventName: string;
+  description: string;
   location: string;
   participants: string[];
   availabilityOptions: AvailabilityOption[];
@@ -26,6 +27,8 @@ export interface CreateEventData {
 
 interface CreateEventPanelProps {
   contacts: Contact[];
+  currentUserEmail?: string;
+  currentUserName?: string;
   onSubmit: (data: CreateEventData) => void;
   onFieldChange?: (data: Partial<CreateEventData>) => void;
   onEditingModeChange?: (editing: boolean) => void;
@@ -36,6 +39,7 @@ interface CreateEventPanelProps {
 
 // Use subtle indicator colors that match the calendar option badges
 const OPTION_COLORS = ['#1A1A1A', '#1A1A1A', '#1A1A1A']; // All black for clean look
+// Duration values for fallback
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
 // Helper to format date as YYYY-MM-DD in local timezone (not UTC)
@@ -64,7 +68,7 @@ const getDateOptions = () => {
 
 // Generate time options with a placeholder (6 AM to 11:30 PM)
 const getTimeOptions = () => {
-  const options = [{ value: '', label: 'Time' }];
+  const options = [{ value: '', label: 'Time', emoji: '🕐' }];
   for (let h = 6; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
       const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
@@ -73,11 +77,23 @@ const getTimeOptions = () => {
         minute: '2-digit',
         hour12: true
       });
-      options.push({ value: time, label });
+      // Add clock emoji based on hour
+      const emoji = h < 12 ? '🌅' : h < 17 ? '☀️' : h < 20 ? '🌆' : '🌙';
+      options.push({ value: time, label, emoji });
     }
   }
   return options;
 };
+
+// Duration options with emoji icons
+const DURATION_OPTIONS = [
+  { value: 15, label: '15m', emoji: '⚡' },
+  { value: 30, label: '30m', emoji: '⏱️' },
+  { value: 45, label: '45m', emoji: '⏳' },
+  { value: 60, label: '1h', emoji: '🕐' },
+  { value: 90, label: '1.5h', emoji: '⏰' },
+  { value: 120, label: '2h', emoji: '🕑' },
+];
 
 const PLACEHOLDER_SUGGESTIONS = [
   "Schedule lunch with the team next Thursday...",
@@ -90,6 +106,8 @@ const PLACEHOLDER_SUGGESTIONS = [
 
 export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   contacts,
+  currentUserEmail,
+  currentUserName,
   onSubmit,
   onFieldChange,
   onEditingModeChange,
@@ -98,7 +116,10 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   events = []
 }) => {
   const [eventName, setEventName] = useState('');
+  const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
   const [participantInput, setParticipantInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -145,6 +166,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   useEffect(() => {
     if (suggestedData) {
       if (suggestedData.eventName) setEventName(suggestedData.eventName);
+      if (suggestedData.description) setDescription(suggestedData.description);
       if (suggestedData.location) setLocation(suggestedData.location);
       if (suggestedData.participants) setParticipants(suggestedData.participants);
       if (suggestedData.availabilityOptions) setAvailabilityOptions(suggestedData.availabilityOptions);
@@ -161,12 +183,47 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     if (isEditing) {
       onFieldChange?.({
         eventName,
+        description,
         location,
         participants,
         availabilityOptions
       });
     }
-  }, [eventName, location, participants, availabilityOptions, isEditing, onFieldChange]);
+  }, [eventName, description, location, participants, availabilityOptions, isEditing, onFieldChange]);
+
+  // Location autocomplete - virtual meeting platforms and Google Places API fallback
+  const handleLocationChange = async (value: string) => {
+    setLocation(value);
+    setIsEditing(true);
+
+    if (value.length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    // Virtual meeting suggestions
+    const virtualPlatforms = ['Google Meet', 'Zoom', 'Microsoft Teams', 'Discord', 'Slack Huddle'];
+    const lowercaseValue = value.toLowerCase();
+    const matchedPlatforms = virtualPlatforms.filter(p => 
+      p.toLowerCase().includes(lowercaseValue)
+    );
+
+    // Common location suggestions based on input
+    const commonLocations = [
+      `${value} (nearby)`,
+      `${value}, Office`,
+      `${value}, Downtown`,
+    ];
+
+    setLocationSuggestions([...matchedPlatforms, ...commonLocations].slice(0, 5));
+    setShowLocationSuggestions(true);
+  };
+
+  const selectLocation = (loc: string) => {
+    setLocation(loc);
+    setShowLocationSuggestions(false);
+  };
 
   // Filter contact suggestions
   const filteredContacts = useMemo(() => {
@@ -180,6 +237,9 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       .slice(0, 6);
   }, [contacts, participantInput, participants]);
 
+  const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState('');
+
   const handleAddParticipant = (emailOrName: string) => {
     const trimmed = emailOrName.trim();
     if (!trimmed || participants.includes(trimmed)) return;
@@ -190,12 +250,40 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       c.email.toLowerCase() === trimmed.toLowerCase()
     );
 
-    const email = contact?.email || trimmed;
-    if (!participants.includes(email)) {
-      setParticipants([...participants, email]);
+    if (contact) {
+      // Contact exists, use their email
+      const email = contact.email;
+      if (!participants.includes(email)) {
+        setParticipants([...participants, email]);
+      }
+      setParticipantInput('');
+      setShowSuggestions(false);
+      setIsEditing(true);
+    } else if (trimmed.includes('@') && trimmed.includes('.')) {
+      // It's an email, add directly
+      if (!participants.includes(trimmed)) {
+        setParticipants([...participants, trimmed]);
+      }
+      setParticipantInput('');
+      setShowSuggestions(false);
+      setIsEditing(true);
+    } else {
+      // It's a name without email - prompt for email
+      setEmailPromptFor(trimmed);
+      setPendingEmail('');
+      setParticipantInput('');
+      setShowSuggestions(false);
     }
-    setParticipantInput('');
-    setShowSuggestions(false);
+  };
+
+  const handleEmailPromptSubmit = () => {
+    if (!emailPromptFor || !pendingEmail.includes('@')) return;
+    
+    if (!participants.includes(pendingEmail)) {
+      setParticipants([...participants, pendingEmail]);
+    }
+    setEmailPromptFor(null);
+    setPendingEmail('');
     setIsEditing(true);
   };
 
@@ -216,6 +304,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
     onSubmit({
       eventName,
+      description,
       location,
       participants,
       availabilityOptions
@@ -223,6 +312,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
     // Reset form to blank state
     setEventName('');
+    setDescription('');
     setLocation('');
     setParticipants([]);
     setAvailabilityOptions([
@@ -242,24 +332,29 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     setChatInput('');
     
     try {
-      // Import and use OpenAI parsing
+      // Import and use OpenAI parsing - include current form state in context
       const { parseSchedulingMessage, getSuggestedTimes } = await import('../lib/openai');
       
       const contactNames = contacts.map(c => c.name);
-      const parsed = await parseSchedulingMessage(message, contactNames);
+      
+      // Include current form state in the message for context preservation
+      const contextMessage = `Current form state: Event="${eventName}", Location="${location}", Description="${description}", Participants=${JSON.stringify(participants)}, Options=${JSON.stringify(availabilityOptions.map(o => ({ day: o.day, time: o.time, duration: o.duration })))}. User message: ${message}`;
+      
+      const parsed = await parseSchedulingMessage(contextMessage, contactNames);
       
       if (parsed.isSchedulingRequest) {
-        // Set event name from parsed title
-        if (parsed.title) {
+        // Only update fields that the user explicitly wants to change
+        // Preserve existing values for fields not mentioned
+        if (parsed.title && parsed.title !== 'New Meeting') {
           setEventName(parsed.title);
         }
         
-        // Set location if parsed
-        if (parsed.location) {
+        // Set location if parsed and different from placeholder
+        if (parsed.location && parsed.location !== 'TBD') {
           setLocation(parsed.location);
         }
         
-        // Add participants if parsed
+        // Add participants if parsed (merge with existing)
         if (parsed.participants && parsed.participants.length > 0) {
           const emails = parsed.participants.map(p => {
             // Try to find contact by name
@@ -276,26 +371,37 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         if (parsed.suggestedDate || parsed.suggestedTime) {
           const newOptions = [...availabilityOptions];
           
+          // Find first empty option slot or use first one
+          const emptyIndex = newOptions.findIndex(o => !o.day && !o.time);
+          const targetIndex = emptyIndex >= 0 ? emptyIndex : 0;
+          
           if (parsed.suggestedDate) {
-            newOptions[0] = { ...newOptions[0], day: parsed.suggestedDate };
+            newOptions[targetIndex] = { ...newOptions[targetIndex], day: parsed.suggestedDate };
           }
           if (parsed.suggestedTime) {
-            newOptions[0] = { ...newOptions[0], time: parsed.suggestedTime };
+            newOptions[targetIndex] = { ...newOptions[targetIndex], time: parsed.suggestedTime };
           }
           if (parsed.duration) {
-            newOptions[0] = { ...newOptions[0], duration: parsed.duration };
+            newOptions[targetIndex] = { ...newOptions[targetIndex], duration: parsed.duration };
           }
           
-          // Try to get additional free time suggestions
-          if (events.length > 0) {
-            const targetDate = parsed.suggestedDate || newOptions[0].day;
+          // Try to get additional free time suggestions for other slots
+          if (events.length > 0 && parsed.suggestedDate) {
+            const targetDate = parsed.suggestedDate;
             const freeTimes = getSuggestedTimes(events, targetDate, parsed.duration || 60);
             
-            freeTimes.slice(0, 3).forEach((time, idx) => {
-              if (newOptions[idx]) {
-                newOptions[idx] = { ...newOptions[idx], time };
+            // Fill remaining empty slots with free times
+            let freeTimeIdx = 0;
+            for (let i = 0; i < newOptions.length && freeTimeIdx < freeTimes.length; i++) {
+              if (!newOptions[i].day && !newOptions[i].time) {
+                newOptions[i] = { 
+                  ...newOptions[i], 
+                  day: targetDate, 
+                  time: freeTimes[freeTimeIdx] 
+                };
+                freeTimeIdx++;
               }
-            });
+            }
           }
           
           setAvailabilityOptions(newOptions);
@@ -303,15 +409,19 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         
         setIsEditing(true);
       } else {
-        // Not a scheduling request, just set as event name
-        setEventName(message);
+        // Not a scheduling request, just append to event name if empty or treat as note
+        if (!eventName) {
+          setEventName(message);
+        }
         setIsEditing(true);
       }
     } catch (error) {
       console.error('Error processing chat:', error);
-      // Fallback: just set as event name
-      setEventName(message);
-    setIsEditing(true);
+      // Fallback: just set as event name if empty
+      if (!eventName) {
+        setEventName(message);
+      }
+      setIsEditing(true);
     } finally {
       setIsProcessingChat(false);
     }
@@ -327,10 +437,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         <h2>Create Event</h2>
         <div className="cep-header-actions">
         {isEditing && (
-            <button 
+              <button 
               className="cep-cancel-btn"
               onClick={() => {
                 setEventName('');
+                setDescription('');
                 setLocation('');
                 setParticipants([]);
                 setAvailabilityOptions([
@@ -371,16 +482,52 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           />
         </div>
 
-        {/* Location */}
+        {/* Description */}
         <div className="cep-field">
+          <label>Description (optional)</label>
+          <textarea
+            value={description}
+            onChange={e => { setDescription(e.target.value); setIsEditing(true); }}
+            onFocus={handleFocus}
+            placeholder="Add any details about this event..."
+            className="cep-description"
+            rows={2}
+          />
+        </div>
+
+        {/* Location */}
+        <div className="cep-field cep-location-field">
           <label>Location/Link</label>
           <input
             type="text"
             value={location}
-            onChange={e => { setLocation(e.target.value); setIsEditing(true); }}
-            onFocus={handleFocus}
+            onChange={e => handleLocationChange(e.target.value)}
+            onFocus={() => {
+              handleFocus();
+              if (location.length >= 2) setShowLocationSuggestions(true);
+            }}
+            onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
             placeholder="Office, Zoom, Coffee shop..."
           />
+          {showLocationSuggestions && locationSuggestions.length > 0 && (
+            <div className="cep-location-suggestions">
+              {locationSuggestions.map((loc, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className="cep-location-suggestion"
+                  onMouseDown={() => selectLocation(loc)}
+                >
+                  {loc.includes('Meet') || loc.includes('Zoom') || loc.includes('Teams') || loc.includes('Discord') || loc.includes('Slack') ? (
+                    <span className="cep-loc-icon">💻</span>
+                  ) : (
+                    <span className="cep-loc-icon">📍</span>
+                  )}
+                  {loc}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* People */}
@@ -443,15 +590,44 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             </div>
           )}
 
+          {/* Email prompt modal */}
+          {emailPromptFor && (
+            <div className="cep-email-prompt">
+              <p>Enter email for <strong>{emailPromptFor}</strong>:</p>
+              <div className="cep-email-prompt-row">
+                <input
+                  type="email"
+                  value={pendingEmail}
+                  onChange={e => setPendingEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleEmailPromptSubmit();
+                    } else if (e.key === 'Escape') {
+                      setEmailPromptFor(null);
+                    }
+                  }}
+                />
+                <button type="button" onClick={handleEmailPromptSubmit}>Add</button>
+                <button type="button" onClick={() => setEmailPromptFor(null)} className="cep-cancel-email">Cancel</button>
+              </div>
+            </div>
+          )}
+
           {/* Selected participants */}
           {participants.length > 0 && (
             <div className="cep-participants">
               {participants.map(email => {
                 const contact = contacts.find(c => c.email === email);
+                const isCurrentUser = email === currentUserEmail;
                 return (
-                  <div key={email} className="cep-participant">
-                    <span>{contact?.name || email}</span>
-                    <button type="button" onClick={() => handleRemoveParticipant(email)}>×</button>
+                  <div key={email} className={`cep-participant ${isCurrentUser ? 'is-organizer' : ''}`}>
+                    <span>{isCurrentUser ? `${contact?.name || currentUserName || 'You'} (Organizer)` : (contact?.name || email)}</span>
+                    {!isCurrentUser && (
+                      <button type="button" onClick={() => handleRemoveParticipant(email)}>×</button>
+                    )}
                   </div>
                 );
               })}
@@ -461,44 +637,56 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
         {/* Availability Options */}
         <div className="cep-field cep-availability">
-          <label>Availability</label>
+          <label>
+            <span>Availability</span>
+            <span className="cep-availability-hint">Select dates and times that work for you</span>
+          </label>
           <div className="cep-options">
             {availabilityOptions.map((opt, idx) => (
               <div 
                 key={opt.id} 
-                className="cep-option"
+                className={`cep-option ${opt.day && opt.time ? 'filled' : ''}`}
               >
                 <span className="cep-option-badge">{idx + 1}</span>
-                <select
-                  value={opt.day}
-                  onChange={e => handleOptionChange(opt.id, 'day', e.target.value)}
-                  onFocus={handleFocus}
-                  className="cep-option-day"
-                >
-                  {dateOptions.map(d => (
-                    <option key={d.value} value={d.value}>{d.shortLabel}</option>
-                  ))}
-                </select>
-                <select
-                  value={opt.time}
-                  onChange={e => handleOptionChange(opt.id, 'time', e.target.value)}
-                  onFocus={handleFocus}
-                  className="cep-option-time"
-                >
-                  {timeOptions.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-                <select
-                  value={opt.duration}
-                  onChange={e => handleOptionChange(opt.id, 'duration', Number(e.target.value))}
-                  onFocus={handleFocus}
-                  className="cep-option-duration"
-                >
-                  {DURATIONS.map(d => (
-                    <option key={d} value={d}>{d < 60 ? `${d}m` : `${d/60}h`}</option>
-                  ))}
-                </select>
+                <div className="cep-option-select-wrapper">
+                  <span className="cep-option-icon">📅</span>
+                  <select
+                    value={opt.day}
+                    onChange={e => handleOptionChange(opt.id, 'day', e.target.value)}
+                    onFocus={handleFocus}
+                    className="cep-option-day"
+                  >
+                    {dateOptions.map(d => (
+                      <option key={d.value} value={d.value}>{d.shortLabel}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="cep-option-select-wrapper">
+                  <span className="cep-option-icon">🕐</span>
+                  <select
+                    value={opt.time}
+                    onChange={e => handleOptionChange(opt.id, 'time', e.target.value)}
+                    onFocus={handleFocus}
+                    className="cep-option-time"
+                  >
+                    {timeOptions.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="cep-option-select-wrapper cep-duration-wrapper">
+                  <span className="cep-option-icon">⏱️</span>
+                  <select
+                    value={opt.duration}
+                    onChange={e => handleOptionChange(opt.id, 'duration', Number(e.target.value))}
+                    onFocus={handleFocus}
+                    className="cep-option-duration"
+                  >
+                    {DURATION_OPTIONS.map(d => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             ))}
           </div>

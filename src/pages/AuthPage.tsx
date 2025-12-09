@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import './AuthPage.css';
@@ -39,6 +39,36 @@ export const AuthPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Handle back navigation and page restore - reset loading state
+  useEffect(() => {
+    // Reset loading state when page is restored from bfcache
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from back/forward cache
+        setIsLoading(false);
+        setError(null);
+      }
+    };
+    
+    // Also reset on visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setIsLoading(false);
+      }
+    };
+    
+    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Reset loading state on mount (handles back button)
+    setIsLoading(false);
+    
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Note: We don't auto-trigger Google auth anymore
   // The user must click the "Continue with Google" button explicitly

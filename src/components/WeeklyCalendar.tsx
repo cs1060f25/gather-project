@@ -127,6 +127,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     const showGatherlyEvents = gatherlyCalendar?.selected !== false;
 
     return events.filter(e => {
+      // Don't show confirmed/cancelled Gatherly events in the Gatherly calendar 
+      // (they should appear on their target calendar)
+      if (e.isGatherlyEvent && (e.status === 'confirmed' || e.status === 'cancelled')) {
+        return false;
+      }
       // Handle Gatherly events based on Gatherly Events toggle
       if (e.isGatherlyEvent || e.calendarId === 'gatherly') {
         return showGatherlyEvents;

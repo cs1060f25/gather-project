@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
@@ -62,6 +62,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export const EventsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user: authUser, signOut } = useAuth();
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
   const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
@@ -186,8 +187,7 @@ export const EventsPage: React.FC = () => {
     return {
       today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled'),
       nextWeek: allEvents.filter(e => e.date > todayISO && e.date <= weekFromNowISO && e.status !== 'cancelled'),
-      pending: gatherlyEvents.filter(ge => ge.status === 'pending'),
-      cancelled: gatherlyEvents.filter(ge => ge.status === 'cancelled')
+      pending: gatherlyEvents.filter(ge => ge.status === 'pending')
     };
   }, [googleEvents, gatherlyEvents]);
 
@@ -222,6 +222,15 @@ export const EventsPage: React.FC = () => {
       {/* Header */}
       <header className="events-header">
         <div className="header-left">
+          <button 
+            className="events-back-btn"
+            onClick={() => navigate('/app')}
+            aria-label="Back to Dashboard"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
           <Link to="/app" className="events-logo">
             <GatherlyLogo size={28} />
             <span>Gatherly</span>
@@ -337,29 +346,6 @@ export const EventsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Cancelled Events */}
-        <section className="events-section cancelled-section">
-          <h2 className="section-title">Canceled</h2>
-          <div className="events-list">
-            {categorizedEvents.cancelled.length === 0 ? (
-              <div className="empty-state">
-                <p>No canceled events</p>
-              </div>
-            ) : (
-              categorizedEvents.cancelled.map(event => (
-                <Link 
-                  key={event.id} 
-                  to={`/event/${event.id}`}
-                  className="event-card cancelled"
-                >
-                  <h3 className="event-title">{event.title}</h3>
-                  <p className="event-participants">{event.participants.length} were invited</p>
-                  <span className="cancelled-badge">Cancelled</span>
-                </Link>
-              ))
-            )}
-          </div>
-        </section>
       </main>
 
       {/* Profile Sidebar */}

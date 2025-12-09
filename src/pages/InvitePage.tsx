@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getInviteByToken, respondToInvite, type Invite } from '../lib/invites';
+import { supabase } from '../lib/supabase';
 import './InvitePage.css';
+
+interface TimeOption {
+  day: string;
+  time: string;
+  duration: number;
+}
+
+interface GatherlyEventData {
+  options: TimeOption[];
+  location?: string;
+  description?: string;
+}
 
 export const InvitePage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
   const [invite, setInvite] = useState<Invite | null>(null);
+  const [eventData, setEventData] = useState<GatherlyEventData | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [responding, setResponding] = useState(false);
   const [response, setResponse] = useState<'accepted' | 'declined' | 'maybe' | null>(null);
@@ -29,6 +44,27 @@ export const InvitePage: React.FC = () => {
       }
 
       setInvite(data);
+      
+      // Load the full Gatherly event data to get all time options
+      if (data.event_id) {
+        try {
+          const { data: eventResult } = await supabase
+            .from('gatherly_events')
+            .select('options, location, description')
+            .eq('id', data.event_id)
+            .single();
+          
+          if (eventResult) {
+            setEventData({
+              options: eventResult.options || [],
+              location: eventResult.location || data.event_location,
+              description: eventResult.description
+            });
+          }
+        } catch (err) {
+          console.log('Could not load full event data');
+        }
+      }
       
       // Check if already responded
       if (data.status !== 'pending') {
@@ -54,7 +90,13 @@ export const InvitePage: React.FC = () => {
     setResponding(true);
     setResponse(status);
     
-    const result = await respondToInvite(token, status);
+    // Pass selected time options to the response
+    const selectedTimeStrings = selectedOptions.map(idx => {
+      const opt = eventData?.options[idx];
+      return opt ? `${opt.day} ${opt.time}` : '';
+    }).filter(Boolean);
+    
+    const result = await respondToInvite(token, status, selectedTimeStrings.length > 0 ? selectedTimeStrings : undefined);
     
     if (result.success) {
       setSubmitted(true);
@@ -66,6 +108,14 @@ export const InvitePage: React.FC = () => {
     }
     
     setResponding(false);
+  };
+
+  const toggleTimeOption = (index: number) => {
+    setSelectedOptions(prev => 
+      prev.includes(index) 
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    );
   };
 
   if (loading) {
@@ -109,6 +159,25 @@ export const InvitePage: React.FC = () => {
     date.setHours(h, m);
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
+
+  const formatDateFromISO = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} hour${hours > 1 ? 's' : ''}`;
+  };
+
+  const timeOptions = eventData?.options || [];
+  const location = eventData?.location || invite.event_location;
 
   return (
     <div className="invite-page">
@@ -154,7 +223,7 @@ export const InvitePage: React.FC = () => {
                 <h3>{invite.event_title}</h3>
                 <p className="event-detail">📅 {eventDate}</p>
                 {invite.event_time && <p className="event-detail">🕐 {formatTime(invite.event_time)}</p>}
-                {invite.event_location && <p className="event-detail">📍 {invite.event_location}</p>}
+                {location && <p className="event-detail">📍 {location}</p>}
               </div>
 
               <div className="response-actions">
@@ -181,24 +250,73 @@ export const InvitePage: React.FC = () => {
 
               <div className="event-card">
                 <h1 className="event-title">{invite.event_title}</h1>
-                <div className="event-details">
-                  <div className="event-detail">
-                    <span className="detail-icon">📅</span>
-                    <span>{eventDate}</span>
+                
+                {/* Show all time options if available */}
+                {timeOptions.length > 0 ? (
+                  <>
+                    <p style={{ fontSize: '0.9rem', color: '#666', margin: '0 0 0.75rem' }}>
+                      Suggested times:
+                    </p>
+                    <div className="time-options-grid">
+                      {timeOptions.map((opt, idx) => (
+                        <button
+                          key={idx}
+                          className={`time-option-item ${selectedOptions.includes(idx) ? 'selected' : ''}`}
+                          onClick={() => toggleTimeOption(idx)}
+                          style={{
+                            cursor: 'pointer',
+                            background: selectedOptions.includes(idx) ? '#22c55e' : '#fff',
+                            color: selectedOptions.includes(idx) ? '#fff' : '#1a1a1a',
+                          }}
+                        >
+                          <span 
+                            className="time-option-badge"
+                            style={{ 
+                              background: selectedOptions.includes(idx) ? '#fff' : '#22c55e',
+                              color: selectedOptions.includes(idx) ? '#22c55e' : '#fff'
+                            }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <div className="time-option-content">
+                            <span className="time-option-date" style={{ color: selectedOptions.includes(idx) ? '#fff' : '#1a1a1a' }}>
+                              {formatDateFromISO(opt.day)}
+                            </span>
+                            <span className="time-option-time" style={{ color: selectedOptions.includes(idx) ? 'rgba(255,255,255,0.8)' : '#666' }}>
+                              {formatTime(opt.time)} • {formatDuration(opt.duration)}
+                            </span>
+                          </div>
+                          {selectedOptions.includes(idx) && (
+                            <span style={{ marginLeft: 'auto' }}>✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: '#888', margin: '0.5rem 0 0' }}>
+                      Select times that work for you
+                    </p>
+                  </>
+                ) : (
+                  <div className="event-details">
+                    <div className="event-detail">
+                      <span className="detail-icon">📅</span>
+                      <span>{eventDate}</span>
+                    </div>
+                    {invite.event_time && (
+                      <div className="event-detail">
+                        <span className="detail-icon">🕐</span>
+                        <span>{formatTime(invite.event_time)}</span>
+                      </div>
+                    )}
                   </div>
-                  {invite.event_time && (
-                    <div className="event-detail">
-                      <span className="detail-icon">🕐</span>
-                      <span>{formatTime(invite.event_time)}</span>
-                    </div>
-                  )}
-                  {invite.event_location && (
-                    <div className="event-detail">
-                      <span className="detail-icon">📍</span>
-                      <span>{invite.event_location}</span>
-                    </div>
-                  )}
-                </div>
+                )}
+                
+                {location && (
+                  <div className="event-detail" style={{ marginTop: '0.75rem' }}>
+                    <span className="detail-icon">📍</span>
+                    <span>{location}</span>
+                  </div>
+                )}
               </div>
 
               <p className="invite-question">Can you make it?</p>

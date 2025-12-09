@@ -69,7 +69,52 @@
 .event-header .header-left {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   flex: 1;
+}
+
+.event-back-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF;
+  border: 2px solid #1A1A1A;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #1A1A1A;
+  transition: all 0.12s ease;
+}
+
+.event-back-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #1A1A1A;
+  background: #22c55e;
+  color: #FFF;
+}
+
+.event-back-btn:hover svg {
+  stroke: #FFF;
+}
+
+.event-back-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #1A1A1A;
+}
+
+.dark-mode .event-back-btn {
+  background: #333;
+  border-color: #FFF;
+  box-shadow: 3px 3px 0 #333;
+}
+
+.dark-mode .event-back-btn svg {
+  stroke: #F0F0F0;
+}
+
+.dark-mode .event-back-btn:hover {
+  background: #22c55e;
+  box-shadow: 5px 5px 0 #333;
 }
 
 .event-header .header-center {
