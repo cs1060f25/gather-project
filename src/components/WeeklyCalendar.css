@@ -731,6 +731,39 @@
   right: 1px;
 }
 
+/* Gatherly scheduled events - Google Calendar events created via Gatherly */
+.wc-event.gatherly-scheduled {
+  border-left: 3px solid #22c55e;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, var(--event-color) 30%);
+}
+
+.wc-gatherly-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.wc-event.short-event .wc-gatherly-badge {
+  width: 14px;
+  height: 14px;
+  top: 1px;
+  right: 1px;
+}
+
+.wc-event.short-event .wc-gatherly-badge svg {
+  width: 10px;
+  height: 10px;
+}
+
 .wc-event.short-event {
   padding: 1px 3px;
 }

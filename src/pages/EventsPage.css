@@ -303,6 +303,18 @@
   box-shadow: 3px 3px 0 #1A1A1A;
 }
 
+/* Gatherly scheduled events - Google Calendar events created via Gatherly */
+.event-card-today.gatherly-scheduled,
+.event-card-upcoming.gatherly-scheduled {
+  border-left: 4px solid #22c55e;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, #FFF 40%);
+}
+
+.event-card-today.gatherly-scheduled .gatherly-badge,
+.event-card-upcoming.gatherly-scheduled .gatherly-badge {
+  background: rgba(34, 197, 94, 0.15);
+}
+
 .event-card-upcoming .upcoming-date-badge {
   font-size: 0.7rem;
   font-weight: 700;

@@ -17,6 +17,7 @@ export interface CalendarEvent {
   calendarName?: string;
   important?: boolean;
   isGatherlyEvent?: boolean;
+  isGatherlyScheduled?: boolean; // Google Calendar event that was created via Gatherly
   suggestedTimes?: { date: string; time: string; color: string }[];
   status?: 'pending' | 'confirmed' | 'cancelled';
   color?: string; // Calendar color for the event
@@ -699,7 +700,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     return (
                       <div
                         key={event.id}
-                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.status === 'pending' ? 'pending' : ''} ${event.status === 'confirmed' ? 'confirmed' : ''} ${isShortEvent ? 'short-event' : ''}`}
+                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.isGatherlyScheduled ? 'gatherly-scheduled' : ''} ${event.status === 'pending' ? 'pending' : ''} ${event.status === 'confirmed' ? 'confirmed' : ''} ${isShortEvent ? 'short-event' : ''}`}
                         style={{ 
                           top: `${topPercent}%`, 
                           height: `${Math.max(heightPercent, 2.5)}%`,
@@ -712,11 +713,24 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                           e.stopPropagation();
                           onEventClick?.(event);
                         }}
-                        title={`${event.title}${event.time ? ` at ${new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}${event.location ? ` • ${event.location}` : ''}`}
+                        title={`${event.title}${event.time ? ` at ${new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}${event.location ? ` • ${event.location}` : ''}${event.isGatherlyScheduled ? ' • Scheduled with Gatherly' : ''}`}
                       >
                         {/* Option number badge for pending Gatherly events */}
                         {event.isGatherlyEvent && event.status === 'pending' && event.optionNumber && (
                           <span className="wc-event-option-badge">{event.optionNumber}</span>
+                        )}
+                        {/* Gatherly badge for confirmed events that were scheduled via Gatherly */}
+                        {event.isGatherlyScheduled && !event.isGatherlyEvent && (
+                          <span className="wc-gatherly-badge" title="Scheduled with Gatherly">
+                            <svg width="12" height="12" viewBox="-2 -2 28 28" fill="none">
+                              <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" 
+                                    stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2.5"/>
+                              <path d="M6 14V18" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M4 16H8" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </span>
                         )}
                         {isShortEvent ? (
                           <div className="wc-event-compact">

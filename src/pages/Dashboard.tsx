@@ -204,22 +204,29 @@ export const Dashboard: React.FC = () => {
 
             if (eventsResponse.ok) {
               const eventsData = await eventsResponse.json();
-              return (eventsData.items || []).map((item: any) => ({
-                id: `gcal-${item.id}`,
-                title: item.summary || 'Untitled Event',
-                date: item.start?.date || item.start?.dateTime?.split('T')[0],
-                time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-                endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
-                category: categorizeEvent(item.summary || ''),
-                source: 'google' as const,
-                calendarId: cal.id,
-                calendarName: cal.name,
-                color: cal.color,
-                attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
-                location: item.location,
-                description: item.description,
-                important: true,
-              }));
+              return (eventsData.items || []).map((item: any) => {
+                // Check if this event was created via Gatherly
+                const isGatherlyScheduled = item.description?.includes('[Scheduled with Gatherly]') || false;
+                
+                return {
+                  id: `gcal-${item.id}`,
+                  title: item.summary || 'Untitled Event',
+                  date: item.start?.date || item.start?.dateTime?.split('T')[0],
+                  time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+                  endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+                  category: categorizeEvent(item.summary || ''),
+                  source: 'google' as const,
+                  calendarId: cal.id,
+                  calendarName: cal.name,
+                  // Use green color for Gatherly-scheduled events, otherwise calendar color
+                  color: isGatherlyScheduled ? '#22c55e' : cal.color,
+                  attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
+                  location: item.location,
+                  description: item.description,
+                  important: true,
+                  isGatherlyScheduled,
+                };
+              });
             }
             return [];
           } catch (err) {

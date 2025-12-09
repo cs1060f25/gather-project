@@ -31,6 +31,7 @@ interface CalendarEvent {
   calendarColor?: string;
   status?: 'pending' | 'confirmed' | 'cancelled';
   isGatherly?: boolean;
+  isGatherlyScheduled?: boolean; // Google Calendar event that was created via Gatherly
   responses?: number;
   totalInvites?: number;
 }
@@ -215,20 +216,27 @@ export const EventsPage: React.FC = () => {
 
             if (response.ok) {
               const data = await response.json();
-              const events = (data.items || []).map((item: any) => ({
-                id: item.id,
-                title: item.summary || 'Untitled Event',
-                date: item.start?.date || item.start?.dateTime?.split('T')[0],
-                time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-                endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
-                location: item.location || 'TBD',
-                attendees: (item.attendees || []).map((a: any) => a.email),
-                source: 'google' as const,
-                calendarId: cal.id,
-                calendarName: cal.name,
-                calendarColor: cal.color,
-                isGatherly: false
-              }));
+              const events = (data.items || []).map((item: any) => {
+                // Check if this event was created via Gatherly
+                const isGatherlyScheduled = item.description?.includes('[Scheduled with Gatherly]') || false;
+                
+                return {
+                  id: item.id,
+                  title: item.summary || 'Untitled Event',
+                  date: item.start?.date || item.start?.dateTime?.split('T')[0],
+                  time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+                  endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+                  location: item.location || 'TBD',
+                  attendees: (item.attendees || []).map((a: any) => a.email),
+                  source: 'google' as const,
+                  calendarId: cal.id,
+                  calendarName: cal.name,
+                  // Use green for Gatherly-scheduled events
+                  calendarColor: isGatherlyScheduled ? '#22c55e' : cal.color,
+                  isGatherly: false,
+                  isGatherlyScheduled
+                };
+              });
               allEvents.push(...events);
             }
           } catch (err) {
@@ -291,42 +299,38 @@ export const EventsPage: React.FC = () => {
   const categorizedEvents = useMemo(() => {
     const today = new Date();
     const todayISO = fmtDateISO(today);
-    
-    // Get upcoming dates (next 7 days, excluding today)
-    const upcomingDates: string[] = [];
-    for (let i = 1; i <= 7; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() + i);
-      upcomingDates.push(fmtDateISO(d));
-    }
+    const nowTime = `${pad(today.getHours())}:${pad(today.getMinutes())}`;
 
     // Convert Gatherly events to calendar events format
+    // Filter out cancelled events - they shouldn't appear anywhere
     // Track confirmed Gatherly events to filter out duplicates from Google Calendar
     const confirmedGatherlyKeys = new Set<string>();
     
-    const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.map(ge => {
-      // Track confirmed events for duplicate detection
-      if (ge.status === 'confirmed' && ge.confirmedOption) {
-        const key = `${ge.confirmedOption.day}|${ge.confirmedOption.time}|${ge.title.toLowerCase().trim()}`;
-        confirmedGatherlyKeys.add(key);
-      }
-      
-      return {
-        id: ge.id,
-        title: ge.title,
-        date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
-        time: ge.confirmedOption?.time || ge.options[0]?.time,
-        location: ge.location || ge.options?.[0]?.location || 'TBD',
-        attendees: ge.participants,
-        source: 'gatherly' as const,
-        status: ge.status,
-        isGatherly: true,
-        calendarName: 'Gatherly',
-        calendarColor: '#22c55e',
-        responses: ge.responses?.length || 0,
-        totalInvites: ge.participants.length
-      };
-    });
+    const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents
+      .filter(ge => ge.status !== 'cancelled') // Don't show cancelled events
+      .map(ge => {
+        // Track confirmed events for duplicate detection
+        if (ge.status === 'confirmed' && ge.confirmedOption) {
+          const key = `${ge.confirmedOption.day}|${ge.confirmedOption.time}|${ge.title.toLowerCase().trim()}`;
+          confirmedGatherlyKeys.add(key);
+        }
+        
+        return {
+          id: ge.id,
+          title: ge.title,
+          date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
+          time: ge.confirmedOption?.time || ge.options[0]?.time,
+          location: ge.location || ge.options?.[0]?.location || 'TBD',
+          attendees: ge.participants,
+          source: 'gatherly' as const,
+          status: ge.status,
+          isGatherly: true,
+          calendarName: 'Gatherly',
+          calendarColor: '#22c55e',
+          responses: ge.responses?.length || 0,
+          totalInvites: ge.participants.length
+        };
+      });
 
     // Filter Google events to remove duplicates of confirmed Gatherly events
     const filteredGoogleEvents = googleEvents.filter(e => {
@@ -337,17 +341,18 @@ export const EventsPage: React.FC = () => {
 
     const allEvents = [...filteredGoogleEvents, ...gatherlyCalEvents];
 
-    // Sort upcoming: Gatherly events first, then by date/time
-    // Cap at 6 events max to look nice on screen
-    // Exclude pending events (they appear in the pending section instead)
-    const MAX_UPCOMING = 6;
+    // Get next 7 upcoming events chronologically (excluding today, not cancelled, not pending)
+    const MAX_UPCOMING = 7;
     const upcomingFiltered = allEvents
-      .filter(e => upcomingDates.includes(e.date) && e.status !== 'cancelled' && e.status !== 'pending')
+      .filter(e => {
+        if (e.status === 'cancelled' || e.status === 'pending') return false;
+        // Must be after today, OR if today then after current time
+        if (e.date > todayISO) return true;
+        if (e.date === todayISO && e.time && e.time > nowTime) return true;
+        return false;
+      })
       .sort((a, b) => {
-        // Gatherly events come first
-        if (a.isGatherly && !b.isGatherly) return -1;
-        if (!a.isGatherly && b.isGatherly) return 1;
-        // Then sort by date
+        // Sort chronologically by date then time
         const dateCompare = a.date.localeCompare(b.date);
         if (dateCompare !== 0) return dateCompare;
         return (a.time || '').localeCompare(b.time || '');
@@ -434,12 +439,13 @@ export const EventsPage: React.FC = () => {
                 const calendarColor = event.calendarColor || '#4285f4';
                 const bgColor = getLighterColor(calendarColor);
                 const isGatherlyEvent = event.isGatherly || event.source === 'gatherly';
+                const isGatherlyScheduled = event.isGatherlyScheduled || false;
                 
                 return (
                   <Link 
                     key={event.id} 
                     to={isGatherlyEvent ? `/event/${event.id}` : '#'}
-                    className={`event-card-today ${!isGatherlyEvent ? 'non-gatherly' : ''}`}
+                    className={`event-card-today ${!isGatherlyEvent ? 'non-gatherly' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
                     onClick={(e) => {
                       if (!isGatherlyEvent) {
                         e.preventDefault();
@@ -468,11 +474,12 @@ export const EventsPage: React.FC = () => {
                         className="event-category-badge"
                         style={{ background: bgColor, color: calendarColor }}
                       >
-                        {calendarName}
+                        {isGatherlyScheduled ? 'Gatherly' : calendarName}
                       </span>
                     </div>
-                    {isGatherlyEvent && (
-                      <div className="gatherly-badge" title="Created with Gatherly">
+                    {/* Show Gatherly badge for pending Gatherly events OR scheduled via Gatherly */}
+                    {(isGatherlyEvent || isGatherlyScheduled) && (
+                      <div className="gatherly-badge" title={isGatherlyScheduled ? 'Scheduled with Gatherly' : 'Created with Gatherly'}>
                         <GatherlyLogo size={16} />
                       </div>
                     )}
@@ -497,6 +504,7 @@ export const EventsPage: React.FC = () => {
                 const calendarColor = event.calendarColor || '#4285f4';
                 const bgColor = getLighterColor(calendarColor);
                 const isGatherlyEvent = event.isGatherly || event.source === 'gatherly';
+                const isGatherlyScheduled = event.isGatherlyScheduled || false;
                 
                 // Format date for display
                 const eventDate = new Date(event.date + 'T00:00:00');
@@ -507,7 +515,7 @@ export const EventsPage: React.FC = () => {
                   <Link 
                     key={event.id} 
                     to={isGatherlyEvent ? `/event/${event.id}` : '#'}
-                    className={`event-card-upcoming ${!isGatherlyEvent ? 'non-gatherly' : ''}`}
+                    className={`event-card-upcoming ${!isGatherlyEvent ? 'non-gatherly' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
                     onClick={(e) => {
                       if (!isGatherlyEvent) {
                         e.preventDefault();
@@ -522,11 +530,12 @@ export const EventsPage: React.FC = () => {
                         className="event-category-badge"
                         style={{ background: bgColor, color: calendarColor }}
                       >
-                        {calendarName}
+                        {isGatherlyScheduled ? 'Gatherly' : calendarName}
                       </span>
                     </div>
-                    {isGatherlyEvent && (
-                      <div className="gatherly-badge" title="Created with Gatherly">
+                    {/* Show Gatherly badge for pending Gatherly events OR scheduled via Gatherly */}
+                    {(isGatherlyEvent || isGatherlyScheduled) && (
+                      <div className="gatherly-badge" title={isGatherlyScheduled ? 'Scheduled with Gatherly' : 'Created with Gatherly'}>
                         <GatherlyLogo size={14} />
                       </div>
                     )}

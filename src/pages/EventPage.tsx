@@ -286,15 +286,22 @@ export const EventPage: React.FC = () => {
           const endDate = new Date(startDate.getTime() + (confirmedOption.duration || 60) * 60000);
           
           // Build the calendar event with all details
+          // Add Gatherly marker to description so we can identify it later
+          const gatherlyMarker = '\n\n[Scheduled with Gatherly]';
+          const descriptionWithMarker = event.description 
+            ? event.description + gatherlyMarker 
+            : gatherlyMarker.trim();
+          
           const calendarEvent: {
             summary: string;
-            description?: string;
+            description: string;
             location?: string;
             start: { dateTime: string; timeZone: string };
             end: { dateTime: string; timeZone: string };
             attendees: { email: string }[];
           } = {
             summary: event.title,
+            description: descriptionWithMarker,
             start: {
               dateTime: startDate.toISOString(),
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -306,10 +313,7 @@ export const EventPage: React.FC = () => {
             attendees: event.participants.map(email => ({ email }))
           };
           
-          // Add optional fields if they exist
-          if (event.description) {
-            calendarEvent.description = event.description;
-          }
+          // Add location if it exists
           if (event.location && event.location !== 'TBD') {
             calendarEvent.location = event.location;
           }
