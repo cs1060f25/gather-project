@@ -61,7 +61,20 @@ export const Dashboard: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
+  // Initialize calendars from localStorage to prevent losing selections on page refresh
+  const [calendars, setCalendars] = useState<GoogleCalendar[]>(() => {
+    try {
+      const savedCalendars = localStorage.getItem('gatherly_calendars_cache');
+      if (savedCalendars) {
+        const parsed = JSON.parse(savedCalendars);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    // Default to just Gatherly calendar if nothing saved
+    return [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }];
+  });
   const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
   
   // Editing state
@@ -135,6 +148,8 @@ export const Dashboard: React.FC = () => {
       });
 
       setCalendars(googleCalendars);
+      // Cache calendars to localStorage to preserve across page refreshes
+      localStorage.setItem('gatherly_calendars_cache', JSON.stringify(googleCalendars));
 
       // Fetch 3 years back and 1 year forward to ensure all historical and future events load
       const allEvents: CalendarEvent[] = [];
@@ -398,13 +413,15 @@ export const Dashboard: React.FC = () => {
   // Toggle calendar visibility - persist to localStorage
   const handleCalendarToggle = useCallback((calendarId: string) => {
     setCalendars(prev => {
-      const updated = prev.map(cal => 
+      const updated = prev.map(cal =>
       cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
       );
       // Save selected state to localStorage
       const selectedStates: Record<string, boolean> = {};
       updated.forEach(cal => { selectedStates[cal.id] = cal.selected; });
       localStorage.setItem('gatherly_calendar_selections', JSON.stringify(selectedStates));
+      // Also update the full calendars cache
+      localStorage.setItem('gatherly_calendars_cache', JSON.stringify(updated));
       return updated;
     });
   }, []);
