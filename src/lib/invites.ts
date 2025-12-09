@@ -185,101 +185,34 @@ export async function getHostPendingInvites(hostEmail: string): Promise<Invite[]
   }
 }
 
-// Send invite emails using Resend API
-export async function sendInviteEmails(invites: Invite[]): Promise<{ sent: number; failed: number }> {
-  const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-  
-  if (!RESEND_API_KEY) {
-    console.warn('Resend API key not configured. Emails will not be sent.');
-    // For demo purposes, log the invite links
-    invites.forEach(invite => {
-      const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
-      console.log(`Invite link for ${invite.invitee_email}: ${inviteUrl}`);
-    });
-    return { sent: 0, failed: invites.length };
-  }
-
+// Send invite emails using our secure server-side API
+// The API key is stored on the server, not exposed to the frontend
+export async function sendInviteEmails(
+  invites: Invite[],
+  suggestedTimes?: Array<{ day: string; time: string; duration: number }>
+): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
 
   for (const invite of invites) {
-    const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
-    const eventDate = new Date(invite.event_date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-
     try {
-      const response = await fetch('https://api.resend.com/emails', {
+      const response = await fetch('/api/send-invite', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: 'Gatherly <noreply@gatherly.now>',
           to: invite.invitee_email,
-          subject: `${invite.host_name} invited you: ${invite.event_title}`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
-                .container { max-width: 500px; margin: 0 auto; background: #fff; }
-                .header { background: #000; color: #fff; padding: 24px; text-align: center; }
-                .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
-                .content { padding: 32px 24px; }
-                .event-card { background: #fafafa; border: 3px solid #000; padding: 20px; margin: 20px 0; }
-                .event-title { font-size: 20px; font-weight: 700; margin: 0 0 12px; }
-                .event-detail { color: #666; margin: 8px 0; }
-                .buttons { margin: 24px 0; }
-                .btn { display: inline-block; padding: 14px 28px; text-decoration: none; font-weight: 700; border: 3px solid #000; margin: 8px 8px 8px 0; }
-                .btn-yes { background: #22c55e; color: #fff; }
-                .btn-no { background: #fff; color: #000; }
-                .btn-maybe { background: #fbbf24; color: #000; }
-                .footer { padding: 20px 24px; text-align: center; color: #888; font-size: 14px; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>📅 Gatherly</h1>
-                </div>
-                <div class="content">
-                  <p>Hey there!</p>
-                  <p><strong>${invite.host_name}</strong> has invited you to:</p>
-                  
-                  <div class="event-card">
-                    <div class="event-title">${invite.event_title}</div>
-                    <div class="event-detail">📅 ${eventDate}</div>
-                    ${invite.event_time ? `<div class="event-detail">🕐 ${invite.event_time}</div>` : ''}
-                    ${invite.event_location ? `<div class="event-detail">📍 ${invite.event_location}</div>` : ''}
-                  </div>
-                  
-                  <p>Can you make it?</p>
-                  
-                  <div class="buttons">
-                    <a href="${inviteUrl}?response=accepted" class="btn btn-yes">Yes, I'm in!</a>
-                    <a href="${inviteUrl}?response=maybe" class="btn btn-maybe">Maybe</a>
-                    <a href="${inviteUrl}?response=declined" class="btn btn-no">Can't make it</a>
-                  </div>
-                  
-                  <p style="color: #888; font-size: 14px;">
-                    Or click here to respond: <a href="${inviteUrl}">${inviteUrl}</a>
-                  </p>
-                </div>
-                <div class="footer">
-                  Sent via Gatherly • Schedule faster together
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
+          eventTitle: invite.event_title,
+          hostName: invite.host_name,
+          hostEmail: invite.host_email,
+          suggestedTimes: suggestedTimes || [{
+            day: invite.event_date,
+            time: invite.event_time || '09:00',
+            duration: 60
+          }],
+          inviteToken: invite.token,
+          location: invite.event_location,
         }),
       });
 
@@ -288,12 +221,21 @@ export async function sendInviteEmails(invites: Invite[]): Promise<{ sent: numbe
         console.log(`Email sent to ${invite.invitee_email}`);
       } else {
         failed++;
-        console.error(`Failed to send email to ${invite.invitee_email}`);
+        const error = await response.json().catch(() => ({}));
+        console.error(`Failed to send email to ${invite.invitee_email}:`, error);
       }
     } catch (err) {
       failed++;
       console.error(`Error sending email to ${invite.invitee_email}:`, err);
     }
+  }
+
+  // Log invite links for debugging (in case email fails)
+  if (failed > 0) {
+    invites.forEach(invite => {
+      const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
+      console.log(`Invite link for ${invite.invitee_email}: ${inviteUrl}`);
+    });
   }
 
   return { sent, failed };

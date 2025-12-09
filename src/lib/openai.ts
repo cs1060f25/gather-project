@@ -1,6 +1,4 @@
-// OpenAI helper for parsing scheduling requests
-
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
+// Scheduling helper - uses server-side API to keep API keys secure
 
 export interface ParsedSchedulingData {
   title: string;
@@ -23,82 +21,31 @@ interface CalendarEvent {
 }
 
 // Parse a natural language message into structured scheduling data
+// This calls our secure server-side API which handles the OpenAI integration
 export async function parseSchedulingMessage(
   message: string,
   contactNames: string[] = []
 ): Promise<ParsedSchedulingData> {
-  if (!OPENAI_API_KEY) {
-    console.warn('OpenAI API key not configured, using basic parsing');
-    return basicParse(message, contactNames);
-  }
-
   try {
-    const today = new Date();
-    const dateContext = `Today is ${today.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })}.`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call our server-side API to parse the message
+    // The API key is safely stored on the server (not exposed to frontend)
+    const response = await fetch('/api/parse-scheduling', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a scheduling assistant. Parse the user's message and extract scheduling information.
-${dateContext}
-
-Known contacts: ${contactNames.join(', ') || 'none'}
-
-Return a JSON object with these fields:
-- isSchedulingRequest: boolean (true if this is a request to schedule something)
-- title: string (the event title/purpose)
-- participants: string[] (names or emails of people mentioned, match to known contacts if possible)
-- suggestedDate: string (ISO date YYYY-MM-DD, interpret relative dates like "tomorrow", "next Tuesday")
-- suggestedTime: string (24h format HH:MM, interpret times like "2pm" = "14:00", "morning" = "09:00", "afternoon" = "14:00", "evening" = "18:00")
-- duration: number (in minutes, default 60 if not specified)
-- location: string (place if mentioned, or "virtual" for video calls)
-- priority: "must" | "should" | "maybe" (based on urgency words like "urgent", "important", "if possible")
-- notes: string (any additional context)
-
-Only include fields that are explicitly mentioned or can be reasonably inferred.`
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500
+        message,
+        contactNames
       })
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
+      console.error('API error:', response.status);
       return basicParse(message, contactNames);
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    
-    if (!content) {
-      return basicParse(message, contactNames);
-    }
-
-    // Extract JSON from the response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return basicParse(message, contactNames);
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = await response.json();
     return {
       title: parsed.title || message.slice(0, 50),
       participants: parsed.participants || [],
@@ -111,7 +58,7 @@ Only include fields that are explicitly mentioned or can be reasonably inferred.
       isSchedulingRequest: parsed.isSchedulingRequest ?? true
     };
   } catch (error) {
-    console.error('Error parsing with OpenAI:', error);
+    console.error('Error calling parsing API:', error);
     return basicParse(message, contactNames);
   }
 }
