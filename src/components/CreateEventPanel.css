@@ -62,20 +62,23 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 6px 12px;
-  background: #FFF;
-  color: #1A1A1A;
-  border: 2px solid #1A1A1A;
+  padding: 6px 14px;
+  background: transparent;
+  color: #FFF;
+  border: 2px solid rgba(255, 255, 255, 0.5);
   text-decoration: none;
-  box-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
   transition: all 0.12s ease;
 }
 
 .cep-events-link:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #FFF;
+}
+
+.cep-events-link svg {
+  stroke: #FFF;
 }
 
 /* Form */

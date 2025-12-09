@@ -296,10 +296,10 @@ export const Dashboard: React.FC = () => {
     } catch (err) {
       console.error('Error loading Gatherly events:', err);
       // Fallback to localStorage
-      const stored = localStorage.getItem('gatherly_created_events');
-      if (stored) {
-        setGatherlyEvents(JSON.parse(stored));
-      }
+    const stored = localStorage.getItem('gatherly_created_events');
+    if (stored) {
+      setGatherlyEvents(JSON.parse(stored));
+    }
     }
   };
 
@@ -336,8 +336,8 @@ export const Dashboard: React.FC = () => {
       console.error('Error saving event:', err);
       // Still update local state
       const events = [...gatherlyEvents, event];
-      setGatherlyEvents(events);
-      localStorage.setItem('gatherly_created_events', JSON.stringify(events));
+    setGatherlyEvents(events);
+    localStorage.setItem('gatherly_created_events', JSON.stringify(events));
     }
   };
 
@@ -356,7 +356,7 @@ export const Dashboard: React.FC = () => {
   const handleCalendarToggle = useCallback((calendarId: string) => {
     setCalendars(prev => {
       const updated = prev.map(cal => 
-        cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
+      cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
       );
       // Save selected state to localStorage
       const selectedStates: Record<string, boolean> = {};
@@ -479,12 +479,12 @@ export const Dashboard: React.FC = () => {
       try {
         const { error } = await supabase.from('contacts').insert({
           id: contact.id,
-          user_id: authUser.id,
-          name: contact.name,
-          email: contact.email,
-          phone: contact.phone,
-          is_gatherly: contact.isGatherly
-        });
+        user_id: authUser.id,
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        is_gatherly: contact.isGatherly
+      });
         
         if (error) {
           console.error('Error saving contact:', error);
@@ -524,19 +524,19 @@ export const Dashboard: React.FC = () => {
       for (let idx = 0; idx < ge.options.length; idx++) {
         const opt = ge.options[idx];
         const calEvent: CalendarEvent = {
-          id: `gatherly-${ge.id}-${idx}`,
-          date: opt.day,
-          time: opt.time,
-          endTime: undefined,
-          title: ge.title,
+        id: `gatherly-${ge.id}-${idx}`,
+        date: opt.day,
+        time: opt.time,
+        endTime: undefined,
+        title: ge.title,
           category: 'gatherly',
-          duration: opt.duration,
-          attendees: ge.participants,
+        duration: opt.duration,
+        attendees: ge.participants,
           source: 'gatherly',
-          calendarId: 'gatherly',
-          isGatherlyEvent: true,
-          status: ge.status,
-          suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color }))
+        calendarId: 'gatherly',
+        isGatherlyEvent: true,
+        status: ge.status,
+        suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color }))
         };
         gatherlyCalEvents.push(calEvent);
       }

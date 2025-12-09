@@ -161,22 +161,22 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               <div className="people-header">
                 <h4>Your Contacts ({contacts.length})</h4>
                 <div className="people-actions">
+                <button 
+                  className="btn-small"
+                  onClick={() => setShowAddContact(!showAddContact)}
+                >
+                  {showAddContact ? 'Cancel' : '+ Add'}
+                </button>
+                {onImportContacts && (
                   <button 
-                    className="btn-small"
-                    onClick={() => setShowAddContact(!showAddContact)}
-                  >
-                    {showAddContact ? 'Cancel' : '+ Add'}
-                  </button>
-                  {onImportContacts && (
-                    <button 
-                      className="btn-small import-btn"
+                    className="btn-small import-btn"
                       onClick={handleImportContacts}
                       disabled={isImporting}
                       title="Import from Google Contacts"
-                    >
+                  >
                       {isImporting ? 'Importing...' : '📥 Google'}
-                    </button>
-                  )}
+                  </button>
+                )}
                 </div>
               </div>
 

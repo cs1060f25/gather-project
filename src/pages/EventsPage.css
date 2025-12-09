@@ -1,33 +1,10 @@
-/* Events Page - Neo-brutalist Design */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Events Page - Simple Clean Design */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 .events-page {
   min-height: 100vh;
   background: #FAFAFA;
   font-family: 'Space Grotesk', sans-serif;
-}
-
-/* Loading */
-.events-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  gap: 1.5rem;
-}
-
-.events-loading .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #1A1A1A;
-  border-top-color: #22c55e;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* Header */
@@ -46,25 +23,16 @@
 .events-header .header-left {
   display: flex;
   align-items: center;
-  flex: 1;
 }
 
 .events-header .header-center {
-  flex: 0;
-}
-
-.events-header .header-center h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
+  display: none;
 }
 
 .events-header .header-right {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex: 1;
-  justify-content: flex-end;
 }
 
 .events-logo {
@@ -73,7 +41,6 @@
   gap: 0.5rem;
   text-decoration: none;
   padding: 0.5rem;
-  transition: background 0.12s ease;
 }
 
 .events-logo:hover {
@@ -86,22 +53,15 @@
   color: #1A1A1A;
 }
 
-/* Profile Button */
 .events-header .profile-button {
   width: 40px;
   height: 40px;
   padding: 0;
-  background: #FFD166;
-  border: 3px solid #1A1A1A;
+  background: #8B7355;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
   overflow: hidden;
-  box-shadow: 3px 3px 0 #1A1A1A;
-  transition: all 0.15s ease;
-}
-
-.events-header .profile-button:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 #1A1A1A;
 }
 
 .events-header .profile-avatar {
@@ -116,10 +76,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FFD166;
-  color: #1A1A1A;
+  background: #8B7355;
+  color: #FFF;
   font-weight: 700;
-  font-size: 0.95rem;
 }
 
 /* Main Content */
@@ -127,233 +86,259 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
+}
+
+/* Top Grid */
+.events-top-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
 /* Section */
 .events-section {
-  background: #FFF;
-  border: 3px solid #1A1A1A;
-  box-shadow: 6px 6px 0 #1A1A1A;
+  margin-bottom: 2rem;
 }
 
 .section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 1rem 1.5rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
-  background: #1A1A1A;
-  color: #FFF;
+  color: #1A1A1A;
+  margin: 0 0 1rem 0;
 }
 
 .title-icon {
-  font-size: 1.25rem;
-}
-
-/* Empty State */
-.empty-state {
-  padding: 2rem;
-  text-align: center;
-  color: #888;
-  font-size: 0.95rem;
+  display: none;
 }
 
 /* Events List */
 .events-list {
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
 }
 
-.event-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 2px solid #E5E5E5;
+/* Reset global event-card styles for this page - Simple gray cards like mockup */
+.events-page .event-card,
+.events-page .event-card.gatherly,
+.events-page .event-card.pending,
+.events-page .event-card.cancelled {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  display: block;
+  padding: 1rem;
+  background: #E8E8E8 !important;
+  border: none !important;
+  border-radius: 8px;
   text-decoration: none;
-  color: inherit;
-  transition: background 0.1s ease;
+  color: #1A1A1A !important;
+  transition: all 0.15s ease;
+  box-shadow: none !important;
+  min-height: 70px;
 }
 
-.event-card:last-child {
-  border-bottom: none;
+.events-page .event-card:hover {
+  background: #DDD !important;
 }
 
-.event-card:hover {
-  background: #F8F8F8;
+.events-page .event-card.gatherly {
+  background: #E8E8E8 !important;
 }
 
-.event-card.gatherly {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
+.events-page .event-card.pending {
+  background: #E8E8E8 !important;
+  border: 2px dashed #22c55e !important;
 }
 
-.event-card.gatherly:hover {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.05) 100%);
+.events-page .event-card.cancelled {
+  background: #E8E8E8 !important;
+  opacity: 0.6;
 }
 
-.event-card.pending {
-  border-style: dashed;
+.events-page .event-card.empty-card {
+  background: #E8E8E8 !important;
+  min-height: 70px;
 }
 
-.event-time,
-.event-date {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
+.events-page .event-card.empty-card:hover {
+  background: #E8E8E8 !important;
+}
+
+/* Event Content */
+.events-page .event-time {
+  font-size: 0.8rem;
   font-weight: 600;
   color: #666;
-  min-width: 70px;
+  margin-bottom: 4px;
 }
 
-.event-date-time {
-  display: flex;
-  flex-direction: column;
-  min-width: 100px;
-}
-
-.event-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.event-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1A1A1A;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.event-location,
-.event-attendees,
-.event-participants {
-  margin: 0.25rem 0 0;
-  font-size: 0.8rem;
+.events-page .event-date {
+  font-size: 0.75rem;
   color: #888;
+  margin-bottom: 2px;
 }
 
-.event-options {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  min-width: 200px;
+.events-page .event-date-time {
+  margin-bottom: 4px;
 }
 
-.option-chip {
-  font-size: 0.7rem;
+.events-page .event-content {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.events-page .event-content * {
+  background: transparent !important;
+  border: none !important;
+}
+
+.events-page .event-title,
+.events-page h3.event-title,
+.events-page .event-card h3,
+.events-page .event-card .event-title,
+.events-page .event-card h3.event-title {
+  font-size: 0.9rem;
   font-weight: 600;
-  padding: 4px 8px;
-  color: #FFF;
-  border: 2px solid #1A1A1A;
+  color: #1A1A1A !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  text-decoration: none !important;
+  line-height: 1.4;
+  display: block;
 }
 
-.gatherly-badge {
-  width: 28px;
-  height: 28px;
+/* Override any mark/highlight elements */
+.events-page .event-card mark,
+.events-page .event-card ::marker,
+.events-page .event-card ::selection {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.events-page .event-location {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.events-page .event-participants {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Badges */
+.events-page .event-badges {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.events-page .gatherly-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
   background: #22c55e;
   color: #FFF;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border: 2px solid #1A1A1A;
-  box-shadow: 2px 2px 0 #1A1A1A;
+  border-radius: 4px;
 }
 
-.pending-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 10px;
+.events-page .pending-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
   background: #FEF3C7;
   color: #92400E;
-  border: 2px solid #1A1A1A;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  border-radius: 4px;
 }
 
-/* Event card wrapper for cancel button positioning */
-.event-card-wrapper {
-  position: relative;
+.events-page .cancelled-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: #F3F4F6;
+  color: #6B7280;
+  border-radius: 4px;
+}
+
+/* Options chips */
+.events-page .event-options {
   display: flex;
-  align-items: stretch;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
-.event-card-wrapper .event-card {
-  flex: 1;
+.events-page .option-chip {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: #22c55e;
+  color: #FFF;
+  border-radius: 4px;
 }
 
-.event-badges {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-shrink: 0;
+/* Event card wrapper */
+.events-page .event-card-wrapper {
+  display: block;
 }
 
-.cancel-event-btn {
-  width: 36px;
-  height: 100%;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #FEE2E2;
-  border: 2px solid #1A1A1A;
-  border-left: none;
-  color: #DC2626;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
+/* Cancel button - hide for now */
+.events-page .cancel-event-btn {
+  display: none;
 }
 
-.cancel-event-btn:hover {
-  background: #FECACA;
-  color: #991B1B;
-}
-
-/* Cancelled Events - muted styling */
-.cancelled-section {
+/* Cancelled section */
+.events-page .cancelled-section {
   opacity: 0.7;
 }
 
-.cancelled-section .section-title {
-  background: #666;
+/* Loading */
+.events-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1.5rem;
 }
 
-.cancelled-title {
-  background: #666 !important;
+.events-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #E5E5E5;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.event-card.cancelled {
-  background: #F5F5F5;
-  opacity: 0.8;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.event-card.cancelled .event-title {
-  text-decoration: line-through;
+/* Empty state */
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
   color: #888;
+  font-size: 0.9rem;
+  background: #F5F5F5;
+  border-radius: 8px;
 }
 
-.event-card.cancelled .event-participants {
-  color: #999;
-}
-
-.cancelled-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  background: #F3F4F6;
-  color: #6B7280;
-  border: 2px solid #9CA3AF;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.empty-state p {
+  margin: 0;
 }
 
 /* Dark Mode */
@@ -363,184 +348,56 @@
 
 .dark-mode .events-header {
   background: #252525;
-  border-color: #444;
-}
-
-.dark-mode .events-header .header-center h1 {
-  color: #F0F0F0;
+  border-color: #333;
 }
 
 .dark-mode .events-logo span {
   color: #F0F0F0;
 }
 
-.dark-mode .events-logo:hover {
-  background: rgba(34, 197, 94, 0.2);
-}
-
-.dark-mode .events-header .profile-button {
-  border-color: #555;
-  box-shadow: 3px 3px 0 #555;
-}
-
-.dark-mode .events-header .profile-button:hover {
-  box-shadow: 5px 5px 0 #555;
-}
-
-.dark-mode .events-section {
-  background: #252525;
-  border-color: #444;
-  box-shadow: 4px 4px 0 #333;
-}
-
 .dark-mode .section-title {
-  background: #333;
   color: #F0F0F0;
 }
 
-.dark-mode .empty-state {
-  color: #888;
+.dark-mode .events-page .event-card {
+  background: #252525;
+  border-color: #333;
 }
 
-.dark-mode .event-card {
-  border-color: #444;
+.dark-mode .events-page .event-card:hover {
   background: #2A2A2A;
 }
 
-.dark-mode .event-card:hover {
-  background: #333;
-}
-
-.dark-mode .event-card.gatherly {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.15) 0%, #2A2A2A 100%);
-}
-
-.dark-mode .event-card.gatherly:hover {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.1) 100%);
-}
-
-.dark-mode .event-title {
+.dark-mode .events-page .event-title {
   color: #F0F0F0;
 }
 
-.dark-mode .event-time,
-.dark-mode .event-date {
+.dark-mode .events-page .event-time,
+.dark-mode .events-page .event-date {
   color: #AAA;
 }
 
-.dark-mode .event-location,
-.dark-mode .event-attendees,
-.dark-mode .event-participants {
-  color: #888;
-}
-
-.dark-mode .gatherly-badge,
-.dark-mode .option-chip {
-  border-color: #555;
-  box-shadow: 2px 2px 0 #444;
-}
-
-.dark-mode .pending-badge {
-  border-color: #555;
-  background: #3D3520;
-  color: #FCD34D;
-}
-
-.dark-mode .cancelled-badge {
-  border-color: #555;
+.dark-mode .events-page .event-card.empty-card {
   background: #333;
+  border-color: #444;
 }
 
-.dark-mode .cancel-event-btn {
-  background: #3D2020;
-  border-color: #555;
-  color: #EF4444;
-}
-
-.dark-mode .cancel-event-btn:hover {
-  background: #4D2020;
+.dark-mode .empty-state {
+  background: #333;
+  color: #888;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .events-header {
-    padding: 0.75rem 1rem;
+  .events-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .events-main {
+    padding: 1.5rem 1rem;
   }
 
   .events-logo span {
     display: none;
   }
-
-  .events-header .profile-button {
-    width: 36px;
-    height: 36px;
-  }
-
-  .events-main {
-    padding: 1rem;
-    gap: 1.5rem;
-  }
-
-  .events-section {
-    box-shadow: 4px 4px 0 #1A1A1A;
-  }
-
-  .section-title {
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-  }
-
-  .event-card {
-    padding: 0.75rem 1rem;
-    flex-wrap: wrap;
-  }
-
-  .event-options {
-    width: 100%;
-    order: 3;
-    margin-top: 0.5rem;
-  }
-
-  .event-date-time {
-    min-width: 80px;
-  }
 }
-
-@media (max-width: 480px) {
-  .events-header {
-    padding: 0.5rem 0.75rem;
-    border-bottom-width: 2px;
-  }
-
-  .events-header .profile-button {
-    width: 32px;
-    height: 32px;
-    border-width: 2px;
-    box-shadow: 2px 2px 0 #1A1A1A;
-  }
-
-  .events-section {
-    border-width: 2px;
-    box-shadow: 3px 3px 0 #1A1A1A;
-  }
-
-  .section-title {
-    padding: 0.6rem 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .event-card {
-    padding: 0.6rem 0.75rem;
-    gap: 0.75rem;
-  }
-
-  .event-title {
-    font-size: 0.9rem;
-  }
-
-  .event-time,
-  .event-date {
-    font-size: 0.75rem;
-  }
-}
-

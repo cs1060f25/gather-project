@@ -215,14 +215,14 @@ export const EventPage: React.FC = () => {
       );
       localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
     }
-    
+
     setEvent({ ...event, status: 'cancelled' });
     setShowCancelConfirm(false);
   };
 
   const handleConfirmTime = async () => {
     if (!event || selectedOption === null) return;
-    
+
     setIsConfirming(true);
     const confirmedOption = event.options[selectedOption];
     
@@ -313,7 +313,7 @@ export const EventPage: React.FC = () => {
       );
       localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
     }
-    
+
     setEvent({ ...event, status: 'confirmed', confirmedOption });
     setIsConfirming(false);
   };
@@ -490,7 +490,7 @@ export const EventPage: React.FC = () => {
                       {invite?.responded_at && (
                         <span className="response-time">
                           {new Date(invite.responded_at).toLocaleDateString()}
-                        </span>
+                            </span>
                       )}
                     </div>
                   );

@@ -254,160 +254,112 @@ export const EventsPage: React.FC = () => {
 
       {/* Content */}
       <main className="events-main">
-        {/* Today's Events */}
-        <section className="events-section">
-          <h2 className="section-title">
-            <span className="title-icon">📅</span>
-            Today's Events
-          </h2>
-          {categorizedEvents.today.length === 0 ? (
-            <div className="empty-state">
-              <p>No events today! 🎉</p>
-            </div>
-          ) : (
+        {/* Top Grid - Today and Next Week side by side */}
+        <div className="events-top-grid">
+          {/* Today's Events */}
+          <section className="events-section">
+            <h2 className="section-title">Today's Event</h2>
             <div className="events-list">
-              {categorizedEvents.today.map(event => (
-                <Link 
-                  key={event.id} 
-                  to={`/event/${event.id}`}
-                  className={`event-card ${event.isGatherly ? 'gatherly' : ''}`}
-                >
-                  <div className="event-time">{formatTime(event.time)}</div>
-                  <div className="event-content">
-                    <h3 className="event-title">{event.title}</h3>
-                    {event.location && <p className="event-location">📍 {event.location}</p>}
-                    {event.attendees && event.attendees.length > 0 && (
-                      <p className="event-attendees">{event.attendees.length} attendees</p>
-                    )}
-                  </div>
-                  {event.isGatherly && <span className="gatherly-badge">G</span>}
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Next Week's Events */}
-        <section className="events-section">
-          <h2 className="section-title">
-            <span className="title-icon">🗓️</span>
-            Next Week's Events
-          </h2>
-          {categorizedEvents.nextWeek.length === 0 ? (
-            <div className="empty-state">
-              <p>No events this week</p>
-            </div>
-          ) : (
-            <div className="events-list">
-              {categorizedEvents.nextWeek.map(event => (
-                <Link 
-                  key={event.id} 
-                  to={`/event/${event.id}`}
-                  className={`event-card ${event.isGatherly ? 'gatherly' : ''}`}
-                >
-                  <div className="event-date-time">
-                    <div className="event-date">{formatDate(event.date)}</div>
-                    <div className="event-time">{formatTime(event.time)}</div>
-                  </div>
-                  <div className="event-content">
-                    <h3 className="event-title">{event.title}</h3>
-                    {event.location && <p className="event-location">📍 {event.location}</p>}
-                  </div>
-                  {event.isGatherly && <span className="gatherly-badge">G</span>}
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Pending Events */}
-        <section className="events-section pending-section">
-          <h2 className="section-title">
-            <span className="title-icon">⏳</span>
-            Pending
-          </h2>
-          {categorizedEvents.pending.length === 0 ? (
-            <div className="empty-state">
-              <p>No pending events</p>
-            </div>
-          ) : (
-            <div className="events-list">
-              {categorizedEvents.pending.map(event => (
-                <div key={event.id} className="event-card-wrapper">
+              {categorizedEvents.today.length === 0 ? (
+                <div className="event-card empty-card"></div>
+              ) : (
+                categorizedEvents.today.map(event => (
                   <Link 
+                    key={event.id} 
                     to={`/event/${event.id}`}
-                    className="event-card pending gatherly"
+                    className={`event-card ${event.isGatherly ? 'gatherly' : ''}`}
                   >
-                    <div className="event-options">
-                      {event.options.slice(0, 3).map((opt, i) => (
-                        <div key={i} className="option-chip" style={{ backgroundColor: opt.color }}>
-                          {formatDate(opt.day)}
-                        </div>
-                      ))}
+                    <div className="event-time">{formatTime(event.time)}</div>
+                    <div className="event-content">
+                      <h3 className="event-title">{event.title}</h3>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Next Week's Events */}
+          <section className="events-section">
+            <h2 className="section-title">Next Week's Events</h2>
+            <div className="events-list">
+              {categorizedEvents.nextWeek.length === 0 ? (
+                <div className="event-card empty-card"></div>
+              ) : (
+                categorizedEvents.nextWeek.map(event => (
+                  <Link 
+                    key={event.id} 
+                    to={`/event/${event.id}`}
+                    className={`event-card ${event.isGatherly ? 'gatherly' : ''}`}
+                  >
+                    <div className="event-date-time">
+                      <div className="event-date">{formatDate(event.date)}</div>
                     </div>
                     <div className="event-content">
                       <h3 className="event-title">{event.title}</h3>
-                      <p className="event-participants">
-                        {event.participants.length} invited • Waiting for responses
-                      </p>
-                    </div>
-                    <div className="event-badges">
-                      <span className="gatherly-badge">Gatherly</span>
-                      <span className="pending-badge">Pending</span>
                     </div>
                   </Link>
-                  <button 
-                    className="cancel-event-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (confirm('Cancel this event?')) {
-                        const stored = localStorage.getItem('gatherly_created_events');
-                        if (stored) {
-                          const events: GatherlyEvent[] = JSON.parse(stored);
-                          const updated = events.map(e => 
-                            e.id === event.id ? { ...e, status: 'cancelled' as const } : e
-                          );
-                          localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
-                          setGatherlyEvents(updated);
-                        }
-                      }
-                    }}
-                    title="Cancel event"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-          )}
+          </section>
+        </div>
+
+        {/* Pending Events */}
+        <section className="events-section">
+          <h2 className="section-title">Pending</h2>
+          <div className="events-list">
+            {categorizedEvents.pending.length === 0 ? (
+              <div className="empty-state">
+                <p>No pending events</p>
+              </div>
+            ) : (
+              categorizedEvents.pending.map(event => (
+                <Link 
+                  key={event.id}
+                  to={`/event/${event.id}`}
+                  className="event-card pending"
+                >
+                  <div className="event-options">
+                    {event.options.slice(0, 3).map((opt, i) => (
+                      <span key={i} className="option-chip">{formatDate(opt.day)}</span>
+                    ))}
+                  </div>
+                  <h3 className="event-title">{event.title}</h3>
+                  <p className="event-participants">{event.participants.length} invited</p>
+                  <div className="event-badges">
+                    <span className="gatherly-badge">Gatherly</span>
+                    <span className="pending-badge">Pending</span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
         </section>
 
-        {/* Cancelled Events - muted styling */}
-        {categorizedEvents.cancelled.length > 0 && (
-          <section className="events-section cancelled-section">
-            <h2 className="section-title cancelled-title">
-              <span className="title-icon">🗑️</span>
-              Cancelled
-            </h2>
-            <div className="events-list">
-              {categorizedEvents.cancelled.map(event => (
+        {/* Cancelled Events */}
+        <section className="events-section cancelled-section">
+          <h2 className="section-title">Canceled</h2>
+          <div className="events-list">
+            {categorizedEvents.cancelled.length === 0 ? (
+              <div className="empty-state">
+                <p>No canceled events</p>
+              </div>
+            ) : (
+              categorizedEvents.cancelled.map(event => (
                 <Link 
                   key={event.id} 
                   to={`/event/${event.id}`}
-                  className="event-card cancelled gatherly"
+                  className="event-card cancelled"
                 >
-                  <div className="event-content">
-                    <h3 className="event-title">{event.title}</h3>
-                    <p className="event-participants">
-                      {event.participants.length} were invited
-                    </p>
-                  </div>
+                  <h3 className="event-title">{event.title}</h3>
+                  <p className="event-participants">{event.participants.length} were invited</p>
                   <span className="cancelled-badge">Cancelled</span>
                 </Link>
-              ))}
-            </div>
-          </section>
-        )}
+              ))
+            )}
+          </div>
+        </section>
       </main>
 
       {/* Profile Sidebar */}

@@ -332,18 +332,18 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         
         {/* Navigation - center */}
         <div className="wc-nav-bubble">
-          <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
+            <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </button>
-          <button className="wc-today-btn" onClick={goToday}>Today</button>
-          <button className="wc-nav-btn" onClick={goNext} aria-label="Next week">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+            </button>
+            <button className="wc-today-btn" onClick={goToday}>Today</button>
+            <button className="wc-nav-btn" onClick={goNext} aria-label="Next week">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
         
         {/* Views Dropdown - right */}
         <div className="wc-views-dropdown" ref={dropdownRef}>
@@ -365,18 +365,18 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           
           {showCalendarDropdown && (
             <div className="wc-dropdown-menu">
-              {calendars.map(cal => (
+            {calendars.map(cal => (
                 <label key={cal.id} className="wc-dropdown-item" style={{ '--cal-color': cal.color } as React.CSSProperties}>
-                  <input
-                    type="checkbox"
-                    checked={cal.selected}
-                    onChange={() => onCalendarToggle(cal.id)}
-                  />
-                  <span className="wc-cal-checkbox"></span>
-                  <span className="wc-cal-name">{cal.name}</span>
-                </label>
-              ))}
-            </div>
+                <input
+                  type="checkbox"
+                  checked={cal.selected}
+                  onChange={() => onCalendarToggle(cal.id)}
+                />
+                <span className="wc-cal-checkbox"></span>
+                <span className="wc-cal-name">{cal.name}</span>
+              </label>
+            ))}
+          </div>
           )}
         </div>
       </div>
@@ -387,11 +387,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         <div className="wc-time-column">
           <div className="wc-day-header-spacer"></div>
           <div className="wc-time-slots-container">
-            {HOURS.map(hour => (
-              <div key={hour} className="wc-time-slot">
-                <span>{fmtTimeLabel(hour)}</span>
-              </div>
-            ))}
+          {HOURS.map(hour => (
+            <div key={hour} className="wc-time-slot">
+              <span>{fmtTimeLabel(hour)}</span>
+            </div>
+          ))}
           </div>
         </div>
 
@@ -464,10 +464,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                           </div>
                         ) : (
                           <>
-                            <div className="wc-event-time">
-                              {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
-                            </div>
-                            <div className="wc-event-title">{event.title}</div>
+                        <div className="wc-event-time">
+                          {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
+                        </div>
+                        <div className="wc-event-title">{event.title}</div>
                             {event.location && heightPercent >= 7 && <div className="wc-event-location">📍 {event.location}</div>}
                           </>
                         )}

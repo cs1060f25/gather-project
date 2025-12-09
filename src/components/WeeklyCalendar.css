@@ -22,6 +22,7 @@
   background: var(--wc-bg, #FAFAFA);
   flex-shrink: 0;
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
+  min-height: 44px;
 }
 
 /* Month label - left */
@@ -540,13 +541,13 @@
 
 .dark-mode .wc-time-option {
   background: rgba(251, 191, 36, 0.3);
-}
+  }
 
 .dark-mode .wc-option-badge {
   background: #FFF;
   color: #1A1A1A;
   border-color: #1A1A1A;
-}
+  }
 
 .dark-mode .wc-option-time {
   background: rgba(0, 0, 0, 0.7);
