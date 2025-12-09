@@ -3,8 +3,24 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
+import { ProfileSidebar } from '../components/ProfileSidebar';
 import { getEventInvites, type Invite } from '../lib/invites';
 import './EventPage.css';
+
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  isGatherly?: boolean;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+}
 
 // Gatherly Logo SVG Component
 const GatherlyLogo = ({ size = 28 }: { size?: number }) => (
@@ -42,7 +58,7 @@ interface GoogleEvent {
 export const EventPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: authUser, signOut } = useAuth();
   const [event, setEvent] = useState<GatherlyEvent | null>(null);
   const [googleEvent, setGoogleEvent] = useState<GoogleEvent | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -51,10 +67,46 @@ export const EventPage: React.FC = () => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  const user: UserProfile | null = authUser ? {
+    id: authUser.id,
+    email: authUser.email || '',
+    full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || '',
+    avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '',
+  } : null;
 
   useEffect(() => {
     loadEvent();
-  }, [eventId]);
+    loadContacts();
+  }, [eventId, authUser]);
+
+  const loadContacts = async () => {
+    if (!authUser) return;
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', authUser.id);
+      
+      if (!error && data) {
+        setContacts(data.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          isGatherly: c.is_gatherly
+        })));
+      }
+    } catch (err) {
+      console.error('Error loading contacts:', err);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const loadEvent = async () => {
     if (!eventId) {
@@ -320,18 +372,18 @@ export const EventPage: React.FC = () => {
           <DayNightToggle />
           <button 
             className="profile-button"
-            onClick={() => navigate('/app')}
-            title="Back to Calendar"
+            onClick={() => setShowProfile(!showProfile)}
+            title="Profile"
           >
-            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+            {user?.avatar_url ? (
               <img 
-                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                src={user.avatar_url} 
                 alt="Profile" 
                 className="profile-avatar"
               />
             ) : (
               <div className="profile-avatar-placeholder">
-                {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'U')[0].toUpperCase()}
+                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
               </div>
             )}
           </button>
@@ -508,6 +560,18 @@ export const EventPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Profile Sidebar */}
+      <ProfileSidebar 
+        isOpen={showProfile}
+        user={user}
+        contacts={contacts}
+        onClose={() => setShowProfile(false)}
+        onSignOut={handleSignOut}
+        onAddContact={async () => {}}
+        onRemoveContact={async () => {}}
+        onImportContacts={async () => {}}
+      />
     </div>
   );
 };

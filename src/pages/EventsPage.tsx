@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../App';
-import { getGoogleToken } from '../lib/supabase';
+import { supabase, getGoogleToken } from '../lib/supabase';
 import { DayNightToggle } from '../components/DayNightToggle';
+import { ProfileSidebar } from '../components/ProfileSidebar';
 import './EventsPage.css';
 
 // Gatherly Logo SVG Component
@@ -42,20 +43,70 @@ interface GatherlyEvent {
   confirmedOption?: { day: string; time: string; duration: number };
 }
 
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  isGatherly?: boolean;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmtDateISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export const EventsPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: authUser, signOut } = useAuth();
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
   const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
-  // Load events
+  const user: UserProfile | null = authUser ? {
+    id: authUser.id,
+    email: authUser.email || '',
+    full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || '',
+    avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '',
+  } : null;
+
+  // Load events and contacts
   useEffect(() => {
     loadEvents();
-  }, []);
+    loadContacts();
+  }, [authUser]);
+
+  const loadContacts = async () => {
+    if (!authUser) return;
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', authUser.id);
+      
+      if (!error && data) {
+        setContacts(data.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          isGatherly: c.is_gatherly
+        })));
+      }
+    } catch (err) {
+      console.error('Error loading contacts:', err);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const loadEvents = async () => {
     setLoading(true);
@@ -180,18 +231,18 @@ export const EventsPage: React.FC = () => {
           <DayNightToggle />
           <button 
             className="profile-button"
-            onClick={() => navigate('/app')}
-            title="Back to Calendar"
+            onClick={() => setShowProfile(!showProfile)}
+            title="Profile"
           >
-            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+            {user?.avatar_url ? (
               <img 
-                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                src={user.avatar_url} 
                 alt="Profile" 
                 className="profile-avatar"
               />
             ) : (
               <div className="profile-avatar-placeholder">
-                {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'U')[0].toUpperCase()}
+                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
               </div>
             )}
           </button>
@@ -304,6 +355,18 @@ export const EventsPage: React.FC = () => {
           )}
         </section>
       </main>
+
+      {/* Profile Sidebar */}
+      <ProfileSidebar 
+        isOpen={showProfile}
+        user={user}
+        contacts={contacts}
+        onClose={() => setShowProfile(false)}
+        onSignOut={handleSignOut}
+        onAddContact={async () => {}}
+        onRemoveContact={async () => {}}
+        onImportContacts={async () => {}}
+      />
     </div>
   );
 };
