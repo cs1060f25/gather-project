@@ -1,4 +1,4 @@
-/* Weekly Calendar - Neo-brutalist Design with Floating Controls */
+/* Weekly Calendar - Clean Minimal Design */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ===== MAIN CONTAINER ===== */
@@ -13,21 +13,17 @@
   position: relative;
 }
 
-/* ===== FLOATING CONTROLS - Centered, doesn't take space ===== */
+/* ===== CONTROLS ROW - Thin bar at top ===== */
 .wc-floating-controls {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
   gap: 10px;
-  pointer-events: none;
-}
-
-.wc-floating-controls > * {
-  pointer-events: auto;
+  flex-shrink: 0;
+  background: var(--wc-bg, #FAFAFA);
+  position: relative;
+  z-index: 10;
 }
 
 /* Navigation bubble - pill shaped */
@@ -35,16 +31,16 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: var(--wc-nav-bg, rgba(255, 255, 255, 0.95));
+  background: var(--wc-nav-bg, #FFF);
   border: 2px solid var(--wc-border, #1A1A1A);
   border-radius: 999px;
-  padding: 4px;
-  box-shadow: 3px 3px 0 var(--wc-border, #1A1A1A);
+  padding: 3px;
+  box-shadow: 2px 2px 0 var(--wc-border, #1A1A1A);
 }
 
 .wc-nav-btn {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,20 +56,16 @@
   background: rgba(0, 0, 0, 0.08);
 }
 
-.wc-nav-btn:active {
-  background: rgba(0, 0, 0, 0.12);
-}
-
 /* Today button - green pill */
 .wc-today-btn {
-  padding: 6px 20px;
+  padding: 5px 16px;
   background: #22c55e;
   color: #FFF;
   border: none;
   border-radius: 999px;
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.1s ease;
 }
@@ -82,7 +74,7 @@
   background: #16a34a;
 }
 
-/* Views dropdown - inside the bubble */
+/* Views dropdown */
 .wc-views-dropdown {
   position: relative;
 }
@@ -90,15 +82,15 @@
 .wc-dropdown-toggle {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 10px;
+  gap: 4px;
+  padding: 5px 10px;
   background: var(--wc-btn-bg, #FFF);
   border: 2px solid var(--wc-border, #1A1A1A);
   color: var(--wc-text, #1A1A1A);
   box-shadow: 2px 2px 0 var(--wc-border, #1A1A1A);
   font-family: inherit;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.1s ease;
   border-radius: 4px;
@@ -163,7 +155,7 @@
   opacity: 0.3;
   transition: opacity 0.15s ease;
   flex-shrink: 0;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .wc-dropdown-item input:checked + .wc-cal-checkbox {
@@ -188,44 +180,45 @@
   text-overflow: ellipsis;
 }
 
-/* ===== MONTH LABEL - Bottom left floating ===== */
+/* ===== MONTH LABEL - Bottom left ===== */
 .wc-month-label {
   position: absolute;
-  bottom: 12px;
-  left: 60px;
+  bottom: 10px;
+  left: 8px;
   z-index: 50;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--wc-muted, #666);
-  background: var(--wc-nav-bg, rgba(255, 255, 255, 0.9));
+  background: var(--wc-nav-bg, rgba(255, 255, 255, 0.95));
   padding: 4px 10px;
   border-radius: 4px;
   border: 1px solid var(--wc-grid, #E5E5E5);
 }
 
-/* ===== GRID CONTAINER - Full height ===== */
+/* ===== GRID CONTAINER - Full remaining space ===== */
 .wc-grid-container {
   flex: 1;
   display: flex;
   min-height: 0;
   background: var(--wc-grid-bg, #FFF);
   overflow: hidden;
+  border-top: 1px solid var(--wc-grid, #E5E5E5);
 }
 
 /* ===== TIME COLUMN ===== */
 .wc-time-column {
-  width: 50px;
+  width: 48px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--wc-grid, #E5E5E5);
   background: var(--wc-time-bg, #FAFAFA);
 }
 
 .wc-day-header-spacer {
-  height: 48px;
+  height: 40px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
+  border-right: 1px solid var(--wc-grid, #E5E5E5);
 }
 
 .wc-time-slots-container {
@@ -233,6 +226,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-right: 1px solid var(--wc-grid, #E5E5E5);
 }
 
 .wc-time-slot {
@@ -241,13 +235,13 @@
   align-items: flex-start;
   justify-content: flex-end;
   padding: 0 6px;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 500;
   color: var(--wc-time-text, #888);
   font-family: 'JetBrains Mono', monospace;
   position: relative;
-  /* Align text with the top border of the slot */
-  margin-top: -6px;
+  transform: translateY(-5px);
+  border-bottom: 1px solid transparent;
 }
 
 /* ===== DAYS CONTAINER ===== */
@@ -272,12 +266,12 @@
 }
 
 .wc-day-column.is-today {
-  background: rgba(34, 197, 94, 0.04);
+  background: rgba(34, 197, 94, 0.03);
 }
 
 /* Day Header */
 .wc-day-header {
-  height: 48px;
+  height: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -285,13 +279,11 @@
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
   background: var(--wc-header-bg, #FFF);
   flex-shrink: 0;
-  gap: 2px;
-  padding: 4px 0;
-  box-sizing: border-box;
+  gap: 1px;
 }
 
 .wc-day-name {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: var(--wc-muted, #888);
   text-transform: uppercase;
@@ -300,12 +292,12 @@
 }
 
 .wc-day-number {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--wc-text, #1A1A1A);
   line-height: 1;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -314,7 +306,7 @@
 .wc-day-number.today {
   background: #22c55e;
   color: #FFF;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 /* ===== DAY SLOTS ===== */
@@ -339,41 +331,41 @@
 }
 
 .wc-hour-slot:hover {
-  background: rgba(34, 197, 94, 0.06);
+  background: rgba(34, 197, 94, 0.05);
 }
 
 /* ===== EVENTS ===== */
 .wc-event {
   position: absolute;
-  left: 2px;
-  right: 2px;
-  padding: 3px 5px;
+  left: 1px;
+  right: 1px;
+  padding: 2px 4px;
   border: 2px solid var(--event-color, #3b82f6);
   cursor: pointer;
   overflow: hidden;
   z-index: 2;
-  box-shadow: 2px 2px 0 var(--event-color, #3b82f6);
+  box-shadow: 1px 1px 0 var(--event-color, #3b82f6);
   background: color-mix(in srgb, var(--event-color, #3b82f6) 20%, white);
   box-sizing: border-box;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .wc-event:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--event-color, #3b82f6);
+  box-shadow: 2px 2px 0 var(--event-color, #3b82f6);
   z-index: 5;
 }
 
 .wc-event.gatherly-event {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  border-color: var(--wc-border, #1A1A1A);
+  border-color: #1A1A1A;
   color: #FFF;
-  box-shadow: 2px 2px 0 var(--wc-border, #1A1A1A);
+  box-shadow: 1px 1px 0 #1A1A1A;
 }
 
 .wc-event.gatherly-event:hover {
-  box-shadow: 3px 3px 0 var(--wc-border, #1A1A1A);
+  box-shadow: 2px 2px 0 #1A1A1A;
 }
 
 .wc-event.gatherly-event .wc-event-time,
@@ -387,31 +379,31 @@
 }
 
 .wc-event.short-event {
-  padding: 1px 4px;
+  padding: 1px 3px;
 }
 
 .wc-event-compact {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .wc-event-compact .wc-event-time {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   margin-bottom: 0;
   flex-shrink: 0;
 }
 
 .wc-event-compact .wc-event-title {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .wc-event-time {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: #555;
   font-family: 'JetBrains Mono', monospace;
@@ -419,10 +411,10 @@
 }
 
 .wc-event-title {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #1A1A1A;
-  line-height: 1.15;
+  line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -433,7 +425,7 @@
 }
 
 .wc-event-location {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   color: #666;
   margin-top: 1px;
   overflow: hidden;
@@ -444,8 +436,8 @@
 /* ===== TIME OPTIONS (EDITING MODE) ===== */
 .wc-time-option {
   position: absolute;
-  left: 2px;
-  right: 2px;
+  left: 1px;
+  right: 1px;
   background: rgba(251, 191, 36, 0.5);
   border: 2px dashed #f59e0b;
   display: flex;
@@ -456,7 +448,7 @@
   animation: pulse-highlight 2s ease-in-out infinite;
   cursor: pointer;
   box-sizing: border-box;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .wc-time-option:hover {
@@ -464,40 +456,39 @@
 }
 
 @keyframes pulse-highlight {
-  0%, 100% { background: rgba(251, 191, 36, 0.45); }
-  50% { background: rgba(251, 191, 36, 0.6); }
+  0%, 100% { background: rgba(251, 191, 36, 0.4); }
+  50% { background: rgba(251, 191, 36, 0.55); }
 }
 
 .wc-option-badge {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #1A1A1A;
   color: #FFF;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   border-radius: 50%;
   border: 2px solid #FFF;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .wc-option-time {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #1A1A1A;
-  margin-top: 3px;
+  margin-top: 2px;
   font-family: 'JetBrains Mono', monospace;
   background: rgba(255, 255, 255, 0.9);
-  padding: 2px 6px;
+  padding: 1px 4px;
   border-radius: 2px;
 }
 
-/* ===== EDITING MODE BORDER ===== */
+/* ===== EDITING MODE ===== */
 .weekly-calendar.editing-mode {
   border: 2px solid #22c55e;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 /* ===== DARK MODE ===== */
@@ -520,7 +511,7 @@
 .dark-mode .wc-nav-bubble {
   background: var(--wc-nav-bg);
   border-color: #555;
-  box-shadow: 3px 3px 0 #333;
+  box-shadow: 2px 2px 0 #333;
 }
 
 .dark-mode .wc-nav-btn:hover {
@@ -541,16 +532,12 @@
   border-color: #444;
 }
 
-.dark-mode .wc-day-number.today {
-  box-shadow: none;
-}
-
 .dark-mode .wc-day-column.is-today {
-  background: rgba(34, 197, 94, 0.08);
+  background: rgba(34, 197, 94, 0.06);
 }
 
 .dark-mode .wc-hour-slot:hover {
-  background: rgba(34, 197, 94, 0.12);
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .dark-mode .wc-event {
@@ -558,7 +545,7 @@
 }
 
 .dark-mode .wc-event.gatherly-event {
-  box-shadow: 2px 2px 0 #333;
+  box-shadow: 1px 1px 0 #333;
 }
 
 .dark-mode .wc-event-title {
@@ -574,7 +561,7 @@
 }
 
 .dark-mode .wc-time-option {
-  background: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.3);
 }
 
 .dark-mode .wc-option-badge {
@@ -591,21 +578,22 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .wc-floating-controls {
-    top: 6px;
+    padding: 5px 8px;
+    gap: 6px;
   }
 
   .wc-nav-bubble {
-    padding: 3px;
+    padding: 2px;
   }
 
   .wc-nav-btn {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
 
   .wc-today-btn {
-    padding: 5px 14px;
-    font-size: 0.7rem;
+    padding: 4px 12px;
+    font-size: 0.65rem;
   }
 
   .wc-dropdown-toggle span {
@@ -613,23 +601,23 @@
   }
 
   .wc-month-label {
-    font-size: 0.7rem;
-    left: 45px;
-    bottom: 8px;
+    font-size: 0.65rem;
+    bottom: 6px;
+    left: 6px;
   }
 
   .wc-time-column {
-    width: 40px;
+    width: 38px;
   }
 
   .wc-time-slot {
     font-size: 0.5rem;
-    padding: 0 4px;
+    padding: 0 3px;
   }
 
   .wc-day-header-spacer,
   .wc-day-header {
-    height: 40px;
+    height: 36px;
   }
 
   .wc-day-name {
@@ -637,34 +625,30 @@
   }
 
   .wc-day-number {
-    font-size: 0.9rem;
-  }
-
-  .wc-day-number.today {
-    width: 22px;
-    height: 22px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    width: 20px;
+    height: 20px;
   }
 }
 
 @media (max-width: 480px) {
   .wc-nav-btn {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 
   .wc-nav-btn svg {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
   }
 
   .wc-today-btn {
-    padding: 4px 10px;
-    font-size: 0.65rem;
+    padding: 3px 8px;
+    font-size: 0.6rem;
   }
 
   .wc-time-column {
-    width: 32px;
+    width: 30px;
   }
 
   .wc-time-slot {
@@ -674,7 +658,7 @@
 
   .wc-day-header-spacer,
   .wc-day-header {
-    height: 36px;
+    height: 32px;
   }
 
   .wc-day-name {
@@ -682,13 +666,9 @@
   }
 
   .wc-day-number {
-    font-size: 0.8rem;
-  }
-
-  .wc-day-number.today {
-    width: 20px;
-    height: 20px;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
   }
 
   .wc-month-label {
@@ -701,7 +681,7 @@
   }
 
   .wc-event-title {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
   }
 
   .wc-event-time,
