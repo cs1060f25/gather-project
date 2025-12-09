@@ -22,6 +22,14 @@ CREATE TABLE IF NOT EXISTS invites (
   CONSTRAINT invites_token_unique UNIQUE (token)
 );
 
+-- Add option_responses column if it doesn't exist (for per-option yes/maybe/no responses)
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invites' AND column_name = 'option_responses') THEN
+    ALTER TABLE invites ADD COLUMN option_responses JSONB;
+  END IF;
+END $$;
+
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_invites_token ON invites(token);
 CREATE INDEX IF NOT EXISTS idx_invites_event_id ON invites(event_id);

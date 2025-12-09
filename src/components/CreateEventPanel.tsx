@@ -48,9 +48,9 @@ const formatLocalDate = (d: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Duration options - includes blank default
+// Duration options - includes blank default (shown as "Span" in UI)
 const DURATION_OPTIONS = [
-  { value: 0, label: 'Duration' },
+  { value: 0, label: 'Span' },
   { value: 15, label: '15m' },
   { value: 30, label: '30m' },
   { value: 45, label: '45m' },
@@ -259,6 +259,29 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const confirmTime = () => {
     if (!activePicker) return;
     const timeStr = formatTimeValue(selectedHour, selectedMinute, selectedPeriod);
+    
+    // Check if the selected date is today and time is in the past
+    const currentOption = availabilityOptions.find(opt => opt.id === activePicker.optionId);
+    if (currentOption?.day) {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      if (currentOption.day === todayStr) {
+        // Parse the selected time
+        let hour24 = selectedHour;
+        if (selectedPeriod === 'PM' && selectedHour !== 12) hour24 += 12;
+        if (selectedPeriod === 'AM' && selectedHour === 12) hour24 = 0;
+        
+        const selectedTimeMinutes = hour24 * 60 + selectedMinute;
+        const currentTimeMinutes = today.getHours() * 60 + today.getMinutes();
+        
+        if (selectedTimeMinutes <= currentTimeMinutes) {
+          alert('Cannot select a time that has already passed today. Please choose a future time.');
+          return;
+        }
+      }
+    }
+    
     handleOptionChange(activePicker.optionId, 'time', timeStr);
     setActivePicker(null);
   };
@@ -322,11 +345,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     });
   };
 
-  // Format display for duration
+  // Format display for duration (shown as "Span" in UI)
   const formatDurationDisplay = (duration: number) => {
-    if (!duration) return 'Dura...';
+    if (!duration) return 'Span';
     const opt = DURATION_OPTIONS.find(d => d.value === duration);
-    return opt?.label || 'Dura...';
+    return opt?.label || 'Span';
   };
 
   // Handle click outside to exit editing mode
@@ -606,6 +629,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         // Preserve existing values for fields not mentioned
         if (parsed.title && parsed.title !== 'New Meeting') {
           setEventName(parsed.title);
+        }
+        
+        // Set description from notes if parsed
+        if (parsed.notes && parsed.notes.trim()) {
+          setDescription(parsed.notes);
         }
         
         // Set location if parsed and different from placeholder
