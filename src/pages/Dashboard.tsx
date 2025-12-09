@@ -37,6 +37,11 @@ interface Contact {
   isGatherly?: boolean;
 }
 
+interface GatherlyEventResponse {
+  email: string;
+  selectedOptions: number[];
+}
+
 interface GatherlyEvent {
   id: string;
   title: string;
@@ -45,6 +50,7 @@ interface GatherlyEvent {
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
   confirmedOption?: AvailabilityOption;
+  responses?: GatherlyEventResponse[];
 }
 
 export const Dashboard: React.FC = () => {
@@ -486,26 +492,35 @@ export const Dashboard: React.FC = () => {
   };
 
   // Combine Google events with Gatherly events for calendar display
-  const allCalendarEvents = useMemo(() => {
-    const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.flatMap(ge => 
-      ge.options.map((opt, idx) => ({
-        id: `gatherly-${ge.id}-${idx}`,
-        date: opt.day,
-        time: opt.time,
-        endTime: undefined,
-        title: ge.title,
-        category: 'gatherly' as const,
-        duration: opt.duration,
-        attendees: ge.participants,
-        source: 'gatherly' as const,
-        calendarId: 'gatherly',
-        isGatherlyEvent: true,
-        status: ge.status,
-        suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color }))
-      }))
-    );
+  const allCalendarEvents = useMemo((): CalendarEvent[] => {
+    // Convert Gatherly events to calendar events
+    const gatherlyCalEvents: CalendarEvent[] = [];
     
-    return [...events, ...gatherlyCalEvents];
+    for (const ge of gatherlyEvents) {
+      for (let idx = 0; idx < ge.options.length; idx++) {
+        const opt = ge.options[idx];
+        const calEvent: CalendarEvent = {
+          id: `gatherly-${ge.id}-${idx}`,
+          date: opt.day,
+          time: opt.time,
+          endTime: undefined,
+          title: ge.title,
+          category: 'gatherly',
+          duration: opt.duration,
+          attendees: ge.participants,
+          source: 'gatherly',
+          calendarId: 'gatherly',
+          isGatherlyEvent: true,
+          status: ge.status,
+          suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color }))
+        };
+        gatherlyCalEvents.push(calEvent);
+      }
+    }
+    
+    // Merge with Google calendar events
+    const merged: CalendarEvent[] = [...events, ...gatherlyCalEvents];
+    return merged;
   }, [events, gatherlyEvents]);
 
   if (authLoading) {
