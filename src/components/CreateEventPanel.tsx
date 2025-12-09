@@ -48,22 +48,6 @@ const formatLocalDate = (d: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Generate next 14 days with a placeholder
-const getDateOptions = () => {
-  const options = [{ value: '', label: 'Select date...', shortLabel: 'Date' }];
-  const today = new Date();
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    options.push({
-      value: formatLocalDate(d), // Use local date, not UTC
-      label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-      shortLabel: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
-    });
-  }
-  return options;
-};
-
 // Generate time options with a placeholder (6 AM to 11:30 PM)
 const getTimeOptions = () => {
   const options = [{ value: '', label: 'Time' }];
@@ -189,9 +173,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const pickerRef = useRef<HTMLDivElement>(null);
 
-  const dateOptions = useMemo(() => getDateOptions(), []);
   const timeOptions = useMemo(() => getTimeOptions(), []);
   
   // Close picker when clicking outside or pressing Escape
@@ -1005,21 +987,14 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   
                   {/* Analog Clock Face */}
                   <div className="cep-clock-face">
-                    {/* Clock marks */}
-                    {[...Array(12)].map((_, i) => (
-                      <div 
-                        key={i} 
-                        className="cep-clock-mark"
-                        style={{ transform: `rotate(${i * 30}deg)` }}
-                      />
-                    ))}
-                    
                     {/* Hour numbers around the clock */}
                     {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h, i) => {
                       const angle = (i * 30 - 90) * (Math.PI / 180);
-                      const radiusPercent = 36; // % from center
-                      const x = 50 + radiusPercent * Math.cos(angle);
-                      const y = 50 + radiusPercent * Math.sin(angle);
+                      const radiusPercent = 34; // % from center
+                      const centerX = 50;
+                      const centerY = 50;
+                      const x = centerX + radiusPercent * Math.cos(angle);
+                      const y = centerY + radiusPercent * Math.sin(angle);
                       return (
                         <button
                           key={h}
