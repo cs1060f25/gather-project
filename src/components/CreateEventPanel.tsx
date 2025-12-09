@@ -481,24 +481,6 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
 
-  // Recently interacted people (from localStorage)
-  const [recentPeople, setRecentPeople] = useState<{email: string; name?: string}[]>([]);
-  
-  // Load recent people from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('gatherly_recent_people');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setRecentPeople(parsed.slice(0, 5)); // Keep only 5 most recent
-        }
-      }
-    } catch (e) {
-      console.error('Error loading recent people:', e);
-    }
-  }, []);
-
   // Save recent people when participants change on successful submit
   const saveRecentPeople = (emails: string[]) => {
     try {
@@ -519,7 +501,6 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       const trimmed = merged.slice(0, 10); // Keep 10 max
       
       localStorage.setItem('gatherly_recent_people', JSON.stringify(trimmed));
-      setRecentPeople(trimmed.slice(0, 5));
     } catch (e) {
       console.error('Error saving recent people:', e);
     }
@@ -1029,72 +1010,30 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             </div>
           )}
 
-          {/* Combined suggestions: Recent people + Contact suggestions */}
-          {(() => {
-            // Filter recent people not already added
-            const availableRecent = recentPeople
-              .filter(p => !participants.includes(p.email))
-              .slice(0, 3);
-            
-            // Show if we have recent people OR contact suggestions
-            const hasContent = availableRecent.length > 0 || (showSuggestions && filteredContacts.length > 0);
-            
-            if (!hasContent) return null;
-            
-            return (
-              <div className="cep-suggestions">
-                {/* Recent section - always show if available */}
-                {availableRecent.length > 0 && (
-                  <>
-                    <div className="cep-recent-header">Recent</div>
-                    {availableRecent.map((person, idx) => (
-                      <button
-                        key={`recent-${idx}`}
-                        type="button"
-                        className="cep-suggestion"
-                        onMouseDown={() => handleAddParticipant(person.email)}
-                      >
-                        <div className="cep-suggestion-avatar cep-recent-avatar">
-                          {(person.name || person.email)[0].toUpperCase()}
-                        </div>
-                        <div className="cep-suggestion-info">
-                          <span className="cep-suggestion-name">{person.name || person.email.split('@')[0]}</span>
-                          <span className="cep-suggestion-email">{person.email}</span>
-                        </div>
-                        <span className="cep-recent-badge">⏱</span>
-                      </button>
-                    ))}
-                  </>
-                )}
-                
-                {/* Contact suggestions when typing */}
-                {showSuggestions && filteredContacts.length > 0 && (
-                  <>
-                    {availableRecent.length > 0 && <div className="cep-recent-header">Contacts</div>}
-                    {filteredContacts.map(contact => (
-                      <button
-                        key={contact.id}
-                        type="button"
-                        className="cep-suggestion"
-                        onMouseDown={() => handleAddParticipant(contact.email)}
-                      >
-                        <div className="cep-suggestion-avatar">
-                          {contact.name[0].toUpperCase()}
-                        </div>
-                        <div className="cep-suggestion-info">
-                          <span className="cep-suggestion-name">{contact.name}</span>
-                          <span className="cep-suggestion-email">{contact.email}</span>
-                        </div>
-                        {contact.isGatherly && (
-                          <span className="cep-gatherly-badge">📅</span>
-                        )}
-                      </button>
-                    ))}
-                  </>
-                )}
-              </div>
-            );
-          })()}
+          {/* Contact suggestions dropdown */}
+          {showSuggestions && filteredContacts.length > 0 && (
+            <div className="cep-suggestions">
+              {filteredContacts.map(contact => (
+                <button
+                  key={contact.id}
+                  type="button"
+                  className="cep-suggestion"
+                  onMouseDown={() => handleAddParticipant(contact.email)}
+                >
+                  <div className="cep-suggestion-avatar">
+                    {contact.name[0].toUpperCase()}
+                  </div>
+                  <div className="cep-suggestion-info">
+                    <span className="cep-suggestion-name">{contact.name}</span>
+                    <span className="cep-suggestion-email">{contact.email}</span>
+                  </div>
+                  {contact.isGatherly && (
+                    <span className="cep-gatherly-badge">📅</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Email prompt modal */}
           {emailPromptFor && (

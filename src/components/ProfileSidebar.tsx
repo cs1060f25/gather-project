@@ -44,9 +44,30 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [showAddContact, setShowAddContact] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [recentPeople, setRecentPeople] = useState<{email: string; name?: string}[]>([]);
   
   // Use real contacts only - no mock data
   const contacts = propContacts;
+  
+  // Load recent people from localStorage
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('gatherly_recent_people');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setRecentPeople(parsed.slice(0, 5));
+        }
+      }
+    } catch (e) {
+      console.error('Error loading recent people:', e);
+    }
+  }, [isOpen]); // Reload when sidebar opens
+  
+  const clearRecentPeople = () => {
+    localStorage.removeItem('gatherly_recent_people');
+    setRecentPeople([]);
+  };
   
   const handleImportContacts = async () => {
     if (!onImportContacts) return;
@@ -159,6 +180,36 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           {/* People Tab */}
           {activeTab === 'people' && (
             <div className="people-section">
+              {/* Recent People Section */}
+              {recentPeople.length > 0 && (
+                <div className="recent-people-section">
+                  <div className="people-header">
+                    <h4>Recently Scheduled</h4>
+                    <button 
+                      className="btn-small btn-clear"
+                      onClick={clearRecentPeople}
+                      title="Clear recent"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="recent-list">
+                    {recentPeople.map((person, idx) => (
+                      <div key={`recent-${idx}`} className="contact-item recent-item">
+                        <div className="contact-avatar recent-avatar">
+                          {(person.name || person.email)[0].toUpperCase()}
+                        </div>
+                        <div className="contact-info">
+                          <span className="contact-name">{person.name || person.email.split('@')[0]}</span>
+                          <span className="contact-email">{person.email}</span>
+                        </div>
+                        <span className="recent-badge">⏱</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="people-header">
                 <h4>Your Contacts ({contacts.length})</h4>
                 <div className="people-actions">

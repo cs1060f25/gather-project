@@ -332,6 +332,41 @@
   opacity: 0.7;
 }
 
+/* Recent People Section */
+.recent-people-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px dashed #ddd;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recent-item {
+  background: #f8f8ff !important;
+}
+
+.recent-avatar {
+  background: #6366f1 !important;
+}
+
+.recent-badge {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.btn-clear {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.btn-clear:hover {
+  color: #ef4444;
+}
+
 .contact-item {
   display: flex;
   align-items: center;
@@ -627,6 +662,14 @@
   background: #333;
   border-color: #FFF;
   box-shadow: 4px 4px 0 0 #FFF;
+}
+
+.dark-mode .recent-people-section {
+  border-color: #555;
+}
+
+.dark-mode .recent-item {
+  background: #3a3a4a !important;
 }
 
 .dark-mode .contact-name {
