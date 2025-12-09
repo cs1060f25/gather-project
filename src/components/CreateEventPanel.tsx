@@ -45,9 +45,9 @@ const formatLocalDate = (d: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Generate next 14 days
+// Generate next 14 days with a placeholder
 const getDateOptions = () => {
-  const options = [];
+  const options = [{ value: '', label: 'Select date...', shortLabel: 'Date' }];
   const today = new Date();
   for (let i = 0; i < 14; i++) {
     const d = new Date(today);
@@ -61,9 +61,9 @@ const getDateOptions = () => {
   return options;
 };
 
-// Generate time options
+// Generate time options with a placeholder
 const getTimeOptions = () => {
-  const options = [];
+  const options = [{ value: '', label: 'Time' }];
   for (let h = 7; h < 22; h++) {
     for (let m = 0; m < 60; m += 30) {
       const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;

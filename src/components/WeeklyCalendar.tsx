@@ -298,7 +298,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return result;
   };
 
-  const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'short' });
+  const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
   const selectedCalendarCount = calendars.filter(c => c.selected).length;
 
@@ -325,25 +325,24 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   return (
     <div className={`weekly-calendar ${editingMode ? 'editing-mode' : ''}`}>
-      {/* Header Bar */}
-      <div className="wc-header-bar">
-        <span className="wc-month">{monthLabel}</span>
-        <div className="wc-nav">
+      {/* Floating Navigation - overlays the calendar */}
+      <div className="wc-floating-controls">
+        <div className="wc-nav-bubble">
           <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M15 18l-6-6 6-6"/>
             </svg>
           </button>
           <button className="wc-today-btn" onClick={goToday}>Today</button>
           <button className="wc-nav-btn" onClick={goNext} aria-label="Next week">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M9 18l6-6-6-6"/>
             </svg>
           </button>
         </div>
         
-        {/* Calendar Dropdown */}
-        <div className="wc-calendar-dropdown" ref={dropdownRef}>
+        {/* Views Dropdown - floats top right */}
+        <div className="wc-views-dropdown" ref={dropdownRef}>
           <button 
             className="wc-dropdown-toggle"
             onClick={() => setShowCalendarDropdown(!showCalendarDropdown)}
@@ -378,7 +377,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         </div>
       </div>
 
-      {/* Week Grid */}
+      {/* Month Label - floats bottom left */}
+      <div className="wc-month-label">{monthLabel}</div>
+
+      {/* Week Grid - full height */}
       <div className="wc-grid-container">
         {/* Time column */}
         <div className="wc-time-column">
