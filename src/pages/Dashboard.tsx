@@ -134,11 +134,11 @@ export const Dashboard: React.FC = () => {
 
       setCalendars(googleCalendars);
 
-      // Fetch 5 years back and 3 years forward to ensure all historical and future events load
+      // Fetch 3 years back and 1 year forward to ensure all historical and future events load
       const allEvents: CalendarEvent[] = [];
       const now = new Date();
-      const timeMin = new Date(now.getFullYear() - 5, 0, 1).toISOString(); // 5 years ago, Jan 1
-      const timeMax = new Date(now.getFullYear() + 3, 11, 31).toISOString(); // 3 years ahead, Dec 31
+      const timeMin = new Date(now.getFullYear() - 3, 0, 1).toISOString(); // 3 years ago, Jan 1
+      const timeMax = new Date(now.getFullYear() + 1, 11, 31).toISOString(); // 1 year ahead, Dec 31
 
       const fetchPromises = googleCalendars
         .filter(cal => cal.id !== 'gatherly')
