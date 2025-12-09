@@ -660,6 +660,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       
       // Extract busy slots from calendar events
       // Calculate proper end times based on duration or default to 1 hour
+      // IMPORTANT: Include pending Gatherly events to prevent double-booking
       const busySlots = events
         .filter(ev => ev.time && ev.date) // Only events with specific times
         .map(ev => {
@@ -675,18 +676,23 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
           }
           
+          // Mark pending Gatherly events explicitly
+          const isPendingGatherly = ev.calendarId === 'gatherly-pending' || (ev.isGatherlyEvent && ev.status === 'pending');
+          const titlePrefix = isPendingGatherly ? '[PENDING GATHERLY] ' : '';
+          
           return {
             date: ev.date,
             startTime: ev.time!,
             endTime: endTime || ev.time!,
-            title: ev.title
+            title: titlePrefix + ev.title
           };
         });
       
-      // Log busy slots for debugging
-      console.log('[Gatherly] Sending busy slots to AI:', busySlots.length, 'events');
-      if (busySlots.length > 0) {
-        console.log('[Gatherly] Sample busy slots:', busySlots.slice(0, 5));
+      // Log busy slots for debugging - especially pending Gatherly events
+      const pendingGatherlySlots = busySlots.filter(s => s.title.includes('[PENDING GATHERLY]'));
+      console.log('[Gatherly] Sending busy slots to AI:', busySlots.length, 'total,', pendingGatherlySlots.length, 'pending Gatherly');
+      if (pendingGatherlySlots.length > 0) {
+        console.log('[Gatherly] Pending Gatherly slots:', pendingGatherlySlots);
       }
       
       // Include current form state in the message for context preservation

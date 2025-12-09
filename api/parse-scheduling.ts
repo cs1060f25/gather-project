@@ -175,6 +175,11 @@ The user's message may include "Current form state:" with existing event details
 - If ALL reasonable times on a date are busy, pick a DIFFERENT DATE
 - This is the #1 priority - the user CANNOT be double-booked
 
+**ESPECIALLY IMPORTANT: [PENDING GATHERLY] EVENTS**
+- Events marked with [PENDING GATHERLY] are pending meeting invitations the user has already sent
+- These are ABSOLUTELY OFF LIMITS - do NOT suggest any times that conflict with these
+- The user is waiting for responses on these times, so they must remain available
+
 **CORE PRINCIPLES:**
 1. Infer clear event names from context ("I want to go to the movies with friends" → "Movies with Friends")
 2. For locations: if user says a partial name like "dunster", expand to full name "Dunster House" with appropriate address
