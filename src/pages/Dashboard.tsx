@@ -87,7 +87,8 @@ export const Dashboard: React.FC = () => {
     const providerToken = getGoogleToken();
     if (!providerToken) {
       console.log('No Google token found, skipping calendar sync');
-      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+      // Only set default calendars if we don't already have any
+      setCalendars(prev => prev.length > 0 ? prev : [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
       return;
     }
 
@@ -99,7 +100,8 @@ export const Dashboard: React.FC = () => {
 
       if (!calendarListResponse.ok) {
         if (calendarListResponse.status === 401) localStorage.removeItem('gatherly_google_token');
-        setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+        // Keep existing calendars on error instead of resetting
+        setCalendars(prev => prev.length > 0 ? prev : [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
         return;
       }
 
@@ -189,7 +191,8 @@ export const Dashboard: React.FC = () => {
       console.log(`Synced ${allEvents.length} events from Google Calendar`);
     } catch (error) {
       console.error('Error syncing Google Calendar:', error);
-      setCalendars([{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+      // Keep existing calendars on error instead of resetting
+      setCalendars(prev => prev.length > 0 ? prev : [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
     }
   }, [authUser?.email]);
 
