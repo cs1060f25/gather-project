@@ -195,13 +195,14 @@
   border: 1px solid var(--wc-grid, #E5E5E5);
 }
 
-/* ===== GRID CONTAINER - Full remaining space ===== */
+/* ===== GRID CONTAINER - Full remaining space, scrollable ===== */
 .wc-grid-container {
   flex: 1;
   display: flex;
   min-height: 0;
   background: var(--wc-grid-bg, #FFF);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   border-top: 1px solid var(--wc-grid, #E5E5E5);
 }
 
@@ -320,6 +321,7 @@
 
 .wc-hour-slot {
   flex: 1;
+  min-height: 35px;
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
   cursor: pointer;
   transition: background 0.1s ease;
