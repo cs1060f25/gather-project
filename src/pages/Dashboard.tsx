@@ -187,7 +187,7 @@ export const Dashboard: React.FC = () => {
       const timeMax = new Date(now.getFullYear() + 1, 11, 31).toISOString(); // 1 year ahead, Dec 31
 
       const fetchPromises = googleCalendars
-        .filter(cal => cal.id !== 'gatherly')
+        .filter(cal => cal.id !== 'gatherly' && cal.id !== 'gatherly-pending')
         .map(async (cal) => {
           try {
             const eventsResponse = await fetch(
@@ -685,25 +685,24 @@ export const Dashboard: React.FC = () => {
   }, [events, gatherlyEvents]);
 
   // Filter events by toggled calendars for scheduling availability check
+  // IMPORTANT: Always include pending Gatherly events as busy slots to avoid double-booking
   const filteredEventsForScheduling = useMemo((): CalendarEvent[] => {
     const selectedCalendarIds = calendars.filter(c => c.selected).map(c => c.id);
     const gatherlyCalendar = calendars.find(c => c.id === 'gatherly');
-    const gatherlyPendingCalendar = calendars.find(c => c.id === 'gatherly-pending');
     const showConfirmedGatherly = gatherlyCalendar?.selected !== false;
-    const showPendingGatherly = gatherlyPendingCalendar?.selected !== false;
 
     return allCalendarEvents.filter(e => {
       // Handle Gatherly confirmed events
       if (e.calendarId === 'gatherly') {
         return showConfirmedGatherly;
       }
-      // Handle Gatherly pending events
+      // ALWAYS include pending Gatherly events as busy slots (to avoid double-booking)
       if (e.calendarId === 'gatherly-pending') {
-        return showPendingGatherly;
+        return true; // Always include pending events for scheduling
       }
-      // Handle legacy gatherly events
+      // Handle legacy gatherly events - always include for scheduling
       if (e.isGatherlyEvent && !e.calendarId) {
-        return showConfirmedGatherly || showPendingGatherly;
+        return true;
       }
       if (!e.calendarId) return true;
       return selectedCalendarIds.includes(e.calendarId);

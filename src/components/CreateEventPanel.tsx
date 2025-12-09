@@ -644,16 +644,39 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         }
         
         // Add participants if parsed (merge with existing)
+        // Only add if they're a known contact OR a valid email
         if (parsed.participants && parsed.participants.length > 0) {
-          const emails = parsed.participants.map(p => {
+          const validEmails: string[] = [];
+          const unknownNames: string[] = [];
+          
+          parsed.participants.forEach(p => {
             // Try to find contact by name
             const contact = contacts.find(c => 
               c.name.toLowerCase().includes(p.toLowerCase()) ||
               c.email.toLowerCase().includes(p.toLowerCase())
             );
-            return contact?.email || p;
+            
+            if (contact) {
+              validEmails.push(contact.email);
+            } else if (isValidEmail(p)) {
+              // It's already a valid email
+              validEmails.push(p);
+            } else {
+              // Unknown name - need to prompt for email
+              unknownNames.push(p);
+            }
           });
-          setParticipants(prev => [...new Set([...prev, ...emails])]);
+          
+          // Add valid emails immediately
+          if (validEmails.length > 0) {
+            setParticipants(prev => [...new Set([...prev, ...validEmails])]);
+          }
+          
+          // Prompt for email for the first unknown name (one at a time)
+          if (unknownNames.length > 0) {
+            setEmailPromptFor(unknownNames[0]);
+            setPendingEmail('');
+          }
         }
         
         // Update availability options if we have date/time suggestions

@@ -119,18 +119,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     const firstOfMonth = new Date(year, month, 1);
     const dayOfWeek = firstOfMonth.getDay(); // 0 = Sunday
     
-    // Find the first Sunday that's either the 1st (if it's Sunday) or the next Sunday
-    // This ensures we show a week that's primarily in the selected month
-    let weekStartDate: Date;
-    if (dayOfWeek === 0) {
-      // 1st is a Sunday, use it
-      weekStartDate = firstOfMonth;
-    } else {
-      // Find the first Sunday of the month (the next Sunday after the 1st)
-      weekStartDate = new Date(year, month, 1 + (7 - dayOfWeek));
-    }
+    // Find the Sunday of the week containing the 1st of the month
+    // This ensures we see the beginning of the selected month
+    const weekStartDate = new Date(year, month, 1 - dayOfWeek);
     
-    setWeekStart(weekStartDate);
+    console.log(`goToMonth: ${year}-${month + 1}, weekStart:`, weekStartDate.toDateString());
+    
+    setWeekStart(new Date(weekStartDate));
     // Store the actual month/year the user selected (for display)
     setDisplayMonth(month);
     setDisplayYear(year);
