@@ -184,9 +184,10 @@ export const EventsPage: React.FC = () => {
     const allEvents = [...googleEvents, ...gatherlyCalEvents];
 
     return {
-      today: allEvents.filter(e => e.date === todayISO),
-      nextWeek: allEvents.filter(e => e.date > todayISO && e.date <= weekFromNowISO),
-      pending: gatherlyEvents.filter(ge => ge.status === 'pending')
+      today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled'),
+      nextWeek: allEvents.filter(e => e.date > todayISO && e.date <= weekFromNowISO && e.status !== 'cancelled'),
+      pending: gatherlyEvents.filter(ge => ge.status === 'pending'),
+      cancelled: gatherlyEvents.filter(ge => ge.status === 'cancelled')
     };
   }, [googleEvents, gatherlyEvents]);
 
@@ -354,6 +355,33 @@ export const EventsPage: React.FC = () => {
             </div>
           )}
         </section>
+
+        {/* Cancelled Events - muted styling */}
+        {categorizedEvents.cancelled.length > 0 && (
+          <section className="events-section cancelled-section">
+            <h2 className="section-title cancelled-title">
+              <span className="title-icon">🗑️</span>
+              Cancelled
+            </h2>
+            <div className="events-list">
+              {categorizedEvents.cancelled.map(event => (
+                <Link 
+                  key={event.id} 
+                  to={`/event/${event.id}`}
+                  className="event-card cancelled gatherly"
+                >
+                  <div className="event-content">
+                    <h3 className="event-title">{event.title}</h3>
+                    <p className="event-participants">
+                      {event.participants.length} were invited
+                    </p>
+                  </div>
+                  <span className="cancelled-badge">Cancelled</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Profile Sidebar */}

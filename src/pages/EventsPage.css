@@ -278,6 +278,44 @@
   letter-spacing: 0.05em;
 }
 
+/* Cancelled Events - muted styling */
+.cancelled-section {
+  opacity: 0.7;
+}
+
+.cancelled-section .section-title {
+  background: #666;
+}
+
+.cancelled-title {
+  background: #666 !important;
+}
+
+.event-card.cancelled {
+  background: #F5F5F5;
+  opacity: 0.8;
+}
+
+.event-card.cancelled .event-title {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.event-card.cancelled .event-participants {
+  color: #999;
+}
+
+.cancelled-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: #F3F4F6;
+  color: #6B7280;
+  border: 2px solid #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* Dark Mode */
 .dark-mode .events-page {
   background: #1A1A1A;
