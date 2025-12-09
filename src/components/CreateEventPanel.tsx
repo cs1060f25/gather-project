@@ -61,10 +61,10 @@ const getDateOptions = () => {
   return options;
 };
 
-// Generate time options with a placeholder
+// Generate time options with a placeholder (6 AM to 11:30 PM)
 const getTimeOptions = () => {
   const options = [{ value: '', label: 'Time' }];
-  for (let h = 7; h < 22; h++) {
+  for (let h = 6; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
       const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
       const label = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {

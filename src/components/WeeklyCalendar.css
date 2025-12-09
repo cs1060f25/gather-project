@@ -223,7 +223,7 @@
 }
 
 .wc-day-header-spacer {
-  height: 44px;
+  height: 48px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
 }
@@ -277,7 +277,7 @@
 
 /* Day Header */
 .wc-day-header {
-  height: 44px;
+  height: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -285,7 +285,9 @@
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
   background: var(--wc-header-bg, #FFF);
   flex-shrink: 0;
-  gap: 1px;
+  gap: 2px;
+  padding: 4px 0;
+  box-sizing: border-box;
 }
 
 .wc-day-name {
@@ -294,25 +296,25 @@
   color: var(--wc-muted, #888);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 .wc-day-number {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--wc-text, #1A1A1A);
   line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wc-day-number.today {
   background: #22c55e;
   color: #FFF;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 0.85rem;
+  border-radius: 6px;
 }
 
 /* ===== DAY SLOTS ===== */

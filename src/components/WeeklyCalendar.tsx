@@ -47,7 +47,7 @@ interface WeeklyCalendarProps {
   onTimeSlotClick?: (date: string, time: string) => void;
 }
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7 AM to 9 PM
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -306,13 +306,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const getEventTopPercent = (time?: string): number => {
     if (!time) return 0;
     const minutes = timeToMinutes(time);
-    const startMinutes = 7 * 60; // 7 AM
-    const totalMinutes = 15 * 60; // 15 hours (7 AM - 10 PM)
-    return ((minutes - startMinutes) / totalMinutes) * 100;
+    const startMinutes = 6 * 60; // 6 AM
+    const totalMinutes = 18 * 60; // 18 hours (6 AM - 12 AM)
+    return Math.max(0, Math.min(100, ((minutes - startMinutes) / totalMinutes) * 100));
   };
 
   const getEventHeightPercent = (startTime?: string, endTime?: string, duration?: number): number => {
-    const totalMinutes = 15 * 60; // 15 hours
+    const totalMinutes = 18 * 60; // 18 hours
     if (startTime && endTime) {
       const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
       return Math.max(2, (diff / totalMinutes) * 100);
