@@ -50,6 +50,13 @@
   border-color: #FFF;
 }
 
+/* Header Actions Container */
+.cep-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Events Link in Header */
 .cep-events-link {
   display: flex;

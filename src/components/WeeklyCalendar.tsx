@@ -325,8 +325,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   return (
     <div className={`weekly-calendar ${editingMode ? 'editing-mode' : ''}`}>
-      {/* Floating Navigation - overlays the calendar */}
-      <div className="wc-floating-controls">
+      {/* Top Controls Bar */}
+      <div className="wc-top-bar">
+        {/* Month Label - left */}
+        <div className="wc-month-label">{monthLabel}</div>
+        
+        {/* Navigation - center */}
         <div className="wc-nav-bubble">
           <button className="wc-nav-btn" onClick={goPrev} aria-label="Previous week">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -341,7 +345,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           </button>
         </div>
         
-        {/* Views Dropdown - floats top right */}
+        {/* Views Dropdown - right */}
         <div className="wc-views-dropdown" ref={dropdownRef}>
           <button 
             className="wc-dropdown-toggle"
@@ -377,10 +381,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         </div>
       </div>
 
-      {/* Month Label - floats bottom left */}
-      <div className="wc-month-label">{monthLabel}</div>
-
-      {/* Week Grid - full height */}
+      {/* Week Grid */}
       <div className="wc-grid-container">
         {/* Time column */}
         <div className="wc-time-column">
