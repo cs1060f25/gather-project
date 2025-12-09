@@ -295,6 +295,13 @@
   margin: 0.5rem 0;
 }
 
+.response-note {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0.5rem 0 1.5rem;
+  font-style: italic;
+}
+
 .response-actions {
   display: flex;
   flex-direction: column;

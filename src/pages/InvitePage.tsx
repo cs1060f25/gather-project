@@ -319,24 +319,28 @@ export const InvitePage: React.FC = () => {
               </div>
               <h1>
                 {response === 'accepted' 
-                  ? "You're in!" 
+                  ? "Response Sent!" 
                   : response === 'maybe' 
-                  ? "Got it!" 
-                  : "No worries!"}
+                  ? "Response Sent!" 
+                  : "Response Sent!"}
               </h1>
               <p>
                 {response === 'accepted' 
-                  ? `See you at ${invite.event_title}!` 
+                  ? "Your availability has been shared with the organizer." 
                   : response === 'maybe' 
-                  ? "We'll keep you posted on the details." 
-                  : "Maybe next time! We'll miss you."}
+                  ? "Your tentative availability has been shared." 
+                  : "The organizer has been notified."}
+              </p>
+              <p className="response-note">
+                {response !== 'declined' 
+                  ? "Once all responses are in, the organizer will confirm the final time."
+                  : "Maybe next time!"}
               </p>
               
               <div className="event-summary">
                 <h3>{invite.event_title}</h3>
-                <p className="event-detail">{eventDate}</p>
-                {invite.event_time && <p className="event-detail">{formatTime(invite.event_time)}</p>}
-                {location && <p className="event-detail">{location}</p>}
+                <p className="event-detail"><strong>Organizer:</strong> {invite.host_name}</p>
+                {location && <p className="event-detail"><strong>Location:</strong> {location}</p>}
               </div>
 
               <div className="response-actions">

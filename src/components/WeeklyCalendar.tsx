@@ -362,10 +362,21 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return filteredEvents.filter(e => e.date === dateISO && !e.time);
   };
 
-  // Check if any day in the current week has all-day events
-  const hasAnyAllDayEvents = useMemo(() => {
-    return weekDays.some(date => getAllDayEventsForDay(date).length > 0);
+  // Calculate max all-day events for consistent row height
+  const maxAllDayEvents = useMemo(() => {
+    let max = 0;
+    for (const date of weekDays) {
+      const count = getAllDayEventsForDay(date).length;
+      if (count > max) max = count;
+    }
+    return max;
   }, [weekDays, filteredEvents]);
+
+  // Check if any day in the current week has all-day events
+  const hasAnyAllDayEvents = maxAllDayEvents > 0;
+  
+  // Calculate the height needed for all-day row (20px per event + 8px padding)
+  const allDayRowHeight = maxAllDayEvents > 0 ? Math.min(maxAllDayEvents, 3) * 20 + 8 : 0;
 
   // Extended time option with index
   interface IndexedTimeOption extends TimeOption {
@@ -604,7 +615,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         <div className="wc-time-column">
           <div className="wc-day-header-spacer"></div>
           {/* All-day spacer - must match height of all-day events row */}
-          {hasAnyAllDayEvents && <div className="wc-all-day-spacer"></div>}
+          {hasAnyAllDayEvents && (
+            <div className="wc-all-day-spacer" style={{ height: `${allDayRowHeight}px`, minHeight: `${allDayRowHeight}px` }}></div>
+          )}
           <div className="wc-time-slots-container">
           {HOURS.map(hour => (
             <div key={hour} className="wc-time-slot">
@@ -635,8 +648,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
                 {/* All-day events row - shown on all columns when any day has all-day events */}
                 {hasAnyAllDayEvents && (
-                  <div className="wc-all-day-events">
-                    {allDayEvents.slice(0, 2).map((event) => (
+                  <div 
+                    className="wc-all-day-events"
+                    style={{ height: `${allDayRowHeight}px`, minHeight: `${allDayRowHeight}px` }}
+                  >
+                    {allDayEvents.slice(0, 3).map((event) => (
                       <div
                         key={event.id}
                         className="wc-all-day-event"
@@ -650,8 +666,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                         {event.title}
                       </div>
                     ))}
-                    {allDayEvents.length > 2 && (
-                      <div className="wc-all-day-more">+{allDayEvents.length - 2} more</div>
+                    {allDayEvents.length > 3 && (
+                      <div className="wc-all-day-more">+{allDayEvents.length - 3} more</div>
                     )}
                   </div>
                 )}
