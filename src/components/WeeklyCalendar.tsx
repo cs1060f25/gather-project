@@ -170,8 +170,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     }
   };
 
+  // Extended event type for positioned events
+  interface PositionedEvent extends CalendarEvent {
+    column: number;
+    totalColumns: number;
+  }
+
   // Get events for a specific day with overlap handling
-  const getEventsForDay = (date: Date) => {
+  const getEventsForDay = (date: Date): PositionedEvent[] => {
     const dateISO = fmtDateISO(date);
     const dayEvents = filteredEvents.filter(e => e.date === dateISO);
     
@@ -183,7 +189,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     });
     
     // Calculate overlap groups for positioning
-    const positioned = dayEvents.map((event, idx) => {
+    const positioned: PositionedEvent[] = [];
+    
+    for (let idx = 0; idx < dayEvents.length; idx++) {
+      const event = dayEvents[idx];
       const eventStart = event.time ? timeToMinutes(event.time) : 0;
       const eventEnd = event.endTime ? timeToMinutes(event.endTime) : 
                        event.duration ? eventStart + event.duration : eventStart + 60;
@@ -200,16 +209,41 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         
         // Check if overlapping
         if (eventStart < prevEnd && eventEnd > prevStart) {
-          column = Math.max(column, (positioned[i]?.column || 0) + 1);
+          const prevPositioned = positioned[i];
+          column = Math.max(column, (prevPositioned?.column || 0) + 1);
           totalColumns = Math.max(totalColumns, column + 1);
         }
       }
       
-      return { ...event, column, totalColumns };
-    });
+      // Create positioned event without spread
+      const posEvent: PositionedEvent = {
+        id: event.id,
+        date: event.date,
+        time: event.time,
+        endTime: event.endTime,
+        title: event.title,
+        category: event.category,
+        duration: event.duration,
+        attendees: event.attendees,
+        location: event.location,
+        description: event.description,
+        source: event.source,
+        calendarId: event.calendarId,
+        calendarName: event.calendarName,
+        important: event.important,
+        isGatherlyEvent: event.isGatherlyEvent,
+        suggestedTimes: event.suggestedTimes,
+        status: event.status,
+        color: event.color,
+        column,
+        totalColumns
+      };
+      positioned.push(posEvent);
+    }
     
     // Update totalColumns for all overlapping events
-    return positioned.map(event => {
+    const result: PositionedEvent[] = [];
+    for (const event of positioned) {
       const eventStart = event.time ? timeToMinutes(event.time) : 0;
       const eventEnd = event.endTime ? timeToMinutes(event.endTime) :
                        event.duration ? eventStart + event.duration : eventStart + 60;
@@ -226,16 +260,60 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         }
       }
       
-      return { ...event, totalColumns: maxColumns };
-    });
+      // Create result event without spread
+      const resultEvent: PositionedEvent = {
+        id: event.id,
+        date: event.date,
+        time: event.time,
+        endTime: event.endTime,
+        title: event.title,
+        category: event.category,
+        duration: event.duration,
+        attendees: event.attendees,
+        location: event.location,
+        description: event.description,
+        source: event.source,
+        calendarId: event.calendarId,
+        calendarName: event.calendarName,
+        important: event.important,
+        isGatherlyEvent: event.isGatherlyEvent,
+        suggestedTimes: event.suggestedTimes,
+        status: event.status,
+        color: event.color,
+        column: event.column,
+        totalColumns: maxColumns
+      };
+      result.push(resultEvent);
+    }
+    
+    return result;
   };
 
+  // Extended time option with index
+  interface IndexedTimeOption extends TimeOption {
+    globalIdx: number;
+  }
+
   // Get time options for a specific day with their global index
-  const getTimeOptionsForDay = (date: Date) => {
+  const getTimeOptionsForDay = (date: Date): IndexedTimeOption[] => {
     const dateISO = fmtDateISO(date);
-    return selectedTimeOptions
-      .map((opt, globalIdx) => ({ ...opt, globalIdx }))
-      .filter(opt => opt.date === dateISO);
+    const result: IndexedTimeOption[] = [];
+    
+    for (let i = 0; i < selectedTimeOptions.length; i++) {
+      const opt = selectedTimeOptions[i];
+      if (opt.date === dateISO) {
+        result.push({
+          date: opt.date,
+          time: opt.time,
+          duration: opt.duration,
+          color: opt.color,
+          label: opt.label,
+          globalIdx: i
+        });
+      }
+    }
+    
+    return result;
   };
 
   const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -338,12 +416,17 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   ))}
 
                   {/* Events */}
-                  {dayEvents.map((event: any) => {
-                    const top = getEventTop(event.time);
-                    const height = getEventHeight(event.time, event.endTime, event.duration);
+                  {dayEvents.map((event) => {
+                    const eventTime = event.time;
+                    const eventEndTime = event.endTime;
+                    const eventDuration = event.duration;
+                    const top = getEventTop(eventTime);
+                    const height = getEventHeight(eventTime, eventEndTime, eventDuration);
                     const eventColor = getEventColor(event);
-                    const width = event.totalColumns > 1 ? `${100 / event.totalColumns - 2}%` : 'calc(100% - 8px)';
-                    const left = event.totalColumns > 1 ? `${(event.column / event.totalColumns) * 100 + 1}%` : '4px';
+                    const cols = event.totalColumns || 1;
+                    const col = event.column || 0;
+                    const width = cols > 1 ? `${100 / cols - 2}%` : 'calc(100% - 8px)';
+                    const left = cols > 1 ? `${(col / cols) * 100 + 1}%` : '4px';
                     const isShortEvent = height < 40;
                     
                     return (
@@ -385,10 +468,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   })}
 
                   {/* Time option indicators (during editing) - show above existing events */}
-                  {editingMode && dayTimeOptions.map((opt: any) => {
-                    const top = getEventTop(opt.time);
-                    const height = getEventHeight(opt.time, undefined, opt.duration);
-                    const optionNumber = opt.globalIdx + 1;
+                  {editingMode && dayTimeOptions.map((opt) => {
+                    const optTime = opt.time;
+                    const optDuration = opt.duration;
+                    const top = getEventTop(optTime);
+                    const height = getEventHeight(optTime, undefined, optDuration);
+                    const optionNumber = (opt.globalIdx || 0) + 1;
                     
                     return (
                       <div
