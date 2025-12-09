@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
-import { supabase, getGoogleToken } from '../lib/supabase';
+import { supabase, getGoogleTokenSync as getGoogleToken } from '../lib/supabase';
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import './EventsPage.css';
 
@@ -291,6 +291,14 @@ export const EventsPage: React.FC = () => {
   const categorizedEvents = useMemo(() => {
     const today = new Date();
     const todayISO = fmtDateISO(today);
+    
+    // Get upcoming dates (next 7 days, excluding today)
+    const upcomingDates: string[] = [];
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      upcomingDates.push(fmtDateISO(d));
+    }
 
     // Convert Gatherly events to calendar events format
     const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents.map(ge => ({
@@ -311,8 +319,25 @@ export const EventsPage: React.FC = () => {
 
     const allEvents = [...googleEvents, ...gatherlyCalEvents];
 
+    // Sort upcoming: Gatherly events first, then by date/time
+    // Cap at 6 events max to look nice on screen
+    const MAX_UPCOMING = 6;
+    const upcomingFiltered = allEvents
+      .filter(e => upcomingDates.includes(e.date) && e.status !== 'cancelled')
+      .sort((a, b) => {
+        // Gatherly events come first
+        if (a.isGatherly && !b.isGatherly) return -1;
+        if (!a.isGatherly && b.isGatherly) return 1;
+        // Then sort by date
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (a.time || '').localeCompare(b.time || '');
+      })
+      .slice(0, MAX_UPCOMING);
+
     return {
       today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled'),
+      upcoming: upcomingFiltered,
       pending: gatherlyEvents.filter(ge => ge.status === 'pending')
     };
   }, [googleEvents, gatherlyEvents]);
@@ -427,6 +452,11 @@ export const EventsPage: React.FC = () => {
                         {calendarName}
                       </span>
                     </div>
+                    {isGatherlyEvent && (
+                      <div className="gatherly-badge" title="Created with Gatherly">
+                        <GatherlyLogo size={16} />
+                      </div>
+                    )}
                     <div className="event-card-bottom-bar" style={{ background: calendarColor }} />
                   </Link>
                 );
@@ -434,6 +464,60 @@ export const EventsPage: React.FC = () => {
             )}
           </div>
         </section>
+
+        {/* Upcoming Events - Horizontal scroll */}
+        {categorizedEvents.upcoming.length > 0 && (
+          <section className="events-section upcoming-section">
+            <h2 className="section-title">Upcoming</h2>
+            <div className="upcoming-events-scroll">
+              {categorizedEvents.upcoming.map(event => {
+                let calendarName = event.calendarName || 'Calendar';
+                if (user?.email && (calendarName === user.email || calendarName.toLowerCase() === user.email.toLowerCase())) {
+                  calendarName = 'Personal';
+                }
+                const calendarColor = event.calendarColor || '#4285f4';
+                const bgColor = getLighterColor(calendarColor);
+                const isGatherlyEvent = event.isGatherly || event.source === 'gatherly';
+                
+                // Format date for display
+                const eventDate = new Date(event.date + 'T00:00:00');
+                const dayName = eventDate.toLocaleDateString('en-US', { weekday: 'short' });
+                const monthDay = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                
+                return (
+                  <Link 
+                    key={event.id} 
+                    to={isGatherlyEvent ? `/event/${event.id}` : '#'}
+                    className={`event-card-upcoming ${!isGatherlyEvent ? 'non-gatherly' : ''}`}
+                    onClick={(e) => {
+                      if (!isGatherlyEvent) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <div className="upcoming-date-badge">{dayName}</div>
+                    <h3 className="event-title">{event.title}</h3>
+                    <p className="event-time-date">{monthDay}{event.time && ` • ${new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}</p>
+                    <div className="event-footer">
+                      <span 
+                        className="event-category-badge"
+                        style={{ background: bgColor, color: calendarColor }}
+                      >
+                        {calendarName}
+                      </span>
+                    </div>
+                    {isGatherlyEvent && (
+                      <div className="gatherly-badge" title="Created with Gatherly">
+                        <GatherlyLogo size={14} />
+                      </div>
+                    )}
+                    <div className="event-card-bottom-bar" style={{ background: calendarColor }} />
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Pending Events */}
         <section className="events-section pending-section">

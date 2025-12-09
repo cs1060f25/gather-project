@@ -463,6 +463,112 @@
   gap: 0.75rem;
 }
 
+/* Response Item Card - Clearer format */
+.response-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #FFF;
+  border: 2px solid #E5E5E5;
+  border-radius: 8px;
+}
+
+.response-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.response-header-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.response-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.response-status-badge.accepted,
+.response-status-badge.maybe {
+  color: #22c55e;
+}
+
+.response-status-badge.declined {
+  color: #ef4444;
+}
+
+.response-status-badge.pending {
+  color: #999;
+  font-style: italic;
+}
+
+.response-date {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* Per-option response grid */
+.response-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #E5E5E5;
+}
+
+.response-option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #F8F8F8;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.response-option-row .option-label {
+  font-weight: 700;
+  color: #666;
+  min-width: 70px;
+}
+
+.response-option-row .option-datetime {
+  flex: 1;
+  color: #444;
+}
+
+.response-option-row .option-answer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.response-option-row .option-answer.yes {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.response-option-row .option-answer.maybe {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.response-option-row .option-answer.no {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Legacy response-item for backwards compatibility */
 .response-item {
   display: flex;
   align-items: center;
@@ -809,9 +915,30 @@
   box-shadow: 7px 7px 0 #FFF;
 }
 
-.dark-mode .response-item {
+.dark-mode .response-item,
+.dark-mode .response-item-card {
   background: #333;
   border-color: #444;
+}
+
+.dark-mode .response-options-grid {
+  border-color: #444;
+}
+
+.dark-mode .response-option-row {
+  background: #2A2A2A;
+}
+
+.dark-mode .response-option-row .option-label {
+  color: #999;
+}
+
+.dark-mode .response-option-row .option-datetime {
+  color: #CCC;
+}
+
+.dark-mode .response-date {
+  color: #888;
 }
 
 .dark-mode .response-email {

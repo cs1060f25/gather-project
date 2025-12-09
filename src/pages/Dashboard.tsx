@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
-import { supabase, getGoogleToken } from '../lib/supabase';
+import { supabase, getGoogleTokenSync as getGoogleToken } from '../lib/supabase';
 import { createInvites, sendInviteEmails } from '../lib/invites';
 import { WeeklyCalendar, type CalendarEvent, type GoogleCalendar, type TimeOption } from '../components/WeeklyCalendar';
 import { CreateEventPanel, type CreateEventData, type AvailabilityOption } from '../components/CreateEventPanel';
@@ -68,14 +68,27 @@ export const Dashboard: React.FC = () => {
       if (savedCalendars) {
         const parsed = JSON.parse(savedCalendars);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // Ensure both Gatherly calendars exist
+          const hasConfirmed = parsed.some((c: GoogleCalendar) => c.id === 'gatherly');
+          const hasPending = parsed.some((c: GoogleCalendar) => c.id === 'gatherly-pending');
+          if (!hasConfirmed) {
+            parsed.unshift({ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true });
+          }
+          if (!hasPending) {
+            parsed.splice(1, 0, { id: 'gatherly-pending', name: 'Gatherly Pending', color: '#FBBF24', selected: true });
+          }
           return parsed;
         }
       }
     } catch {}
-    // Default to just Gatherly calendar if nothing saved
-    return [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }];
+    // Default to both Gatherly calendars
+    return [
+      { id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true },
+      { id: 'gatherly-pending', name: 'Gatherly Pending', color: '#FBBF24', selected: true }
+    ];
   });
   const [gatherlyEvents, setGatherlyEvents] = useState<GatherlyEvent[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(true); // Track calendar loading state
   
   // Editing state
   const [editingMode, setEditingMode] = useState(false);
@@ -97,11 +110,16 @@ export const Dashboard: React.FC = () => {
 
   // Sync all Google Calendars - defined first so it can be used in useEffect
   const syncGoogleCalendars = useCallback(async () => {
+    setCalendarLoading(true);
     const providerToken = getGoogleToken();
     if (!providerToken) {
       console.log('No Google token found, skipping calendar sync');
       // Only set default calendars if we don't already have any
-      setCalendars(prev => prev.length > 0 ? prev : [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+      setCalendars(prev => prev.length > 0 ? prev : [
+        { id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true },
+        { id: 'gatherly-pending', name: 'Gatherly Pending', color: '#FBBF24', selected: true }
+      ]);
+      setCalendarLoading(false);
       return;
     }
 
@@ -114,7 +132,11 @@ export const Dashboard: React.FC = () => {
       if (!calendarListResponse.ok) {
         if (calendarListResponse.status === 401) localStorage.removeItem('gatherly_google_token');
         // Keep existing calendars on error instead of resetting
-        setCalendars(prev => prev.length > 0 ? prev : [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+        setCalendars(prev => prev.length > 0 ? prev : [
+          { id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true },
+          { id: 'gatherly-pending', name: 'Gatherly Pending', color: '#FBBF24', selected: true }
+        ]);
+        setCalendarLoading(false);
         return;
       }
 
@@ -140,6 +162,13 @@ export const Dashboard: React.FC = () => {
         };
       });
 
+      // Add Gatherly calendars at the beginning
+      googleCalendars.unshift({
+        id: 'gatherly-pending',
+        name: 'Gatherly Pending',
+        color: '#FBBF24',
+        selected: savedSelections['gatherly-pending'] !== undefined ? savedSelections['gatherly-pending'] : true
+      });
       googleCalendars.unshift({
         id: 'gatherly',
         name: 'Gatherly Events',
@@ -204,10 +233,15 @@ export const Dashboard: React.FC = () => {
 
       setEvents(allEvents);
       console.log(`Synced ${allEvents.length} events from Google Calendar`);
+      setCalendarLoading(false);
     } catch (error) {
       console.error('Error syncing Google Calendar:', error);
       // Keep existing calendars on error instead of resetting
-      setCalendars(prev => prev.length > 0 ? prev : [{ id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true }]);
+      setCalendars(prev => prev.length > 0 ? prev : [
+        { id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true },
+        { id: 'gatherly-pending', name: 'Gatherly Pending', color: '#FBBF24', selected: true }
+      ]);
+      setCalendarLoading(false);
     }
   }, [authUser?.email]);
 
@@ -620,7 +654,7 @@ export const Dashboard: React.FC = () => {
         };
         gatherlyCalEvents.push(calEvent);
       } else if (ge.status === 'pending') {
-        // For pending events, show all options with option numbers
+        // For pending events, show all options with option numbers - use 'gatherly-pending' calendar
         for (let idx = 0; idx < ge.options.length; idx++) {
           const opt = ge.options[idx];
           const calEvent: CalendarEvent = {
@@ -634,7 +668,7 @@ export const Dashboard: React.FC = () => {
             attendees: ge.participants,
             location: ge.location,
             source: 'gatherly',
-            calendarId: 'gatherly',
+            calendarId: 'gatherly-pending', // Use pending calendar for pending events
             isGatherlyEvent: true,
             status: ge.status,
             suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color })),
@@ -654,12 +688,22 @@ export const Dashboard: React.FC = () => {
   const filteredEventsForScheduling = useMemo((): CalendarEvent[] => {
     const selectedCalendarIds = calendars.filter(c => c.selected).map(c => c.id);
     const gatherlyCalendar = calendars.find(c => c.id === 'gatherly');
-    const showGatherlyEvents = gatherlyCalendar?.selected !== false;
+    const gatherlyPendingCalendar = calendars.find(c => c.id === 'gatherly-pending');
+    const showConfirmedGatherly = gatherlyCalendar?.selected !== false;
+    const showPendingGatherly = gatherlyPendingCalendar?.selected !== false;
 
     return allCalendarEvents.filter(e => {
-      // Handle Gatherly events
-      if (e.isGatherlyEvent || e.calendarId === 'gatherly') {
-        return showGatherlyEvents;
+      // Handle Gatherly confirmed events
+      if (e.calendarId === 'gatherly') {
+        return showConfirmedGatherly;
+      }
+      // Handle Gatherly pending events
+      if (e.calendarId === 'gatherly-pending') {
+        return showPendingGatherly;
+      }
+      // Handle legacy gatherly events
+      if (e.isGatherlyEvent && !e.calendarId) {
+        return showConfirmedGatherly || showPendingGatherly;
       }
       if (!e.calendarId) return true;
       return selectedCalendarIds.includes(e.calendarId);
@@ -724,6 +768,7 @@ export const Dashboard: React.FC = () => {
             editingMode={editingMode}
             onEventClick={handleEventClick}
             onTimeSlotClick={handleTimeSlotClick}
+            loading={calendarLoading}
           />
         </div>
 

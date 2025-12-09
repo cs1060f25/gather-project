@@ -70,7 +70,25 @@ export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
 });
 
 // Helper to get Google Calendar token
-export const getGoogleToken = () => {
+// First tries to get fresh token from Supabase session, falls back to localStorage
+export const getGoogleToken = async (): Promise<string | null> => {
+    try {
+        // Try to get fresh token from Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.provider_token) {
+            // Store the fresh token
+            localStorage.setItem('gatherly_google_token', session.provider_token);
+            return session.provider_token;
+        }
+    } catch (e) {
+        console.warn('Could not get fresh token from session:', e);
+    }
+    // Fall back to stored token
+    return localStorage.getItem('gatherly_google_token');
+};
+
+// Synchronous version for backwards compatibility
+export const getGoogleTokenSync = (): string | null => {
     return localStorage.getItem('gatherly_google_token');
 };
 

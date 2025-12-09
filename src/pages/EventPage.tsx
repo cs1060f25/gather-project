@@ -171,7 +171,7 @@ export const EventPage: React.FC = () => {
     }
 
     // If not found, try Google Calendar (search across all calendars)
-    const providerToken = getGoogleToken();
+    const providerToken = await getGoogleToken();
     if (providerToken) {
       try {
         // First try primary calendar
@@ -277,14 +277,23 @@ export const EventPage: React.FC = () => {
         console.error('Error confirming event in Supabase:', error);
       }
       
-      // Try to create Google Calendar event
-      const providerToken = getGoogleToken();
+      // Try to create Google Calendar event for the organizer
+      const providerToken = await getGoogleToken();
+      console.log('Google token available:', !!providerToken);
       if (providerToken && confirmedOption) {
         try {
           const startDate = new Date(`${confirmedOption.day}T${confirmedOption.time}`);
           const endDate = new Date(startDate.getTime() + (confirmedOption.duration || 60) * 60000);
           
-          const calendarEvent = {
+          // Build the calendar event with all details
+          const calendarEvent: {
+            summary: string;
+            description?: string;
+            location?: string;
+            start: { dateTime: string; timeZone: string };
+            end: { dateTime: string; timeZone: string };
+            attendees: { email: string }[];
+          } = {
             summary: event.title,
             start: {
               dateTime: startDate.toISOString(),
@@ -296,6 +305,16 @@ export const EventPage: React.FC = () => {
             },
             attendees: event.participants.map(email => ({ email }))
           };
+          
+          // Add optional fields if they exist
+          if (event.description) {
+            calendarEvent.description = event.description;
+          }
+          if (event.location && event.location !== 'TBD') {
+            calendarEvent.location = event.location;
+          }
+          
+          console.log('Creating Google Calendar event:', calendarEvent);
           
           const response = await fetch(
             'https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all',
@@ -310,7 +329,8 @@ export const EventPage: React.FC = () => {
           );
           
           if (response.ok) {
-            console.log('Google Calendar event created successfully');
+            const createdEvent = await response.json();
+            console.log('Google Calendar event created successfully:', createdEvent.id);
             
             // Delete the Gatherly event from Supabase since it's now on GCal
             await supabase
@@ -330,7 +350,12 @@ export const EventPage: React.FC = () => {
             navigate('/events');
             return;
           } else {
-            console.error('Failed to create Google Calendar event');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to create Google Calendar event:', response.status, errorData);
+            // If it's a scope/permission error, show a helpful message
+            if (response.status === 403 || response.status === 401) {
+              alert('Unable to create calendar event. Please try signing out and signing back in to refresh permissions.');
+            }
           }
         } catch (gcalError) {
           console.error('Error creating Google Calendar event:', gcalError);
@@ -530,56 +555,71 @@ export const EventPage: React.FC = () => {
                   const optionResponses = (invite as any)?.option_responses as Record<string, 'yes' | 'maybe' | 'no'> | undefined;
                   
                   return (
-                    <div key={email} className="response-item">
-                      <div className={`response-avatar ${status}`}>
-                        {email[0].toUpperCase()}
-                      </div>
-                      <div className="response-info">
-                        <span className="response-email">{email}</span>
-                        <span className={`response-status ${status}`}>
-                          {status === 'accepted' && '✓ Accepted'}
-                          {status === 'declined' && '✗ Declined'}
-                          {status === 'maybe' && '? Maybe'}
-                          {status === 'pending' && 'Waiting...'}
-                        </span>
-                        {/* Show per-option responses */}
-                        {status !== 'pending' && (
-                          <div className="response-selections">
-                            {event.options.map((opt, idx) => {
-                              // Check option_responses first, fall back to suggestedTimes
-                              let optResponse: 'yes' | 'maybe' | 'no' | undefined;
-                              if (optionResponses && optionResponses[idx.toString()]) {
-                                optResponse = optionResponses[idx.toString()];
-                              } else if (suggestedTimes.length > 0) {
-                                // Fall back to old logic - check if time is in suggestedTimes
-                                const isSelected = suggestedTimes.some(t => t.includes(opt.day) && t.includes(opt.time));
-                                optResponse = isSelected ? (status === 'maybe' ? 'maybe' : 'yes') : 'no';
-                              } else if (status === 'declined') {
-                                optResponse = 'no';
-                              }
-                              
-                              if (!optResponse) return null;
-                              
-                              return (
-                                <span 
-                                  key={idx} 
-                                  className={`selection-chip ${optResponse}`}
-                                  title={`Option ${idx + 1}: ${optResponse === 'yes' ? 'Yes' : optResponse === 'maybe' ? 'Maybe' : 'No'}`}
-                                >
-                                  <span className="chip-number">{idx + 1}</span>
-                                  <span className="chip-response">
-                                    {optResponse === 'yes' ? '✓' : optResponse === 'maybe' ? '?' : '✗'}
-                                  </span>
-                                </span>
-                              );
-                            })}
-                          </div>
+                    <div key={email} className="response-item-card">
+                      <div className="response-item-header">
+                        <div className={`response-avatar ${status}`}>
+                          {email[0].toUpperCase()}
+                        </div>
+                        <div className="response-header-info">
+                          <span className="response-email">{email}</span>
+                          <span className={`response-status-badge ${status}`}>
+                            {status === 'accepted' && 'Responded'}
+                            {status === 'declined' && 'Declined All'}
+                            {status === 'maybe' && 'Responded'}
+                            {status === 'pending' && 'Waiting...'}
+                          </span>
+                        </div>
+                        {invite?.responded_at && (
+                          <span className="response-date">
+                            {new Date(invite.responded_at).toLocaleDateString()}
+                          </span>
                         )}
                       </div>
-                      {invite?.responded_at && (
-                        <span className="response-time">
-                          {new Date(invite.responded_at).toLocaleDateString()}
-                        </span>
+                      
+                      {/* Show detailed per-option responses */}
+                      {status !== 'pending' && (
+                        <div className="response-options-grid">
+                          {event.options.map((opt, idx) => {
+                            // Check option_responses first, fall back to suggestedTimes
+                            let optResponse: 'yes' | 'maybe' | 'no' | undefined;
+                            if (optionResponses && optionResponses[idx.toString()]) {
+                              optResponse = optionResponses[idx.toString()];
+                            } else if (suggestedTimes.length > 0) {
+                              const isSelected = suggestedTimes.some(t => t.includes(opt.day) && t.includes(opt.time));
+                              optResponse = isSelected ? (status === 'maybe' ? 'maybe' : 'yes') : 'no';
+                            } else if (status === 'declined') {
+                              optResponse = 'no';
+                            }
+                            
+                            if (!optResponse) optResponse = 'no';
+                            
+                            // Format the date/time for display
+                            const optDate = new Date(opt.day + 'T00:00:00');
+                            const dayStr = optDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                            const timeStr = formatTime(opt.time);
+                            
+                            return (
+                              <div 
+                                key={idx} 
+                                className={`response-option-row ${optResponse}`}
+                              >
+                                <span className="option-label">Option {idx + 1}</span>
+                                <span className="option-datetime">{dayStr} • {timeStr}</span>
+                                <span className={`option-answer ${optResponse}`}>
+                                  {optResponse === 'yes' && (
+                                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg> Yes</>
+                                  )}
+                                  {optResponse === 'maybe' && (
+                                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg> Maybe</>
+                                  )}
+                                  {optResponse === 'no' && (
+                                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg> No</>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   );

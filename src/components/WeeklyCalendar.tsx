@@ -46,6 +46,7 @@ interface WeeklyCalendarProps {
   editingMode?: boolean;
   onEventClick?: (event: CalendarEvent) => void;
   onTimeSlotClick?: (date: string, time: string) => void;
+  loading?: boolean;
 }
 
 const HOURS = Array.from({ length: 19 }, (_, i) => i + 6); // 6 AM to 12 AM (midnight)
@@ -71,7 +72,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   selectedTimeOptions = [],
   editingMode = false,
   onEventClick,
-  onTimeSlotClick
+  onTimeSlotClick,
+  loading = false
 }) => {
   const [today] = useState(new Date());
   const [weekStart, setWeekStart] = useState(() => {
@@ -189,17 +191,26 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const filteredEvents = useMemo(() => {
     const selectedCalendarIds = calendars.filter(c => c.selected).map(c => c.id);
     const gatherlyCalendar = calendars.find(c => c.id === 'gatherly');
-    const showGatherlyEvents = gatherlyCalendar?.selected !== false;
+    const gatherlyPendingCalendar = calendars.find(c => c.id === 'gatherly-pending');
+    const showConfirmedGatherly = gatherlyCalendar?.selected !== false;
+    const showPendingGatherly = gatherlyPendingCalendar?.selected !== false;
 
     return events.filter(e => {
       // Don't show cancelled Gatherly events
       if (e.isGatherlyEvent && e.status === 'cancelled') {
         return false;
       }
-      // Show confirmed Gatherly events (they appear as confirmed until synced to GCal)
-      // Handle Gatherly events based on Gatherly Events toggle
-      if (e.isGatherlyEvent || e.calendarId === 'gatherly') {
-        return showGatherlyEvents;
+      // Handle Gatherly confirmed events
+      if (e.calendarId === 'gatherly') {
+        return showConfirmedGatherly;
+      }
+      // Handle Gatherly pending events
+      if (e.calendarId === 'gatherly-pending') {
+        return showPendingGatherly;
+      }
+      // Handle legacy gatherly events without specific calendar
+      if (e.isGatherlyEvent && !e.calendarId) {
+        return e.status === 'confirmed' ? showConfirmedGatherly : showPendingGatherly;
       }
       if (!e.calendarId) return true; // Show events without calendar ID
       return selectedCalendarIds.includes(e.calendarId);
@@ -415,6 +426,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   return (
     <div className={`weekly-calendar ${editingMode ? 'editing-mode' : ''}`}>
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="wc-loading-overlay">
+          <div className="wc-loading-spinner"></div>
+          <p>Syncing calendar...</p>
+        </div>
+      )}
+      
       {/* Top Controls Bar */}
       <div className="wc-top-bar">
         {/* Month Label - left (clickable date picker) */}

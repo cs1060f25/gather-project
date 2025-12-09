@@ -23,6 +23,56 @@
   box-sizing: border-box;
 }
 
+/* ===== LOADING OVERLAY ===== */
+.wc-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(250, 250, 250, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.wc-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #E5E5E5;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: wc-spin 1s linear infinite;
+}
+
+.wc-loading-overlay p {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  margin: 0;
+}
+
+@keyframes wc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dark-mode .wc-loading-overlay {
+  background: rgba(26, 26, 26, 0.85);
+}
+
+.dark-mode .wc-loading-spinner {
+  border-color: #444;
+  border-top-color: #22c55e;
+}
+
+.dark-mode .wc-loading-overlay p {
+  color: #AAA;
+}
+
 /* ===== EDITING MODE - No border here, applied on parent container ===== */
 
 /* ===== TOP CONTROLS BAR ===== */

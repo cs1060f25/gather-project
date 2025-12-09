@@ -221,14 +221,128 @@
   border-radius: 12px;
 }
 
-/* Black bar at bottom of card - matches mockup */
+/* Colored bar at bottom of card - sits inside border */
 .event-card-bottom-bar {
   position: absolute;
   bottom: 0;
-  left: -3px;
-  right: -3px;
-  height: 10px;
-  background: #1A1A1A;
+  left: 0;
+  right: 0;
+  height: 8px;
+  border-radius: 0;
+}
+
+/* Gatherly badge for events created with Gatherly */
+.gatherly-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #FFF;
+  border: 2px solid #22c55e;
+  border-radius: 50%;
+}
+
+/* Upcoming Section */
+.upcoming-section {
+  background: #FFF;
+  border-bottom: 3px solid #1A1A1A;
+  padding: 1rem 0 1.25rem;
+}
+
+.upcoming-section .section-title {
+  padding: 0 1.5rem 0.75rem;
+}
+
+.upcoming-events-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0 1.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.upcoming-events-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Upcoming Event Card - Compact */
+.event-card-upcoming {
+  flex: 0 0 auto;
+  width: 180px;
+  min-height: 110px;
+  background: #FFF;
+  border: 3px solid #1A1A1A;
+  padding: 0.75rem 0.75rem 1.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  scroll-snap-align: start;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.event-card-upcoming:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #1A1A1A;
+}
+
+.event-card-upcoming.non-gatherly {
+  cursor: default;
+}
+
+.event-card-upcoming.non-gatherly:hover {
+  transform: none;
+  box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.event-card-upcoming .upcoming-date-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.event-card-upcoming .event-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: #1A1A1A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-card-upcoming .event-time-date {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0 0 auto 0;
+}
+
+.event-card-upcoming .event-footer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.75rem;
+}
+
+.event-card-upcoming .event-category-badge {
+  font-size: 0.65rem;
+}
+
+.event-card-upcoming .gatherly-badge {
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
 }
 
 /* Pending Section */
@@ -430,6 +544,34 @@
   color: #888;
 }
 
+.dark-mode .upcoming-section {
+  background: #222;
+  border-color: #444;
+}
+
+.dark-mode .event-card-upcoming {
+  background: #2A2A2A;
+  border-color: #444;
+  box-shadow: 3px 3px 0 #444;
+}
+
+.dark-mode .event-card-upcoming:hover {
+  box-shadow: 5px 5px 0 #444;
+}
+
+.dark-mode .event-card-upcoming .event-title {
+  color: #F0F0F0;
+}
+
+.dark-mode .event-card-upcoming .event-time-date,
+.dark-mode .event-card-upcoming .upcoming-date-badge {
+  color: #888;
+}
+
+.dark-mode .gatherly-badge {
+  background: #2A2A2A;
+}
+
 .dark-mode .pending-section {
   background: #2A2A2A;
 }
@@ -484,13 +626,23 @@
     padding: 1rem 1rem 0.5rem;
   }
 
-  .today-events-scroll {
+  .today-events-scroll,
+  .upcoming-events-scroll {
     padding: 0 1rem;
   }
 
   .event-card-today {
     width: 200px;
     min-height: 120px;
+  }
+
+  .upcoming-section .section-title {
+    padding: 0 1rem 0.75rem;
+  }
+
+  .event-card-upcoming {
+    width: 160px;
+    min-height: 100px;
   }
 
   .pending-section {
