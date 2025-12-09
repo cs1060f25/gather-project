@@ -880,7 +880,25 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             </button>
           </div>
 
-          {/* Contact suggestions dropdown */}
+          {/* Selected participants - show first */}
+          {participants.length > 0 && (
+            <div className="cep-participants">
+              {participants.map(email => {
+                const contact = contacts.find(c => c.email === email);
+                const isCurrentUser = email === currentUserEmail;
+                return (
+                  <div key={email} className={`cep-participant ${isCurrentUser ? 'is-organizer' : ''}`}>
+                    <span>{isCurrentUser ? `${contact?.name || currentUserName || 'You'} (Organizer)` : (contact?.name || email)}</span>
+                    {!isCurrentUser && (
+                      <button type="button" onClick={() => handleRemoveParticipant(email)}>×</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Contact suggestions dropdown - positioned after participants */}
           {showSuggestions && filteredContacts.length > 0 && (
             <div className="cep-suggestions">
               {filteredContacts.map(contact => (
@@ -928,24 +946,6 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                 <button type="button" onClick={handleEmailPromptSubmit}>Add</button>
                 <button type="button" onClick={() => setEmailPromptFor(null)} className="cep-cancel-email">Cancel</button>
               </div>
-            </div>
-          )}
-
-          {/* Selected participants */}
-          {participants.length > 0 && (
-            <div className="cep-participants">
-              {participants.map(email => {
-                const contact = contacts.find(c => c.email === email);
-                const isCurrentUser = email === currentUserEmail;
-                return (
-                  <div key={email} className={`cep-participant ${isCurrentUser ? 'is-organizer' : ''}`}>
-                    <span>{isCurrentUser ? `${contact?.name || currentUserName || 'You'} (Organizer)` : (contact?.name || email)}</span>
-                    {!isCurrentUser && (
-                      <button type="button" onClick={() => handleRemoveParticipant(email)}>×</button>
-                    )}
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>

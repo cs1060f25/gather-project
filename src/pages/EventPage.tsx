@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
-import { DayNightToggle } from '../components/DayNightToggle';
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import { getEventInvites, type Invite } from '../lib/invites';
 import './EventPage.css';
@@ -37,6 +36,8 @@ const GatherlyLogo = ({ size = 28 }: { size?: number }) => (
 interface GatherlyEvent {
   id: string;
   title: string;
+  location?: string;
+  description?: string;
   options: { day: string; time: string; duration: number; color: string }[];
   participants: string[];
   status: 'pending' | 'confirmed' | 'cancelled';
@@ -128,6 +129,8 @@ export const EventPage: React.FC = () => {
         const gatherlyEvent: GatherlyEvent = {
           id: supabaseEvent.id,
           title: supabaseEvent.title,
+          location: supabaseEvent.location || 'TBD',
+          description: supabaseEvent.description,
           options: supabaseEvent.options || [],
           participants: supabaseEvent.participants || [],
           status: supabaseEvent.status,
@@ -431,7 +434,6 @@ export const EventPage: React.FC = () => {
               Cancel Event
             </button>
           )}
-          <DayNightToggle />
           <button 
             className="profile-button"
             onClick={() => setShowProfile(!showProfile)}
@@ -458,9 +460,9 @@ export const EventPage: React.FC = () => {
           // Gatherly Event View
           <div className="event-content">
             <div className={`event-status-banner ${event.status}`}>
-              {event.status === 'pending' && '⏳ Waiting for responses'}
-              {event.status === 'confirmed' && '✅ Event confirmed'}
-              {event.status === 'cancelled' && '❌ Event cancelled'}
+              {event.status === 'pending' && 'Waiting for responses'}
+              {event.status === 'confirmed' && 'Event confirmed'}
+              {event.status === 'cancelled' && 'Event cancelled'}
             </div>
 
             <div className="event-nav">
@@ -476,6 +478,14 @@ export const EventPage: React.FC = () => {
               <h2>{event.title}</h2>
               <span className="gatherly-tag">Gatherly Event</span>
             </div>
+
+            {/* Location */}
+            {event.location && event.location !== 'TBD' && (
+              <div className="event-location-display">
+                <span className="location-icon">📍</span>
+                <span>{event.location}</span>
+              </div>
+            )}
 
             {/* Time Options */}
             <div className="event-section">

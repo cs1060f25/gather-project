@@ -251,17 +251,12 @@
 
 /* Suggestions Dropdown */
 .cep-suggestions {
-  position: absolute;
-  top: calc(100% - 4px);
-  left: 0;
-  right: 0;
   background: #FFF;
   border: 3px solid #1A1A1A;
-  border-top: none;
   box-shadow: 4px 4px 0 #1A1A1A;
-  z-index: 10;
-  max-height: 240px;
+  max-height: 200px;
   overflow-y: auto;
+  margin-top: 0.5rem;
 }
 
 .cep-suggestion {

@@ -320,6 +320,21 @@
   box-shadow: 2px 2px 0 #1A1A1A;
 }
 
+.event-location-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: #F5F5F5;
+  border-bottom: 2px solid #E5E5E5;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.event-location-display .location-icon {
+  font-size: 1rem;
+}
+
 .google-tag {
   padding: 0.35rem 0.75rem;
   background: #4285F4;
