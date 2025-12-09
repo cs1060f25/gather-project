@@ -566,6 +566,7 @@
   box-shadow: 4px 4px 0 #111;
   width: 100%;
   max-width: 320px;
+  position: relative;
 }
 
 .option-number-badge {
@@ -585,24 +586,33 @@
 .option-details {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  flex: 1;
 }
 
 .option-date {
   font-weight: 600;
   color: #111;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .option-time-large {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #111;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .option-duration {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: 500;
+  background: #f0f0f0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .time-question {

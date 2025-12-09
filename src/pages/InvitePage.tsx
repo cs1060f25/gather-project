@@ -394,8 +394,10 @@ export const InvitePage: React.FC = () => {
                           <span className="option-date">{timeOptions[currentStep].day ? formatDateFromISO(timeOptions[currentStep].day) : 'Date TBD'}</span>
                           <span className="option-time-large">
                             {timeOptions[currentStep].time ? formatTime(timeOptions[currentStep].time) : 'Time TBD'}
+                            {timeOptions[currentStep].duration && (
+                              <span className="option-duration">{formatDuration(timeOptions[currentStep].duration)}</span>
+                            )}
                           </span>
-                          <span className="option-duration">{timeOptions[currentStep].duration ? formatDuration(timeOptions[currentStep].duration) : ''}</span>
                         </div>
                       </div>
                       
