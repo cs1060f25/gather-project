@@ -356,6 +356,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return result;
   };
 
+  // Get all-day events for a specific day (events without time, like holidays)
+  const getAllDayEventsForDay = (date: Date): CalendarEvent[] => {
+    const dateISO = fmtDateISO(date);
+    return filteredEvents.filter(e => e.date === dateISO && !e.time);
+  };
+
   // Extended time option with index
   interface IndexedTimeOption extends TimeOption {
     globalIdx: number;
@@ -608,6 +614,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
             const isToday = dateISO === fmtDateISO(today);
             const dayEvents = getEventsForDay(date);
             const dayTimeOptions = getTimeOptionsForDay(date);
+            const allDayEvents = getAllDayEventsForDay(date);
 
             return (
               <div key={i} className={`wc-day-column ${isToday ? 'is-today' : ''}`}>
@@ -618,6 +625,29 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     {date.getDate()}
                   </span>
                 </div>
+
+                {/* All-day events (holidays, etc.) */}
+                {allDayEvents.length > 0 && (
+                  <div className="wc-all-day-events">
+                    {allDayEvents.slice(0, 2).map((event) => (
+                      <div
+                        key={event.id}
+                        className="wc-all-day-event"
+                        style={{ backgroundColor: event.color || '#e3e4e6' }}
+                        title={event.title}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEventClick?.(event);
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                    ))}
+                    {allDayEvents.length > 2 && (
+                      <div className="wc-all-day-more">+{allDayEvents.length - 2} more</div>
+                    )}
+                  </div>
+                )}
 
                 {/* Hour slots */}
                 <div className="wc-day-slots">

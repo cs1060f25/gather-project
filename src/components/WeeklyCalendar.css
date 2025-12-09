@@ -541,6 +541,42 @@
   letter-spacing: 0.05em;
 }
 
+/* All-day events (holidays, etc.) */
+.wc-all-day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px 4px;
+  background: var(--wc-header-bg, #FFF);
+  border-bottom: 1px solid var(--wc-grid, #E5E5E5);
+  min-height: 24px;
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.wc-all-day-event {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  color: #333;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.wc-all-day-event:hover {
+  opacity: 0.85;
+}
+
+.wc-all-day-more {
+  font-size: 0.6rem;
+  color: var(--wc-muted, #888);
+  padding: 0 4px;
+}
+
 .wc-day-number {
   font-size: 0.95rem;
   font-weight: 700;
@@ -913,6 +949,19 @@
 .dark-mode .wc-option-time {
   background: rgba(0, 0, 0, 0.7);
   color: #FFF;
+}
+
+.dark-mode .wc-all-day-events {
+  background: var(--wc-header-bg, #222);
+  border-bottom-color: var(--wc-grid, #333);
+}
+
+.dark-mode .wc-all-day-event {
+  color: #F0F0F0;
+}
+
+.dark-mode .wc-all-day-more {
+  color: #888;
 }
 
 /* ===== RESPONSIVE ===== */

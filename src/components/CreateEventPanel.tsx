@@ -609,15 +609,36 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       
       const contactNames = contacts.map(c => c.name);
       
-      // Extract busy slots from calendar events for the next 2 weeks
+      // Extract busy slots from calendar events
+      // Calculate proper end times based on duration or default to 1 hour
       const busySlots = events
         .filter(ev => ev.time && ev.date) // Only events with specific times
-        .map(ev => ({
-          date: ev.date,
-          startTime: ev.time,
-          endTime: ev.endTime || ev.time,
-          title: ev.title
-        }));
+        .map(ev => {
+          let endTime = ev.endTime;
+          
+          // If no endTime, calculate from duration or default to 1 hour
+          if (!endTime && ev.time) {
+            const [hours, minutes] = ev.time.split(':').map(Number);
+            const durationMins = ev.duration || 60; // Default 1 hour
+            const endMinutes = hours * 60 + minutes + durationMins;
+            const endHours = Math.floor(endMinutes / 60) % 24;
+            const endMins = endMinutes % 60;
+            endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
+          }
+          
+          return {
+            date: ev.date,
+            startTime: ev.time!,
+            endTime: endTime || ev.time!,
+            title: ev.title
+          };
+        });
+      
+      // Log busy slots for debugging
+      console.log('[Gatherly] Sending busy slots to AI:', busySlots.length, 'events');
+      if (busySlots.length > 0) {
+        console.log('[Gatherly] Sample busy slots:', busySlots.slice(0, 5));
+      }
       
       // Include current form state in the message for context preservation
       const contextMessage = `Current form state: Event="${eventName}", Location="${location}", Description="${description}", Participants=${JSON.stringify(participants)}, Options=${JSON.stringify(availabilityOptions.map(o => ({ day: o.day, time: o.time, duration: o.duration })))}. User message: ${message}`;

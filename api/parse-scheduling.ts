@@ -126,11 +126,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       day: 'numeric' 
     })}.`;
 
-    // Format busy slots for the prompt
-    const busySlotsContext = busySlots.length > 0 
-      ? `\n\n**USER'S BUSY TIMES (DO NOT SCHEDULE DURING THESE):**\n${(busySlots as BusySlot[]).map((slot: BusySlot) => 
-          `- ${slot.date} ${slot.startTime}-${slot.endTime}: ${slot.title}`
-        ).join('\n')}`
+    // Format busy slots for the prompt - group by date for clarity
+    const sortedBusySlots = [...(busySlots as BusySlot[])].sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.startTime.localeCompare(b.startTime);
+    });
+    
+    const busySlotsContext = sortedBusySlots.length > 0 
+      ? `\n\n**USER'S BUSY TIMES (ABSOLUTELY DO NOT SCHEDULE DURING THESE - THIS IS CRITICAL):**\n${sortedBusySlots.map((slot: BusySlot) => 
+          `- ${slot.date} ${slot.startTime}-${slot.endTime}: "${slot.title}"`
+        ).join('\n')}\n\n**CONFLICT CHECKING REQUIRED**: Before suggesting ANY time, verify it does NOT overlap with the above busy slots. A time conflicts if it starts during OR overlaps with any busy slot on the same date.`
       : '';
 
     const locationContext = userLocation 
@@ -162,10 +167,13 @@ The user's message may include "Current form state:" with existing event details
 3. If user says "select good times" or similar, use the event name/context to pick appropriate times
 4. If user mentions a partial location (like "dunster"), expand it to the full known location (e.g., "Dunster House, Cambridge, MA" if user is at Harvard)
 
-**CRITICAL: AVOID BUSY TIMES**
-- NEVER suggest times that overlap with the user's busy slots listed above
-- Check each suggestion against the busy times before including it
-- If a time conflicts, find the next available slot
+**CRITICAL: AVOID BUSY TIMES - THIS IS MANDATORY**
+- NEVER suggest times that overlap with ANY busy slot listed above
+- A conflict occurs if your suggested time would START during OR OVERLAP with any busy period
+- For example: if busy 10:00-11:00, do NOT suggest 10:00, 10:30, or any time where a 1-hour meeting would overlap
+- Before outputting ANY time suggestion, mentally verify it against ALL busy slots on that date
+- If ALL reasonable times on a date are busy, pick a DIFFERENT DATE
+- This is the #1 priority - the user CANNOT be double-booked
 
 **CORE PRINCIPLES:**
 1. Infer clear event names from context ("I want to go to the movies with friends" → "Movies with Friends")
@@ -208,7 +216,7 @@ Return JSON with ALL these fields:
   "suggestedTime2": "HH:MM",
   "suggestedDate3": "YYYY-MM-DD",
   "suggestedTime3": "HH:MM",
-  "duration": number,
+  "duration": number (IN MINUTES - e.g., 60 for 1 hour, 120 for 2 hours, 30 for 30 minutes),
   "location": string,
   "priority": "must" | "should" | "maybe",
   "notes": string
@@ -250,6 +258,14 @@ REMEMBER:
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Normalize duration - AI might return in hours (e.g., 2) instead of minutes (120)
+    // If duration is less than 10, assume it's hours and convert to minutes
+    let duration = parsed.duration || 60;
+    if (duration > 0 && duration < 10) {
+      duration = duration * 60; // Convert hours to minutes
+    }
+    
     return res.status(200).json({
       title: parsed.title || message.slice(0, 50),
       participants: parsed.participants || [],
@@ -259,7 +275,7 @@ REMEMBER:
       suggestedTime2: parsed.suggestedTime2,
       suggestedDate3: parsed.suggestedDate3,
       suggestedTime3: parsed.suggestedTime3,
-      duration: parsed.duration || 60,
+      duration,
       location: parsed.location,
       priority: parsed.priority || 'should',
       notes: parsed.notes,

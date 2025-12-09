@@ -321,9 +321,10 @@ export const EventsPage: React.FC = () => {
 
     // Sort upcoming: Gatherly events first, then by date/time
     // Cap at 6 events max to look nice on screen
+    // Exclude pending events (they appear in the pending section instead)
     const MAX_UPCOMING = 6;
     const upcomingFiltered = allEvents
-      .filter(e => upcomingDates.includes(e.date) && e.status !== 'cancelled')
+      .filter(e => upcomingDates.includes(e.date) && e.status !== 'cancelled' && e.status !== 'pending')
       .sort((a, b) => {
         // Gatherly events come first
         if (a.isGatherly && !b.isGatherly) return -1;
@@ -336,7 +337,7 @@ export const EventsPage: React.FC = () => {
       .slice(0, MAX_UPCOMING);
 
     return {
-      today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled'),
+      today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled' && e.status !== 'pending'),
       upcoming: upcomingFiltered,
       pending: gatherlyEvents.filter(ge => ge.status === 'pending')
     };
