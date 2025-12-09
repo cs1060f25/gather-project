@@ -855,11 +855,15 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
               value={participantInput}
               onChange={e => {
                 setParticipantInput(e.target.value);
-                setShowSuggestions(true);
+                // Only show suggestions if there's input
+                setShowSuggestions(e.target.value.length > 0);
                 setIsEditing(true);
               }}
               onFocus={() => {
-                setShowSuggestions(true);
+                // Only show suggestions if there's already input
+                if (participantInput.length > 0) {
+                  setShowSuggestions(true);
+                }
                 handleFocus();
               }}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
