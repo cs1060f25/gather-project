@@ -248,8 +248,8 @@
 /* Pending Event Row */
 .pending-event-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.75rem;
   background: #FFF;
   border: 3px solid #1A1A1A;
   padding: 1rem 1.25rem;
@@ -261,6 +261,12 @@
 .pending-event-row:hover {
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 #1A1A1A;
+}
+
+.pending-event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .pending-event-row .event-title {
@@ -284,6 +290,60 @@
 .pending-event-row .event-responses {
   font-size: 0.85rem;
   color: #666;
+  font-weight: 500;
+}
+
+/* Pending event time options */
+.pending-event-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pending-option-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #F5F5F5;
+  border: 2px solid #E5E5E5;
+  border-radius: 20px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.pending-option-badge .option-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #22c55e;
+  color: #FFF;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.pending-option-badge .option-datetime {
+  color: #444;
+  font-weight: 500;
+}
+
+/* Event time display for non-Gatherly events */
+.event-time-display {
+  font-size: 0.85rem;
+  color: #444;
+  font-weight: 600;
+}
+
+/* Non-Gatherly event cards - less emphasis on click */
+.event-card-today.non-gatherly {
+  cursor: default;
+}
+
+.event-card-today.non-gatherly:hover {
+  transform: none;
+  box-shadow: 4px 4px 0 #1A1A1A;
 }
 
 /* Empty State */
@@ -387,6 +447,19 @@
 .dark-mode .pending-event-row .event-location,
 .dark-mode .pending-event-row .event-responses {
   color: #888;
+}
+
+.dark-mode .pending-option-badge {
+  background: #333;
+  border-color: #444;
+}
+
+.dark-mode .pending-option-badge .option-datetime {
+  color: #CCC;
+}
+
+.dark-mode .event-time-display {
+  color: #CCC;
 }
 
 .dark-mode .profile-button {

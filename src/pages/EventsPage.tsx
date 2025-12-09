@@ -351,18 +351,37 @@ export const EventsPage: React.FC = () => {
                 }
                 const calendarColor = event.calendarColor || '#4285f4';
                 const bgColor = getLighterColor(calendarColor);
+                const isGatherlyEvent = event.isGatherly || event.source === 'gatherly';
+                
                 return (
                   <Link 
                     key={event.id} 
-                    to={`/event/${event.id}`}
-                    className="event-card-today"
+                    to={isGatherlyEvent ? `/event/${event.id}` : '#'}
+                    className={`event-card-today ${!isGatherlyEvent ? 'non-gatherly' : ''}`}
+                    onClick={(e) => {
+                      if (!isGatherlyEvent) {
+                        e.preventDefault();
+                        // Could optionally show a toast or info that this is a Google Calendar event
+                      }
+                    }}
                   >
                     <h3 className="event-title">{event.title}</h3>
                     <p className="event-location">{event.location || 'TBD'}</p>
                     <div className="event-footer">
-                      <span className="event-responses">
-                        {event.responses || 0}/{event.totalInvites || event.attendees?.length || 1} Responses
-                      </span>
+                      {/* Only show responses for Gatherly events */}
+                      {isGatherlyEvent && (
+                        <span className="event-responses">
+                          {event.responses || 0}/{event.totalInvites || event.attendees?.length || 1} Responses
+                        </span>
+                      )}
+                      {!isGatherlyEvent && event.time && (
+                        <span className="event-time-display">
+                          {new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      )}
                       <span 
                         className="event-category-badge"
                         style={{ background: bgColor, color: calendarColor }}
@@ -387,21 +406,58 @@ export const EventsPage: React.FC = () => {
                 <p>No pending events</p>
               </div>
             ) : (
-              categorizedEvents.pending.map(event => (
-                <Link 
-                  key={event.id}
-                  to={`/event/${event.id}`}
-                  className="pending-event-row"
-                >
-                  <h3 className="event-title">{event.title}</h3>
-                  <div className="event-meta">
-                    <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
-                    <span className="event-responses">
-                      {event.responses?.length || 0}/{event.participants.length} Responses
-                    </span>
-                  </div>
-                </Link>
-              ))
+              categorizedEvents.pending.map(event => {
+                // Format time for display
+                const formatTime = (time: string) => {
+                  if (!time) return '';
+                  const [h, m] = time.split(':').map(Number);
+                  const date = new Date();
+                  date.setHours(h, m);
+                  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                };
+                
+                // Format date for display
+                const formatDate = (dateStr: string) => {
+                  if (!dateStr) return '';
+                  const [year, month, day] = dateStr.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                };
+                
+                return (
+                  <Link 
+                    key={event.id}
+                    to={`/event/${event.id}`}
+                    className="pending-event-row"
+                  >
+                    <div className="pending-event-header">
+                      <h3 className="event-title">{event.title}</h3>
+                      <span className="event-responses">
+                        {event.responses?.length || 0}/{event.participants.length} Responses
+                      </span>
+                    </div>
+                    
+                    {/* Show the 3 time options with badges */}
+                    {event.options && event.options.length > 0 && (
+                      <div className="pending-event-options">
+                        {event.options.slice(0, 3).map((opt, idx) => (
+                          <div key={idx} className="pending-option-badge">
+                            <span className="option-number">{idx + 1}</span>
+                            <span className="option-datetime">
+                              {opt.day && formatDate(opt.day)}
+                              {opt.time && ` • ${formatTime(opt.time)}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="event-meta">
+                      <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
+                    </div>
+                  </Link>
+                );
+              })
             )}
           </div>
         </section>

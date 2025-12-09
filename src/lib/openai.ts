@@ -32,11 +32,20 @@ interface CalendarEvent {
   title: string;
 }
 
+interface BusySlot {
+  date: string;
+  startTime: string;
+  endTime: string;
+  title: string;
+}
+
 // Parse a natural language message into structured scheduling data
 // This calls our secure server-side API which handles the OpenAI integration
 export async function parseSchedulingMessage(
   message: string,
-  contactNames: string[] = []
+  contactNames: string[] = [],
+  busySlots: BusySlot[] = [],
+  userLocation: string = ''
 ): Promise<ParsedSchedulingData> {
   try {
     // Call our server-side API to parse the message
@@ -48,7 +57,9 @@ export async function parseSchedulingMessage(
       },
       body: JSON.stringify({
         message,
-        contactNames
+        contactNames,
+        busySlots,
+        userLocation
       })
     });
 

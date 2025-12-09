@@ -16,6 +16,9 @@ interface GatherlyEventData {
   description?: string;
 }
 
+// Response state for each time option
+type TimeOptionResponse = 'yes' | 'no' | 'maybe' | null;
+
 export const InvitePage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
@@ -27,6 +30,11 @@ export const InvitePage: React.FC = () => {
   const [response, setResponse] = useState<'accepted' | 'declined' | 'maybe' | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Individual responses for each time option
+  const [timeResponses, setTimeResponses] = useState<Record<number, TimeOptionResponse>>({});
+  const [currentStep, setCurrentStep] = useState(0); // For step-by-step flow
+  const useStepByStep = true; // Use step-by-step flow for better UX
 
   useEffect(() => {
     const loadInvite = async () => {
@@ -110,12 +118,88 @@ export const InvitePage: React.FC = () => {
     setResponding(false);
   };
 
+  // Handle response for individual time option
+  const handleTimeResponse = (index: number, response: TimeOptionResponse) => {
+    setTimeResponses(prev => ({ ...prev, [index]: response }));
+    
+    // Update selectedOptions based on responses
+    if (response === 'yes') {
+      setSelectedOptions(prev => [...new Set([...prev, index])]);
+    } else {
+      setSelectedOptions(prev => prev.filter(i => i !== index));
+    }
+  };
+
+  // Move to next step in step-by-step flow
+  const handleNextStep = () => {
+    const timeOptions = eventData?.options || [];
+    if (currentStep < timeOptions.length - 1) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      // All options reviewed, submit
+      handleFinalSubmit();
+    }
+  };
+
+  // Submit final response based on individual selections
+  const handleFinalSubmit = async () => {
+    if (!token || responding) return;
+    
+    setResponding(true);
+    
+    // Determine overall status based on individual responses
+    const hasYes = Object.values(timeResponses).some(r => r === 'yes');
+    const hasMaybe = Object.values(timeResponses).some(r => r === 'maybe');
+    const allNo = Object.values(timeResponses).every(r => r === 'no');
+    
+    let overallStatus: 'accepted' | 'declined' | 'maybe';
+    if (hasYes) {
+      overallStatus = 'accepted';
+    } else if (hasMaybe) {
+      overallStatus = 'maybe';
+    } else if (allNo) {
+      overallStatus = 'declined';
+    } else {
+      overallStatus = 'maybe'; // Default if not all answered
+    }
+    
+    setResponse(overallStatus);
+    
+    // Collect accepted/maybe time options
+    const selectedTimeStrings = Object.entries(timeResponses)
+      .filter(([_, resp]) => resp === 'yes' || resp === 'maybe')
+      .map(([idx]) => {
+        const opt = eventData?.options[parseInt(idx)];
+        return opt ? `${opt.day} ${opt.time}` : '';
+      })
+      .filter(Boolean);
+    
+    const result = await respondToInvite(token, overallStatus, selectedTimeStrings.length > 0 ? selectedTimeStrings : undefined);
+    
+    if (result.success) {
+      setSubmitted(true);
+      if (result.invite) {
+        setInvite(result.invite);
+      }
+    } else {
+      setError(result.message);
+    }
+    
+    setResponding(false);
+  };
+
   const toggleTimeOption = (index: number) => {
     setSelectedOptions(prev => 
       prev.includes(index) 
         ? prev.filter(i => i !== index)
         : [...prev, index]
     );
+  };
+
+  // Check if all time options have been responded to
+  const allOptionsResponded = () => {
+    const timeOptions = eventData?.options || [];
+    return timeOptions.every((_, idx) => timeResponses[idx] !== undefined && timeResponses[idx] !== null);
   };
 
   if (loading) {
@@ -251,8 +335,112 @@ export const InvitePage: React.FC = () => {
               <div className="event-card">
                 <h1 className="event-title">{invite.event_title}</h1>
                 
-                {/* Show all time options if available */}
-                {timeOptions.length > 0 ? (
+                {location && (
+                  <div className="event-detail" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+                    <span className="detail-icon">📍</span>
+                    <span>{location}</span>
+                  </div>
+                )}
+                
+                {/* Step-by-step flow for time options */}
+                {timeOptions.length > 0 && useStepByStep ? (
+                  <div className="step-by-step-flow">
+                    <div className="step-progress">
+                      <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
+                      <div className="step-dots">
+                        {timeOptions.map((_, idx) => (
+                          <span 
+                            key={idx} 
+                            className={`step-dot ${idx === currentStep ? 'active' : ''} ${timeResponses[idx] ? 'answered' : ''}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="current-time-option">
+                      <div className="time-option-card">
+                        <span className="option-number-badge">{currentStep + 1}</span>
+                        <div className="option-details">
+                          <span className="option-date">{formatDateFromISO(timeOptions[currentStep].day)}</span>
+                          <span className="option-time-large">
+                            {formatTime(timeOptions[currentStep].time)}
+                          </span>
+                          <span className="option-duration">{formatDuration(timeOptions[currentStep].duration)}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="time-question">Does this time work for you?</p>
+                      
+                      <div className="time-response-buttons">
+                        <button
+                          className={`time-btn time-btn-yes ${timeResponses[currentStep] === 'yes' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTimeResponse(currentStep, 'yes');
+                            setTimeout(handleNextStep, 300);
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5"/>
+                          </svg>
+                          Yes
+                        </button>
+                        <button
+                          className={`time-btn time-btn-maybe ${timeResponses[currentStep] === 'maybe' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTimeResponse(currentStep, 'maybe');
+                            setTimeout(handleNextStep, 300);
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                          </svg>
+                          Maybe
+                        </button>
+                        <button
+                          className={`time-btn time-btn-no ${timeResponses[currentStep] === 'no' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTimeResponse(currentStep, 'no');
+                            setTimeout(handleNextStep, 300);
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                          </svg>
+                          No
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Show summary of responses so far */}
+                    {Object.keys(timeResponses).length > 0 && (
+                      <div className="responses-summary">
+                        {timeOptions.map((_, idx) => (
+                          timeResponses[idx] && (
+                            <div key={idx} className={`response-chip ${timeResponses[idx]}`}>
+                              <span className="chip-number">{idx + 1}</span>
+                              <span className="chip-response">
+                                {timeResponses[idx] === 'yes' ? '✓' : timeResponses[idx] === 'no' ? '✗' : '?'}
+                              </span>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Manual submit button if all answered */}
+                    {allOptionsResponded() && (
+                      <button
+                        className="submit-responses-btn"
+                        onClick={handleFinalSubmit}
+                        disabled={responding}
+                      >
+                        {responding ? 'Submitting...' : 'Submit My Availability'}
+                      </button>
+                    )}
+                  </div>
+                ) : timeOptions.length > 0 ? (
+                  // Fallback: Original selection mode
                   <>
                     <p style={{ fontSize: '0.9rem', color: '#666', margin: '0 0 0.75rem' }}>
                       Suggested times:
@@ -295,6 +483,23 @@ export const InvitePage: React.FC = () => {
                     <p style={{ fontSize: '0.75rem', color: '#888', margin: '0.5rem 0 0' }}>
                       Select times that work for you
                     </p>
+                    
+                    <div className="response-buttons" style={{ marginTop: '1.5rem' }}>
+                      <button
+                        className={`btn-response btn-yes ${response === 'accepted' ? 'selected' : ''}`}
+                        onClick={() => handleResponse('accepted')}
+                        disabled={responding || selectedOptions.length === 0}
+                      >
+                        {responding && response === 'accepted' ? (
+                          <span className="loading-spinner-small"></span>
+                        ) : (
+                          <>
+                            <span className="btn-emoji">✅</span>
+                            <span>Submit</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <div className="event-details">
@@ -310,63 +515,61 @@ export const InvitePage: React.FC = () => {
                     )}
                   </div>
                 )}
-                
-                {location && (
-                  <div className="event-detail" style={{ marginTop: '0.75rem' }}>
-                    <span className="detail-icon">📍</span>
-                    <span>{location}</span>
+              </div>
+
+              {/* Only show these buttons if not using step-by-step or no time options */}
+              {(!timeOptions.length || !useStepByStep) && !timeOptions.length && (
+                <>
+                  <p className="invite-question">Can you make it?</p>
+
+                  <div className="response-buttons">
+                    <button
+                      className={`btn-response btn-yes ${response === 'accepted' ? 'selected' : ''}`}
+                      onClick={() => handleResponse('accepted')}
+                      disabled={responding}
+                    >
+                      {responding && response === 'accepted' ? (
+                        <span className="loading-spinner-small"></span>
+                      ) : (
+                        <>
+                          <span className="btn-emoji">✅</span>
+                          <span>Yes, I'm in!</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      className={`btn-response btn-maybe ${response === 'maybe' ? 'selected' : ''}`}
+                      onClick={() => handleResponse('maybe')}
+                      disabled={responding}
+                    >
+                      {responding && response === 'maybe' ? (
+                        <span className="loading-spinner-small"></span>
+                      ) : (
+                        <>
+                          <span className="btn-emoji">🤔</span>
+                          <span>Maybe</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      className={`btn-response btn-no ${response === 'declined' ? 'selected' : ''}`}
+                      onClick={() => handleResponse('declined')}
+                      disabled={responding}
+                    >
+                      {responding && response === 'declined' ? (
+                        <span className="loading-spinner-small"></span>
+                      ) : (
+                        <>
+                          <span className="btn-emoji">❌</span>
+                          <span>Can't make it</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <p className="invite-question">Can you make it?</p>
-
-              <div className="response-buttons">
-                <button
-                  className={`btn-response btn-yes ${response === 'accepted' ? 'selected' : ''}`}
-                  onClick={() => handleResponse('accepted')}
-                  disabled={responding}
-                >
-                  {responding && response === 'accepted' ? (
-                    <span className="loading-spinner-small"></span>
-                  ) : (
-                    <>
-                      <span className="btn-emoji">✅</span>
-                      <span>Yes, I'm in!</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  className={`btn-response btn-maybe ${response === 'maybe' ? 'selected' : ''}`}
-                  onClick={() => handleResponse('maybe')}
-                  disabled={responding}
-                >
-                  {responding && response === 'maybe' ? (
-                    <span className="loading-spinner-small"></span>
-                  ) : (
-                    <>
-                      <span className="btn-emoji">🤔</span>
-                      <span>Maybe</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  className={`btn-response btn-no ${response === 'declined' ? 'selected' : ''}`}
-                  onClick={() => handleResponse('declined')}
-                  disabled={responding}
-                >
-                  {responding && response === 'declined' ? (
-                    <span className="loading-spinner-small"></span>
-                  ) : (
-                    <>
-                      <span className="btn-emoji">❌</span>
-                      <span>Can't make it</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                </>
+              )}
             </div>
           )}
         </main>

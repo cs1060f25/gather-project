@@ -167,11 +167,12 @@ export const EventPage: React.FC = () => {
       }
     }
 
-    // If not found, try Google Calendar
+    // If not found, try Google Calendar (search across all calendars)
     const providerToken = getGoogleToken();
     if (providerToken) {
       try {
-        const response = await fetch(
+        // First try primary calendar
+        let response = await fetch(
           `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
           { headers: { Authorization: `Bearer ${providerToken}` } }
         );
@@ -180,6 +181,39 @@ export const EventPage: React.FC = () => {
           const data = await response.json();
           setGoogleEvent(data);
           setIsGatherlyEvent(false);
+          setLoading(false);
+          return;
+        }
+
+        // If not found in primary, search other calendars
+        const calendarListResponse = await fetch(
+          'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+          { headers: { Authorization: `Bearer ${providerToken}` } }
+        );
+
+        if (calendarListResponse.ok) {
+          const calendarList = await calendarListResponse.json();
+          
+          for (const cal of (calendarList.items || [])) {
+            if (cal.id === 'primary') continue; // Already tried primary
+            
+            try {
+              response = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events/${eventId}`,
+                { headers: { Authorization: `Bearer ${providerToken}` } }
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+                setGoogleEvent(data);
+                setIsGatherlyEvent(false);
+                setLoading(false);
+                return;
+              }
+            } catch (err) {
+              // Continue to next calendar
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading Google event:', error);

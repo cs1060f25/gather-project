@@ -466,6 +466,16 @@
   font-size: 0.875rem;
 }
 
+/* Appearance setting with DayNightToggle */
+.setting-item.appearance-setting {
+  cursor: default;
+}
+
+.setting-item.appearance-setting .day-night-toggle {
+  transform: scale(0.85);
+  transform-origin: right center;
+}
+
 .toggle {
   appearance: none;
   width: 44px;

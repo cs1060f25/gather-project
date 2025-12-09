@@ -8,11 +8,22 @@ export interface ParsedSchedulingData {
   participants: string[];
   suggestedDate?: string;
   suggestedTime?: string;
+  suggestedDate2?: string;
+  suggestedTime2?: string;
+  suggestedDate3?: string;
+  suggestedTime3?: string;
   duration?: number;
   location?: string;
   priority?: 'must' | 'should' | 'maybe';
   notes?: string;
   isSchedulingRequest: boolean;
+}
+
+interface BusySlot {
+  date: string;
+  startTime: string;
+  endTime: string;
+  title: string;
 }
 
 // Fallback basic parsing without AI
@@ -95,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { message, contactNames = [] } = req.body;
+    const { message, contactNames = [], busySlots = [], userLocation = '' } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -115,6 +126,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       day: 'numeric' 
     })}.`;
 
+    // Format busy slots for the prompt
+    const busySlotsContext = busySlots.length > 0 
+      ? `\n\n**USER'S BUSY TIMES (DO NOT SCHEDULE DURING THESE):**\n${(busySlots as BusySlot[]).map((slot: BusySlot) => 
+          `- ${slot.date} ${slot.startTime}-${slot.endTime}: ${slot.title}`
+        ).join('\n')}`
+      : '';
+
+    const locationContext = userLocation 
+      ? `\nUser's location: ${userLocation}. Prefer suggesting locations near this area.`
+      : '';
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -126,11 +148,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         messages: [
           {
             role: 'system',
-            content: `You are an agentic scheduling assistant for Gatherly. Your job is to interpret natural-language messages and update only the relevant fields in the Create Event form.
+            content: `You are an agentic scheduling assistant for Gatherly. Your job is to interpret natural-language messages and suggest optimal meeting times.
 
-${dateContext}
+${dateContext}${locationContext}
 
 Known contacts: ${contactNames.join(', ') || 'none'}
+${busySlotsContext}
+
+**CRITICAL: AVOID BUSY TIMES**
+- NEVER suggest times that overlap with the user's busy slots listed above
+- Check each suggestion against the busy times before including it
+- If a time conflicts, find the next available slot
 
 **CORE PRINCIPLES:**
 1. Infer clear event names from context ("I want to go to the movies with friends" → "Movies with Friends")
@@ -148,8 +176,7 @@ Known contacts: ${contactNames.join(', ') || 'none'}
    - If user says "this weekend" - use the upcoming Saturday/Sunday
    - If user says "next weekend" - use Saturday/Sunday of the following week
 5. When users provide explicit dates or times, use them
-6. Modify ONLY fields the user clearly intends to change, preserving existing values in the form state
-7. Add or remove participants ONLY when explicitly requested
+6. Modify ONLY fields the user clearly intends to change
 
 **LOCATION RULES:**
 - If specific place mentioned: use it exactly
@@ -157,39 +184,35 @@ Known contacts: ${contactNames.join(', ') || 'none'}
 - If NOT specified: use "TBD"
 - For MEALS: assume physical location unless stated otherwise → "TBD"
 
-**SUGGESTED TIMES STRATEGY:**
-- Provide 3 different time slot suggestions that are SPACED OUT:
-  - If it's a dinner → 18:00, 18:30, 19:00 (all evening, different times)
-  - If it's weekend → spread across Saturday AND Sunday
-  - Don't bunch all suggestions in the same hour
-  - Consider variety: different days if event is flexible
+**ALWAYS PROVIDE 3 TIME SUGGESTIONS:**
+- You MUST always provide suggestedDate, suggestedTime, suggestedDate2, suggestedTime2, suggestedDate3, suggestedTime3
+- Space them out across different times and/or days
+- If it's a dinner → 18:00, 18:30, 19:00 on same day, OR spread across multiple days
+- If it's weekend → spread across Saturday AND Sunday
+- VERIFY each suggestion doesn't conflict with busy times
 
-**WHAT TO HANDLE:**
-- Creation of new events
-- Incremental updates
-- Rescheduling and location changes
-- Participant modifications
+Return JSON with ALL these fields:
+{
+  "isSchedulingRequest": boolean,
+  "title": string,
+  "participants": string[],
+  "suggestedDate": "YYYY-MM-DD",
+  "suggestedTime": "HH:MM",
+  "suggestedDate2": "YYYY-MM-DD",
+  "suggestedTime2": "HH:MM",
+  "suggestedDate3": "YYYY-MM-DD",
+  "suggestedTime3": "HH:MM",
+  "duration": number,
+  "location": string,
+  "priority": "must" | "should" | "maybe",
+  "notes": string
+}
 
-**WHAT TO IGNORE:**
-- Vague messages ("Bored," "hmm")
-- Never fabricate participants
-
-Return JSON:
-- isSchedulingRequest: boolean
-- title: string (clean event title)
-- participants: string[] (match to contacts)
-- suggestedDate: string (YYYY-MM-DD) 
-- suggestedTime: string (HH:MM 24h - MUST match event type! Dinner=18:00+)
-- suggestedDate2: string (optional second date for variety)
-- suggestedTime2: string (optional second time)
-- suggestedDate3: string (optional third date)
-- suggestedTime3: string (optional third time)
-- duration: number (minutes)
-- location: string (specific place or "TBD")
-- priority: "must" | "should" | "maybe"
-- notes: string
-
-REMEMBER: Dinner times MUST be 18:00 or later. Weekend events MUST be on Sat/Sun.`
+REMEMBER: 
+- Dinner times MUST be 18:00 or later
+- Weekend events MUST be on Sat/Sun
+- NEVER suggest times that conflict with busy slots
+- ALWAYS provide all 3 time suggestions`
           },
           {
             role: 'user',
@@ -197,7 +220,7 @@ REMEMBER: Dinner times MUST be 18:00 or later. Weekend events MUST be on Sat/Sun
           }
         ],
         temperature: 0.3,
-        max_tokens: 500
+        max_tokens: 600
       })
     });
 
@@ -225,6 +248,10 @@ REMEMBER: Dinner times MUST be 18:00 or later. Weekend events MUST be on Sat/Sun
       participants: parsed.participants || [],
       suggestedDate: parsed.suggestedDate,
       suggestedTime: parsed.suggestedTime,
+      suggestedDate2: parsed.suggestedDate2,
+      suggestedTime2: parsed.suggestedTime2,
+      suggestedDate3: parsed.suggestedDate3,
+      suggestedTime3: parsed.suggestedTime3,
       duration: parsed.duration || 60,
       location: parsed.location,
       priority: parsed.priority || 'should',

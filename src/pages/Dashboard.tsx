@@ -6,7 +6,6 @@ import { createInvites, sendInviteEmails } from '../lib/invites';
 import { WeeklyCalendar, type CalendarEvent, type GoogleCalendar, type TimeOption } from '../components/WeeklyCalendar';
 import { CreateEventPanel, type CreateEventData, type AvailabilityOption } from '../components/CreateEventPanel';
 import { ProfileSidebar } from '../components/ProfileSidebar';
-import { DayNightToggle } from '../components/DayNightToggle';
 import './Dashboard.css';
 
 // Gatherly Logo SVG Component
@@ -135,11 +134,11 @@ export const Dashboard: React.FC = () => {
 
       setCalendars(googleCalendars);
 
-      // Fetch 1 year back and 1 year forward to ensure all events load
+      // Fetch 5 years back and 3 years forward to ensure all historical and future events load
       const allEvents: CalendarEvent[] = [];
       const now = new Date();
-      const timeMin = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString();
-      const timeMax = new Date(now.getFullYear() + 1, now.getMonth() + 1, 0).toISOString();
+      const timeMin = new Date(now.getFullYear() - 5, 0, 1).toISOString(); // 5 years ago, Jan 1
+      const timeMax = new Date(now.getFullYear() + 3, 11, 31).toISOString(); // 3 years ahead, Dec 31
 
       const fetchPromises = googleCalendars
         .filter(cal => cal.id !== 'gatherly')
@@ -611,6 +610,22 @@ export const Dashboard: React.FC = () => {
     return merged;
   }, [events, gatherlyEvents]);
 
+  // Filter events by toggled calendars for scheduling availability check
+  const filteredEventsForScheduling = useMemo((): CalendarEvent[] => {
+    const selectedCalendarIds = calendars.filter(c => c.selected).map(c => c.id);
+    const gatherlyCalendar = calendars.find(c => c.id === 'gatherly');
+    const showGatherlyEvents = gatherlyCalendar?.selected !== false;
+
+    return allCalendarEvents.filter(e => {
+      // Handle Gatherly events
+      if (e.isGatherlyEvent || e.calendarId === 'gatherly') {
+        return showGatherlyEvents;
+      }
+      if (!e.calendarId) return true;
+      return selectedCalendarIds.includes(e.calendarId);
+    });
+  }, [allCalendarEvents, calendars]);
+
   if (authLoading) {
     return (
       <div className="dashboard-loading">
@@ -638,7 +653,6 @@ export const Dashboard: React.FC = () => {
           {/* Events button moved to Create Event panel */}
         </div>
         <div className="header-right">
-          <DayNightToggle />
           <button 
             className="profile-button"
             onClick={() => setShowProfile(!showProfile)}
@@ -684,7 +698,7 @@ export const Dashboard: React.FC = () => {
             onEditingModeChange={handleEditingModeChange}
             suggestedData={suggestedEventData}
             isLoading={isCreating}
-            events={allCalendarEvents}
+            events={filteredEventsForScheduling}
           />
         </div>
       </main>

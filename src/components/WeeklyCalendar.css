@@ -192,6 +192,17 @@
   box-shadow: 2px 2px 0 #1A1A1A;
 }
 
+.wc-picker-item.hovered {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: #22c55e;
+  transform: scale(1.05);
+}
+
+/* Month label preview state */
+.wc-month-label.previewing {
+  color: #22c55e;
+}
+
 .wc-picker-footer {
   padding: 8px 10px;
   border-top: 2px solid var(--wc-grid, #E5E5E5);

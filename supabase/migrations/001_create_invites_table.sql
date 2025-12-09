@@ -127,6 +127,12 @@ CREATE POLICY "Users can view their own events" ON gatherly_events
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- Policy: Anyone can view events by ID (for invite page to load event options)
+-- This allows unauthenticated users to view event details when responding to invites
+CREATE POLICY "Anyone can view events by id" ON gatherly_events
+  FOR SELECT
+  USING (true);
+
 -- Policy: Users can create their own events
 CREATE POLICY "Users can create their own events" ON gatherly_events
   FOR INSERT

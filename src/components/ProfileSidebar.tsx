@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './ProfileSidebar.css';
+import { DayNightToggle } from './DayNightToggle';
 
 interface UserProfile {
   id: string;
@@ -258,11 +259,15 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           {activeTab === 'settings' && (
             <div className="settings-section">
               <div className="settings-group">
-                <h4>Preferences</h4>
-                <label className="setting-item">
-                  <span>Dark Mode</span>
-                  <input type="checkbox" className="toggle" />
-                </label>
+                <h4>Appearance</h4>
+                <div className="setting-item appearance-setting">
+                  <span>Theme</span>
+                  <DayNightToggle />
+                </div>
+              </div>
+
+              <div className="settings-group">
+                <h4>Notifications</h4>
                 <label className="setting-item">
                   <span>Email Notifications</span>
                   <input type="checkbox" className="toggle" defaultChecked />

@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { input } = req.query;
+  const { input, lat, lon } = req.query;
 
   if (!input || typeof input !== 'string') {
     return res.status(400).json({ error: 'Missing input parameter' });
@@ -27,13 +27,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Build params with location bias if provided
+    const params: Record<string, string> = {
+      input,
+      key: apiKey,
+      // Allow searching by establishment names, addresses, and regions
+      types: 'establishment'
+    };
+
+    // Add location bias if coordinates provided (50km radius)
+    if (lat && lon && typeof lat === 'string' && typeof lon === 'string') {
+      params.location = `${lat},${lon}`;
+      params.radius = '50000'; // 50km radius for location bias
+    }
+
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
-      new URLSearchParams({
-        input,
-        key: apiKey,
-        types: 'establishment|geocode'
-      })
+      new URLSearchParams(params)
     );
 
     if (!response.ok) {
@@ -42,10 +52,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json();
     
-    // Return simplified predictions
+    // If no results with establishment type, try without type restriction
+    if ((!data.predictions || data.predictions.length === 0)) {
+      const fallbackParams = { ...params };
+      delete fallbackParams.types;
+      
+      const fallbackResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
+        new URLSearchParams(fallbackParams)
+      );
+      
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData.predictions && fallbackData.predictions.length > 0) {
+          return res.status(200).json({
+            predictions: fallbackData.predictions.map((p: any) => ({
+              description: p.description,
+              placeId: p.place_id,
+              mainText: p.structured_formatting?.main_text,
+              secondaryText: p.structured_formatting?.secondary_text
+            }))
+          });
+        }
+      }
+    }
+    
+    // Return simplified predictions with more details
     const predictions = (data.predictions || []).map((p: any) => ({
       description: p.description,
-      placeId: p.place_id
+      placeId: p.place_id,
+      mainText: p.structured_formatting?.main_text,
+      secondaryText: p.structured_formatting?.secondary_text
     }));
 
     return res.status(200).json({ predictions });

@@ -349,3 +349,87 @@
     box-shadow: 3px 3px 0 #1A1A1A;
   }
 }
+
+/* 
+ * Auth page should ALWAYS be in light mode for brand consistency
+ * Users should see a clean, professional auth experience
+ */
+.auth-page {
+  background: #FAFAFA !important;
+}
+
+/* Override any dark mode styles - keep light mode */
+.dark-mode .auth-page {
+  background: #FAFAFA !important;
+}
+
+.dark-mode .auth-card {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: 8px 8px 0 #1A1A1A;
+}
+
+.dark-mode .auth-title {
+  color: #1A1A1A;
+}
+
+.dark-mode .auth-subtitle {
+  color: #666;
+}
+
+.dark-mode .auth-decor {
+  border-color: #1A1A1A;
+  box-shadow: 6px 6px 0 #1A1A1A;
+}
+
+.dark-mode .back-btn-floating {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: 4px 4px 0 #1A1A1A;
+  color: #1A1A1A;
+}
+
+.dark-mode .google-btn {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: 4px 4px 0 #1A1A1A;
+  color: #1A1A1A;
+}
+
+.dark-mode .auth-divider::before,
+.dark-mode .auth-divider::after {
+  background: #1A1A1A;
+}
+
+.dark-mode .auth-divider span {
+  color: #666;
+}
+
+.dark-mode .form-group label {
+  color: #1A1A1A;
+}
+
+.dark-mode .form-group input {
+  background: #FFF;
+  border-color: #1A1A1A;
+  color: #1A1A1A;
+}
+
+.dark-mode .form-group input::placeholder {
+  color: #999;
+}
+
+.dark-mode .submit-btn {
+  border-color: #1A1A1A;
+  box-shadow: 4px 4px 0 #1A1A1A;
+}
+
+.dark-mode .auth-switch span {
+  color: #666;
+}
+
+.dark-mode .auth-error {
+  background: #FFE5E5;
+  border-color: #1A1A1A;
+  color: #DC2626;
+}

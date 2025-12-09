@@ -82,10 +82,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [pickerView, setPickerView] = useState<'months' | 'years'>('months');
+  // Track the display month/year separately from weekStart (which may be in previous month)
+  const [displayMonth, setDisplayMonth] = useState(today.getMonth());
+  const [displayYear, setDisplayYear] = useState(today.getFullYear());
+  // Hover preview state
+  const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns when clicking outside
+  // Close dropdowns when clicking outside - use 'click' instead of 'mousedown' 
+  // to avoid interfering with button click handlers
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -97,22 +103,31 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Navigate to a specific month
+  // Month names for picker - defined as constant outside to avoid recreation
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Navigate to a specific month/year
   const goToMonth = (year: number, month: number) => {
     const d = new Date(year, month, 1);
     // Find the Sunday of that week
     d.setDate(d.getDate() - d.getDay());
     setWeekStart(d);
+    // Store the actual month/year the user selected (for display)
+    setDisplayMonth(month);
+    setDisplayYear(year);
     setShowDatePicker(false);
     setPickerView('months');
+    setHoveredMonth(null);
   };
 
-  // Month names for picker
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Handle month button click - uses current pickerYear state
+  const handleMonthClick = (monthIndex: number) => {
+    goToMonth(pickerYear, monthIndex);
+  };
 
   // Generate year range for picker
   const currentYear = new Date().getFullYear();
@@ -131,18 +146,30 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     const d = new Date(today);
     d.setDate(d.getDate() - d.getDay());
     setWeekStart(d);
+    setDisplayMonth(today.getMonth());
+    setDisplayYear(today.getFullYear());
   };
 
   const goPrev = () => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() - 7);
     setWeekStart(d);
+    // Update display month/year based on new week's Wednesday (middle of week)
+    const midWeek = new Date(d);
+    midWeek.setDate(d.getDate() + 3);
+    setDisplayMonth(midWeek.getMonth());
+    setDisplayYear(midWeek.getFullYear());
   };
 
   const goNext = () => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + 7);
     setWeekStart(d);
+    // Update display month/year based on new week's Wednesday (middle of week)
+    const midWeek = new Date(d);
+    midWeek.setDate(d.getDate() + 3);
+    setDisplayMonth(midWeek.getMonth());
+    setDisplayYear(midWeek.getFullYear());
   };
 
   // Filter events for selected calendars
@@ -335,7 +362,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return result;
   };
 
-  const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  // Show hover preview or actual display month/year
+  const monthLabel = useMemo(() => {
+    if (hoveredMonth !== null && showDatePicker) {
+      // Show preview of hovered month
+      return `${MONTHS[hoveredMonth]} ${pickerYear}`;
+    }
+    // Show the actual selected month/year
+    return `${MONTHS[displayMonth]} ${displayYear}`;
+  }, [hoveredMonth, showDatePicker, pickerYear, displayMonth, displayYear, MONTHS]);
 
   const selectedCalendarCount = calendars.filter(c => c.selected).length;
 
@@ -369,12 +404,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       <div className="wc-top-bar">
         {/* Month Label - left (clickable date picker) */}
         <div className="wc-date-picker-wrapper" ref={datePickerRef}>
-          <button 
-            className="wc-month-label"
+          <button
+            className={`wc-month-label ${hoveredMonth !== null && showDatePicker ? 'previewing' : ''}`}
             onClick={() => {
               setShowDatePicker(!showDatePicker);
-              setPickerYear(weekStart.getFullYear());
+              setPickerYear(displayYear);
               setPickerView('months');
+              setHoveredMonth(null);
             }}
           >
             {monthLabel}
@@ -413,15 +449,21 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               
               {/* Month grid or Year grid */}
               {pickerView === 'months' ? (
-                <div className="wc-picker-grid wc-months-grid">
+                <div 
+                  className="wc-picker-grid wc-months-grid"
+                  onMouseLeave={() => setHoveredMonth(null)}
+                >
                   {MONTHS.map((month, idx) => {
                     const isCurrentMonth = idx === today.getMonth() && pickerYear === today.getFullYear();
-                    const isSelectedMonth = idx === weekStart.getMonth() && pickerYear === weekStart.getFullYear();
+                    const isSelectedMonth = idx === displayMonth && pickerYear === displayYear;
+                    const isHovered = hoveredMonth === idx;
                     return (
                       <button
-                        key={month}
-                        className={`wc-picker-item ${isCurrentMonth ? 'current' : ''} ${isSelectedMonth ? 'selected' : ''}`}
-                        onClick={() => goToMonth(pickerYear, idx)}
+                        key={`month-${idx}`}
+                        type="button"
+                        className={`wc-picker-item ${isCurrentMonth ? 'current' : ''} ${isSelectedMonth ? 'selected' : ''} ${isHovered ? 'hovered' : ''}`}
+                        onClick={() => handleMonthClick(idx)}
+                        onMouseEnter={() => setHoveredMonth(idx)}
                       >
                         {month}
                       </button>
@@ -435,7 +477,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     const isSelectedYear = year === pickerYear;
                     return (
                       <button
-                        key={year}
+                        key={`year-${year}`}
+                        type="button"
                         className={`wc-picker-item ${isCurrentYear ? 'current' : ''} ${isSelectedYear ? 'selected' : ''}`}
                         onClick={() => {
                           setPickerYear(year);

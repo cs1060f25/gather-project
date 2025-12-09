@@ -775,15 +775,16 @@
   border-color: #22c55e;
 }
 
+/* Cancel button should stay red in dark mode */
 .dark-mode .cep-cancel-btn {
-  border-color: #555;
-  color: #AAA;
-  background: #333;
+  background: #DC2626;
+  color: #FFF;
+  border-color: #DC2626;
 }
 
 .dark-mode .cep-cancel-btn:hover {
-  background: #444;
-  color: #F0F0F0;
+  background: #B91C1C;
+  border-color: #B91C1C;
 }
 
 .dark-mode .cep-submit {
@@ -1621,11 +1622,20 @@
 }
 
 .dark-mode .cep-clock-hour {
+  background: #333;
   color: #F0F0F0;
+  border-color: #555;
 }
 
 .dark-mode .cep-clock-hour:hover {
   background: rgba(34, 197, 94, 0.3);
+  border-color: #22c55e;
+}
+
+.dark-mode .cep-clock-hour.selected {
+  background: #22c55e;
+  color: #FFF;
+  border-color: #22c55e;
 }
 
 .dark-mode .cep-clock-hand.hour-hand {

@@ -154,8 +154,31 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
   
+  // User location from IP (for better location suggestions)
+  const [userLocation, setUserLocation] = useState('');
+  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  
+  // Load user's location from IP on mount
+  useEffect(() => {
+    const loadUserLocation = async () => {
+      try {
+        const response = await fetch('/api/get-location');
+        if (response.ok) {
+          const data = await response.json();
+          setUserLocation(data.locationString || '');
+          if (data.lat && data.lon) {
+            setUserCoords({ lat: data.lat, lon: data.lon });
+          }
+        }
+      } catch (err) {
+        console.log('Could not load user location from IP');
+      }
+    };
+    loadUserLocation();
+  }, []);
 
   // Close picker when clicking outside or pressing Escape
   useEffect(() => {
@@ -385,7 +408,13 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
     // Otherwise, try Google Places API via serverless function
     try {
-      const response = await fetch(`/api/places-autocomplete?input=${encodeURIComponent(value)}`);
+      // Build URL with location bias if we have user coordinates
+      let apiUrl = `/api/places-autocomplete?input=${encodeURIComponent(value)}`;
+      if (userCoords) {
+        apiUrl += `&lat=${userCoords.lat}&lon=${userCoords.lon}`;
+      }
+      
+      const response = await fetch(apiUrl);
       
       if (response.ok) {
         const data = await response.json();
@@ -487,14 +516,35 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     setIsEditing(true);
   };
 
+  // Check if form is complete (all required fields filled)
+  const isFormComplete = useMemo(() => {
+    // Check event name
+    if (!eventName.trim()) return false;
+    
+    // Check that at least one participant is added
+    if (participants.length === 0) return false;
+    
+    // Check that all 3 availability options are fully filled
+    for (const opt of availabilityOptions) {
+      if (!opt.day || !opt.time || !opt.duration) {
+        return false;
+      }
+    }
+    
+    return true;
+  }, [eventName, participants.length, availabilityOptions]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventName.trim()) return;
+    if (!isFormComplete) return;
+
+    // Use TBD if no location specified
+    const finalLocation = location.trim() || 'TBD';
 
     onSubmit({
       eventName,
       description,
-      location,
+      location: finalLocation,
       participants,
       availabilityOptions
     });
@@ -526,10 +576,20 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       
       const contactNames = contacts.map(c => c.name);
       
+      // Extract busy slots from calendar events for the next 2 weeks
+      const busySlots = events
+        .filter(ev => ev.time && ev.date) // Only events with specific times
+        .map(ev => ({
+          date: ev.date,
+          startTime: ev.time,
+          endTime: ev.endTime || ev.time,
+          title: ev.title
+        }));
+      
       // Include current form state in the message for context preservation
       const contextMessage = `Current form state: Event="${eventName}", Location="${location}", Description="${description}", Participants=${JSON.stringify(participants)}, Options=${JSON.stringify(availabilityOptions.map(o => ({ day: o.day, time: o.time, duration: o.duration })))}. User message: ${message}`;
       
-      const parsed = await parseSchedulingMessage(contextMessage, contactNames);
+      const parsed = await parseSchedulingMessage(contextMessage, contactNames, busySlots, userLocation);
       
       if (parsed.isSchedulingRequest) {
         // Only update fields that the user explicitly wants to change
@@ -1121,20 +1181,15 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           )}
         </div>
 
-        {/* Submit Button - requires event name, at least 1 participant, and at least 1 availability option */}
+        {/* Submit Button - requires event name and all 3 availability options filled */}
         <button 
           type="submit" 
           className="cep-submit"
-          disabled={
-            !eventName.trim() || 
-            participants.length === 0 || 
-            !availabilityOptions.some(opt => opt.day && opt.time) ||
-            isLoading
-          }
+          disabled={!isFormComplete || isLoading}
           title={
             !eventName.trim() ? 'Enter an event name' :
             participants.length === 0 ? 'Add at least one participant' :
-            !availabilityOptions.some(opt => opt.day && opt.time) ? 'Add at least one availability option' :
+            !availabilityOptions.every(opt => opt.day && opt.time && opt.duration) ? 'Fill in all 3 availability options (date, time, and duration)' :
             'Create event'
           }
         >

@@ -830,3 +830,180 @@
     padding: 0 1rem;
   }
 }
+
+/* 
+ * Marketing/Landing page should ALWAYS be in light mode
+ * Override any dark mode that might be set on :root or body
+ * This ensures a consistent brand experience for new visitors
+ */
+.g-page {
+  /* Force light mode colors regardless of dark-mode class */
+  background: #FAFAFA !important;
+  color: #1A1A1A !important;
+}
+
+.dark-mode .g-page,
+.dark-mode .g-page * {
+  /* Reset any inherited dark mode styles */
+}
+
+/* Ensure all marketing page elements stay light */
+.dark-mode .g-nav {
+  background: #FAFAFA;
+  border-color: #1A1A1A;
+}
+
+.dark-mode .g-logo {
+  color: #1A1A1A;
+}
+
+.dark-mode .g-nav-links a {
+  color: #1A1A1A;
+}
+
+.dark-mode .g-btn-outline {
+  background: #FFF;
+  border-color: #1A1A1A;
+  color: #1A1A1A;
+  box-shadow: var(--g-shadow-sm);
+}
+
+.dark-mode .g-btn-primary {
+  border-color: #1A1A1A;
+  box-shadow: var(--g-shadow-sm);
+}
+
+.dark-mode .g-hero {
+  background: #FAFAFA;
+}
+
+.dark-mode .g-hero-title {
+  color: #1A1A1A;
+}
+
+.dark-mode .g-hero-desc {
+  color: #666;
+}
+
+.dark-mode .g-hero-visual {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: var(--g-shadow-lg);
+}
+
+.dark-mode .g-proof {
+  background: #1A1A1A;
+  border-color: #1A1A1A;
+}
+
+.dark-mode .proof-stat {
+  color: #FAFAFA;
+}
+
+.dark-mode .proof-label {
+  color: #CCC;
+}
+
+.dark-mode .g-features {
+  background: #FAFAFA;
+}
+
+.dark-mode .g-section-title {
+  color: #1A1A1A;
+}
+
+.dark-mode .g-section-desc {
+  color: #666;
+}
+
+.dark-mode .g-feature-card {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: var(--g-shadow);
+}
+
+.dark-mode .g-feature-card h3 {
+  color: #1A1A1A;
+}
+
+.dark-mode .g-feature-card p {
+  color: #666;
+}
+
+.dark-mode .g-steps {
+  background: #f0f0f0;
+  border-color: #1A1A1A;
+}
+
+.dark-mode .g-step {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: var(--g-shadow-sm);
+}
+
+.dark-mode .step-num {
+  background: var(--g-green);
+  border-color: #1A1A1A;
+  color: #FFF;
+}
+
+.dark-mode .step-line {
+  background: #1A1A1A;
+}
+
+.dark-mode .step-content h3 {
+  color: #1A1A1A;
+}
+
+.dark-mode .step-content p {
+  color: #666;
+}
+
+.dark-mode .g-cta {
+  background: #FAFAFA;
+}
+
+.dark-mode .g-cta-card {
+  background: var(--g-green);
+  border-color: #1A1A1A;
+  box-shadow: var(--g-shadow-lg);
+}
+
+.dark-mode .g-cta-card h2 {
+  color: #FFF;
+}
+
+.dark-mode .g-cta-card p {
+  color: rgba(255,255,255,0.9);
+}
+
+.dark-mode .g-footer {
+  background: #1A1A1A;
+  border-color: #1A1A1A;
+}
+
+.dark-mode .g-footer a {
+  color: #FAFAFA;
+}
+
+.dark-mode .g-founders {
+  background: #FAFAFA;
+}
+
+.dark-mode .g-founder-card {
+  background: #FFF;
+  border-color: #1A1A1A;
+  box-shadow: var(--g-shadow);
+}
+
+.dark-mode .founder-info h3 {
+  color: #1A1A1A;
+}
+
+.dark-mode .founder-role {
+  color: #666;
+}
+
+.dark-mode .founder-bio {
+  color: #444;
+}
