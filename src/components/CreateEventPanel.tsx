@@ -101,10 +101,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [participants, setParticipants] = useState<string[]>([]);
   const [participantInput, setParticipantInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // Start with blank availability options - AI will populate them intelligently
   const [availabilityOptions, setAvailabilityOptions] = useState<AvailabilityOption[]>([
-    { id: '1', day: getDateOptions()[1].value, time: '10:00', duration: 60, color: OPTION_COLORS[0] },
-    { id: '2', day: getDateOptions()[2].value, time: '14:00', duration: 60, color: OPTION_COLORS[1] },
-    { id: '3', day: getDateOptions()[3].value, time: '16:00', duration: 60, color: OPTION_COLORS[2] }
+    { id: '1', day: '', time: '', duration: 60, color: OPTION_COLORS[0] },
+    { id: '2', day: '', time: '', duration: 60, color: OPTION_COLORS[1] },
+    { id: '3', day: '', time: '', duration: 60, color: OPTION_COLORS[2] }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -219,14 +220,14 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       availabilityOptions
     });
 
-    // Reset form
+    // Reset form to blank state
     setEventName('');
     setLocation('');
     setParticipants([]);
     setAvailabilityOptions([
-      { id: '1', day: dateOptions[1].value, time: '10:00', duration: 60, color: OPTION_COLORS[0] },
-      { id: '2', day: dateOptions[2].value, time: '14:00', duration: 60, color: OPTION_COLORS[1] },
-      { id: '3', day: dateOptions[3].value, time: '16:00', duration: 60, color: OPTION_COLORS[2] }
+      { id: '1', day: '', time: '', duration: 60, color: OPTION_COLORS[0] },
+      { id: '2', day: '', time: '', duration: 60, color: OPTION_COLORS[1] },
+      { id: '3', day: '', time: '', duration: 60, color: OPTION_COLORS[2] }
     ]);
     setIsEditing(false);
   };
@@ -486,11 +487,22 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button - requires event name, at least 1 participant, and at least 1 availability option */}
         <button 
           type="submit" 
           className="cep-submit"
-          disabled={!eventName.trim() || isLoading}
+          disabled={
+            !eventName.trim() || 
+            participants.length === 0 || 
+            !availabilityOptions.some(opt => opt.day && opt.time) ||
+            isLoading
+          }
+          title={
+            !eventName.trim() ? 'Enter an event name' :
+            participants.length === 0 ? 'Add at least one participant' :
+            !availabilityOptions.some(opt => opt.day && opt.time) ? 'Add at least one availability option' :
+            'Create event'
+          }
         >
           {isLoading ? (
             <span className="cep-loading">

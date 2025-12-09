@@ -410,7 +410,16 @@ export const Dashboard: React.FC = () => {
         }
         
         if (invites.length > 0) {
-          await sendInviteEmails(invites);
+          // Pass all availability options to the email
+          const allSuggestedTimes = data.availabilityOptions
+            .filter(opt => opt.day && opt.time) // Only include filled options
+            .map(opt => ({
+              day: opt.day,
+              time: opt.time,
+              duration: opt.duration
+            }));
+          
+          await sendInviteEmails(invites, allSuggestedTimes);
           invites.forEach(invite => {
             console.log(`Invite for ${invite.invitee_email}: ${window.location.origin}/invite/${invite.token}`);
           });

@@ -126,23 +126,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         messages: [
           {
             role: 'system',
-            content: `You are a scheduling assistant. Parse the user's message and extract scheduling information.
+            content: `You are a smart scheduling assistant. Parse the user's message and extract scheduling information. Think carefully about what makes sense for the type of event.
+
 ${dateContext}
 
 Known contacts: ${contactNames.join(', ') || 'none'}
 
+**IMPORTANT CONTEXT RULES:**
+- For MEALS (breakfast, brunch, lunch, dinner): suggest appropriate times:
+  - Breakfast: 08:00-10:00
+  - Brunch: 10:00-12:00  
+  - Lunch: 11:30-13:30
+  - Dinner: 18:00-21:00
+- For MEALS: location should be a restaurant/cafe type, NOT "virtual" unless explicitly stated
+- For WORK meetings/calls: suggest business hours (09:00-17:00), location can be "virtual" or office
+- For SOCIAL activities (hangout, party, drinks): suggest evening times (17:00-22:00)
+- If location is NOT specified and NOT a video call: use "TBD"
+- Only use "virtual" if explicitly mentioned (zoom, video call, online, etc.)
+
 Return a JSON object with these fields:
 - isSchedulingRequest: boolean (true if this is a request to schedule something)
-- title: string (the event title/purpose)
-- participants: string[] (names or emails of people mentioned, match to known contacts if possible)
-- suggestedDate: string (ISO date YYYY-MM-DD, interpret relative dates like "tomorrow", "next Tuesday")
-- suggestedTime: string (24h format HH:MM, interpret times like "2pm" = "14:00", "morning" = "09:00", "afternoon" = "14:00", "evening" = "18:00")
-- duration: number (in minutes, default 60 if not specified)
-- location: string (place if mentioned, or "virtual" for video calls)
-- priority: "must" | "should" | "maybe" (based on urgency words like "urgent", "important", "if possible")
+- title: string (clean, concise event title)
+- participants: string[] (names or emails mentioned, match to known contacts if possible)
+- suggestedDate: string (ISO date YYYY-MM-DD, interpret relative dates)
+- suggestedTime: string (24h format HH:MM - MUST make sense for the event type!)
+- duration: number (in minutes - meals typically 60-90min, meetings 30-60min)
+- location: string (specific place if mentioned, "TBD" if unknown, "virtual" ONLY for video calls)
+- priority: "must" | "should" | "maybe"
 - notes: string (any additional context)
 
-Only include fields that are explicitly mentioned or can be reasonably inferred.`
+Think step by step: What type of event is this? What time makes sense? What location makes sense?`
           },
           {
             role: 'user',

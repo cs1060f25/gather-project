@@ -275,6 +275,24 @@ export const EventPage: React.FC = () => {
           
           if (response.ok) {
             console.log('Google Calendar event created successfully');
+            
+            // Delete the Gatherly event from Supabase since it's now on GCal
+            await supabase
+              .from('gatherly_events')
+              .delete()
+              .eq('id', event.id);
+            
+            // Delete from localStorage
+            const storedEvents = localStorage.getItem('gatherly_created_events');
+            if (storedEvents) {
+              const events: GatherlyEvent[] = JSON.parse(storedEvents);
+              const filtered = events.filter(e => e.id !== event.id);
+              localStorage.setItem('gatherly_created_events', JSON.stringify(filtered));
+            }
+            
+            // Navigate back to events page
+            navigate('/events');
+            return;
           } else {
             console.error('Failed to create Google Calendar event');
           }
@@ -286,7 +304,7 @@ export const EventPage: React.FC = () => {
       console.error('Error confirming event:', err);
     }
     
-    // Update localStorage
+    // Fallback: Update localStorage if GCal creation failed
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
       const events: GatherlyEvent[] = JSON.parse(stored);
