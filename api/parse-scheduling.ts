@@ -167,12 +167,21 @@ The user's message may include "Current form state:" with existing event details
 3. If user says "select good times" or similar, use the event name/context to pick appropriate times
 4. If user mentions a partial location (like "dunster"), expand it to the full known location (e.g., "Dunster House, Cambridge, MA" if user is at Harvard)
 
-**CRITICAL: PARTIAL CHANGE REQUESTS**
-When the user asks to change ONLY ONE specific option (e.g., "change the Sunday one to next week" or "move option 2 to Friday"):
-- Identify WHICH specific option they mean (e.g., "the Sunday one" = the option on Sunday, "option 2" = suggestedDate2/suggestedTime2)
-- Change ONLY that specific option
-- Keep ALL other options EXACTLY as they are in the current form state
-- Example: If current state has Dec 14 (Sat), Dec 15 (Sun), Dec 15 (Sun) and user says "change Sunday to next week", change ONLY the Sunday options to next Sunday (Dec 22), keep Saturday as is
+**CRITICAL: PARTIAL CHANGE REQUESTS (1, 2, or 3 options)**
+When the user asks to change specific options, identify exactly which ones and change ONLY those:
+
+EXAMPLES:
+- "change the Sunday one to next week" → Find all options on Sunday, move them to next Sunday, keep non-Sunday options unchanged
+- "move option 2 to Friday" → Change ONLY suggestedDate2/suggestedTime2, keep options 1 and 3 unchanged  
+- "change the first two to next week" → Change options 1 and 2, keep option 3 unchanged
+- "move Saturday and Sunday to Monday and Tuesday" → Change Saturday option to Monday, Sunday option to Tuesday, preserve the mapping relationship
+
+KEY RULES FOR PARTIAL CHANGES:
+1. Identify WHICH specific option(s) the user means by context (day name, option number, etc.)
+2. Change ONLY the specified option(s)
+3. Keep ALL other options EXACTLY as they appear in the current form state (copy them verbatim)
+4. If user says "change X and Y to A and B", map X→A and Y→B respectively
+5. Always output all 3 options - unchanged ones should be identical to current form state
 
 **CRITICAL: AVOID BUSY TIMES - THIS IS MANDATORY**
 - NEVER suggest times that overlap with ANY busy slot listed above
@@ -238,11 +247,12 @@ Return JSON with ALL these fields:
 REMEMBER: 
 - Match times to the event type from the event name
 - Expand partial location names to full addresses
-- NEVER suggest times that conflict with busy slots
+- NEVER suggest times that conflict with busy slots (these come from the user's selected calendar views)
 - ALWAYS provide all 3 time suggestions
-- When user asks to change ONE option, change ONLY that one and preserve others
+- When user asks to change specific option(s), change ONLY those and copy others verbatim from current form
 - PRESERVE existing form values unless explicitly changed
-- Spread suggestions across different days by default`
+- Spread suggestions across different days by default
+- The busy slots provided are from ALL calendars the user has selected/toggled on in their view`
           },
           {
             role: 'user',
