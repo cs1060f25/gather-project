@@ -150,15 +150,13 @@ export const InvitePage: React.FC = () => {
   };
 
   // Move to next step in step-by-step flow
-  // Pass the current response to handle state timing issues
-  const handleNextStep = (currentResponse?: { index: number; response: TimeOptionResponse }) => {
+  // No longer auto-submits - user must click submit button
+  const handleNextStep = (_currentResponse?: { index: number; response: TimeOptionResponse }) => {
     const timeOptions = eventData?.options || [];
     if (currentStep < timeOptions.length - 1) {
       setCurrentStep(prev => prev + 1);
-    } else {
-      // All options reviewed, submit - pass the last response to ensure it's included
-      handleFinalSubmit(currentResponse);
     }
+    // Don't auto-submit - user clicks the submit button when ready
   };
 
   // Submit final response based on individual selections
@@ -236,12 +234,6 @@ export const InvitePage: React.FC = () => {
     );
   };
 
-  // Check if all time options have been responded to
-  const allOptionsResponded = () => {
-    const timeOptions = eventData?.options || [];
-    return timeOptions.every((_, idx) => timeResponses[idx] !== undefined && timeResponses[idx] !== null);
-  };
-
   if (loading) {
     return (
       <div className="invite-page">
@@ -270,8 +262,9 @@ export const InvitePage: React.FC = () => {
     );
   }
 
-  // Check if event is cancelled
-  if (eventData?.status === 'cancelled') {
+  // Check if event is cancelled or confirmed (no longer accepting responses)
+  if (eventData?.status === 'cancelled' || eventData?.status === 'confirmed') {
+    const isCancelled = eventData.status === 'cancelled';
     return (
       <div className="invite-page">
         <div className="invite-container">
@@ -289,15 +282,24 @@ export const InvitePage: React.FC = () => {
             </div>
           </header>
           <main className="invite-main">
-            <div className="invite-cancelled">
+            <div className={`invite-cancelled ${isCancelled ? '' : 'confirmed'}`}>
               <div className="cancelled-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M15 9l-6 6M9 9l6 6"/>
-                </svg>
+                {isCancelled ? (
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M15 9l-6 6M9 9l6 6"/>
+                  </svg>
+                ) : (
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <path d="M22 4L12 14.01l-3-3"/>
+                  </svg>
+                )}
               </div>
-              <h1>Event Cancelled</h1>
-              <p>This event has been cancelled by the organizer.</p>
+              <h1>{isCancelled ? 'Event Cancelled' : 'Event Scheduled'}</h1>
+              <p>{isCancelled 
+                ? 'This event has been cancelled by the organizer.' 
+                : 'This event has already been scheduled. Responses are no longer being accepted.'}</p>
               {invite && (
                 <div className="cancelled-event-info">
                   <h3>{invite.event_title}</h3>
@@ -459,7 +461,7 @@ export const InvitePage: React.FC = () => {
                             onClick={() => setCurrentStep(prev => prev - 1)}
                             type="button"
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <path d="M15 18l-6-6 6-6"/>
                             </svg>
                             Back
@@ -467,15 +469,22 @@ export const InvitePage: React.FC = () => {
                         )}
                         <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
                       </div>
-                      <div className="step-dots">
+                      <div className="step-circles">
                         {timeOptions.map((_, idx) => (
                           <button 
                             key={idx} 
-                            className={`step-dot ${idx === currentStep ? 'active' : ''} ${timeResponses[idx] ? 'answered' : ''}`}
-                            onClick={() => setCurrentStep(idx)}
+                            className={`step-circle ${idx <= currentStep ? 'filled' : ''} ${timeResponses[idx] ? 'answered' : ''}`}
+                            onClick={() => idx <= currentStep ? setCurrentStep(idx) : null}
                             type="button"
-                            title={`Go to option ${idx + 1}`}
-                          />
+                            title={idx <= currentStep ? `Go to option ${idx + 1}` : `Option ${idx + 1}`}
+                            disabled={idx > currentStep}
+                          >
+                            {timeResponses[idx] && (
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                                <path d="M20 6L9 17l-5-5"/>
+                              </svg>
+                            )}
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -560,8 +569,8 @@ export const InvitePage: React.FC = () => {
                       </div>
                     )}
                     
-                    {/* Manual submit button if all answered */}
-                    {allOptionsResponded() && (
+                    {/* Submit button - shown after answering last option */}
+                    {currentStep === timeOptions.length - 1 && timeResponses[currentStep] && (
                       <button
                         className="submit-responses-btn"
                         onClick={() => handleFinalSubmit()}

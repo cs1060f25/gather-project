@@ -74,6 +74,205 @@
 .header-right {
   flex: 1;
   justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Notification Bell */
+.notification-bell-container {
+  position: relative;
+}
+
+.notification-bell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease;
+}
+
+.notification-bell:hover {
+  transform: scale(1.05);
+}
+
+.notification-bell svg {
+  color: #1A1A1A;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: #fff;
+  border: 3px solid #1A1A1A;
+  box-shadow: 6px 6px 0 #1A1A1A;
+  z-index: 200;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid #e5e5e5;
+}
+
+.notification-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.mark-all-read {
+  background: none;
+  border: none;
+  color: #22c55e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mark-all-read:hover {
+  text-decoration: underline;
+}
+
+.notification-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.no-notifications {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 0.5rem;
+}
+
+.no-notifications p {
+  color: #999;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.notification-item:hover {
+  background: #f8f8f8;
+}
+
+.notification-item.unread {
+  background: #f0fdf4;
+}
+
+.notification-item.unread:hover {
+  background: #dcfce7;
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.notification-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.notification-message {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.3;
+}
+
+.notification-time {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+/* Dark mode for notifications */
+.dark-mode .notification-bell svg {
+  color: #FFF;
+}
+
+.dark-mode .notification-dropdown {
+  background: #2A2A2A;
+  border-color: #FFF;
+  box-shadow: 6px 6px 0 #FFF;
+}
+
+.dark-mode .notification-header {
+  border-bottom-color: #444;
+}
+
+.dark-mode .notification-header h3 {
+  color: #FFF;
+}
+
+.dark-mode .notification-item {
+  border-bottom-color: #333;
+}
+
+.dark-mode .notification-item:hover {
+  background: #333;
+}
+
+.dark-mode .notification-item.unread {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.dark-mode .notification-title {
+  color: #FFF;
+}
+
+.dark-mode .notification-message {
+  color: #aaa;
 }
 
 .dashboard-logo {
@@ -442,6 +641,69 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     border-left: none;
     box-shadow: none;
   }
+}
+
+/* Calendar Not Connected Overlay */
+.calendar-not-connected-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(2px);
+}
+
+.cnc-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.cnc-content svg {
+  margin-bottom: 1rem;
+}
+
+.cnc-content p {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0 0 1rem;
+}
+
+.cnc-connect-btn {
+  padding: 0.75rem 1.5rem;
+  background: #22c55e;
+  color: #fff;
+  border: 3px solid #1A1A1A;
+  box-shadow: 4px 4px 0 #1A1A1A;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cnc-connect-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1A1A1A;
+}
+
+.dark-mode .calendar-not-connected-overlay {
+  background: rgba(26, 26, 26, 0.95);
+}
+
+.dark-mode .cnc-content p {
+  color: #aaa;
+}
+
+.dark-mode .cnc-connect-btn {
+  border-color: #FFF;
+  box-shadow: 4px 4px 0 #FFF;
+}
+
+/* Make create-event-section relative for overlay positioning */
+.create-event-section {
+  position: relative;
 }
 
 /* Calendar Connection Prompt */

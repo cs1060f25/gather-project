@@ -9,6 +9,9 @@
   border-left: 3px solid #1A1A1A;
   font-family: 'Space Grotesk', sans-serif;
   overflow: hidden;
+  position: relative;
+  min-width: 320px;
+  max-width: 600px;
 }
 
 .create-event-panel.editing {
@@ -33,47 +36,38 @@
   flex: 1;
 }
 
-/* Drag Handle */
-.cep-drag-handle {
+/* Resize Handle on left edge */
+.cep-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-right: 0.75rem;
-  cursor: grab;
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
-  flex-shrink: 0;
 }
 
-.cep-drag-handle:hover {
+.cep-resize-handle:hover .cep-resize-indicator,
+.create-event-panel.resizing .cep-resize-indicator {
   opacity: 1;
+  background: #22c55e;
 }
 
-.cep-drag-handle:active {
-  cursor: grabbing;
+.cep-resize-indicator {
+  width: 4px;
+  height: 48px;
+  background: #ccc;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-/* Draggable Panel States */
-.create-event-panel.dragged {
-  border: 3px solid #1A1A1A;
-  box-shadow: 8px 8px 0 #1A1A1A;
-  border-radius: 0;
-  overflow: auto;
-}
-
-.create-event-panel.dragging {
-  opacity: 0.95;
-  box-shadow: 12px 12px 0 rgba(26, 26, 26, 0.5);
-}
-
-.create-event-panel.dragged .cep-header {
-  cursor: grab;
-}
-
-.create-event-panel.dragging .cep-header {
-  cursor: grabbing;
+/* Resizing State */
+.create-event-panel.resizing {
+  user-select: none;
 }
 
 .cep-cancel-btn {

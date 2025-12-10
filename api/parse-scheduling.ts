@@ -167,6 +167,13 @@ The user's message may include "Current form state:" with existing event details
 3. If user says "select good times" or similar, use the event name/context to pick appropriate times
 4. If user mentions a partial location (like "dunster"), expand it to the full known location (e.g., "Dunster House, Cambridge, MA" if user is at Harvard)
 
+**CRITICAL: PARTIAL CHANGE REQUESTS**
+When the user asks to change ONLY ONE specific option (e.g., "change the Sunday one to next week" or "move option 2 to Friday"):
+- Identify WHICH specific option they mean (e.g., "the Sunday one" = the option on Sunday, "option 2" = suggestedDate2/suggestedTime2)
+- Change ONLY that specific option
+- Keep ALL other options EXACTLY as they are in the current form state
+- Example: If current state has Dec 14 (Sat), Dec 15 (Sun), Dec 15 (Sun) and user says "change Sunday to next week", change ONLY the Sunday options to next Sunday (Dec 22), keep Saturday as is
+
 **CRITICAL: AVOID BUSY TIMES - THIS IS MANDATORY**
 - NEVER suggest times that overlap with ANY busy slot listed above
 - A conflict occurs if your suggested time would START during OR OVERLAP with any busy period
@@ -197,6 +204,7 @@ The user's message may include "Current form state:" with existing event details
    - If user says "next weekend" - use Saturday/Sunday of the following week
 5. When users provide explicit dates or times, use them
 6. Modify ONLY fields the user clearly intends to change
+7. **SPREAD OUT SUGGESTIONS:** By default, spread the 3 time suggestions across DIFFERENT DAYS, not the same day back-to-back
 
 **LOCATION RULES:**
 - If specific place mentioned: expand partial names to full addresses (e.g., "dunster" → "Dunster House, Memorial Drive, Cambridge, MA")
@@ -207,7 +215,7 @@ The user's message may include "Current form state:" with existing event details
 **ALWAYS PROVIDE 3 TIME SUGGESTIONS:**
 - You MUST always provide suggestedDate, suggestedTime, suggestedDate2, suggestedTime2, suggestedDate3, suggestedTime3
 - Base times on the EVENT NAME context (Lunch = lunch times, Dinner = dinner times, etc.)
-- Space them out across different times and/or days
+- SPREAD THEM OUT: Prefer different days unless user specifically wants same-day options
 - VERIFY each suggestion doesn't conflict with busy times
 
 Return JSON with ALL these fields:
@@ -232,7 +240,9 @@ REMEMBER:
 - Expand partial location names to full addresses
 - NEVER suggest times that conflict with busy slots
 - ALWAYS provide all 3 time suggestions
-- PRESERVE existing form values unless explicitly changed`
+- When user asks to change ONE option, change ONLY that one and preserve others
+- PRESERVE existing form values unless explicitly changed
+- Spread suggestions across different days by default`
           },
           {
             role: 'user',

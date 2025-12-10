@@ -161,11 +161,14 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   
-  // Drag state
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [panelPosition, setPanelPosition] = useState<{ x: number; y: number } | null>(null);
-  const dragStartPos = useRef({ x: 0, y: 0 });
+  // Panel width state for horizontal resize
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const saved = localStorage.getItem('gatherly_panel_width');
+    return saved ? parseInt(saved) : 380;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(380);
   
   // Load user's location from IP on mount
   useEffect(() => {
@@ -373,73 +376,48 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [handleClickOutside]);
 
-  // Drag handlers
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    if (!panelRef.current) return;
-    
-    // Only start drag from the header area
-    const target = e.target as HTMLElement;
-    if (!target.closest('.cep-drag-handle')) return;
-    
+  // Horizontal resize handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    setIsDragging(true);
-    
-    const rect = panelRef.current.getBoundingClientRect();
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
-    
-    if (!panelPosition) {
-      // First drag - calculate initial position
-      setPanelPosition({ x: rect.left, y: rect.top });
-      setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    } else {
-      setDragOffset({ x: e.clientX - panelPosition.x, y: e.clientY - panelPosition.y });
-    }
-  }, [panelPosition]);
+    setIsResizing(true);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = panelWidth;
+  }, [panelWidth]);
 
-  const handleDragMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
     
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
+    // Calculate new width based on mouse movement (dragging left = wider, right = narrower)
+    const deltaX = resizeStartX.current - e.clientX;
+    const newWidth = Math.max(320, Math.min(600, resizeStartWidth.current + deltaX));
     
-    // Keep panel within viewport bounds
-    const maxX = window.innerWidth - 380; // Panel width
-    const maxY = window.innerHeight - 100; // Minimum visible height
-    
-    setPanelPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY))
-    });
-  }, [isDragging, dragOffset]);
+    setPanelWidth(newWidth);
+    localStorage.setItem('gatherly_panel_width', String(newWidth));
+  }, [isResizing]);
 
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
   }, []);
 
-  // Add/remove drag listeners
+  // Add/remove resize listeners
   useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleDragMove);
-      document.addEventListener('mouseup', handleDragEnd);
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
       document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'grabbing';
+      document.body.style.cursor = 'ew-resize';
     } else {
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     }
     
     return () => {
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
-  }, [isDragging, handleDragMove, handleDragEnd]);
-
-  // Reset position when panel closes/opens
-  const resetPanelPosition = () => {
-    setPanelPosition(null);
-  };
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
 
   // Cycle through placeholder suggestions
   useEffect(() => {
@@ -920,37 +898,27 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     }
   };
 
-  // Panel style with draggable position
-  const panelStyle: React.CSSProperties = panelPosition ? {
-    position: 'fixed',
-    left: panelPosition.x,
-    top: panelPosition.y,
-    zIndex: 100,
-    width: '380px',
-    maxHeight: '90vh',
-  } : {};
+  // Panel style with width
+  const panelStyle: React.CSSProperties = {
+    width: `${panelWidth}px`,
+  };
 
   return (
     <div 
       ref={panelRef} 
-      className={`create-event-panel ${isEditing ? 'editing' : ''} ${panelPosition ? 'dragged' : ''} ${isDragging ? 'dragging' : ''}`}
+      className={`create-event-panel ${isEditing ? 'editing' : ''} ${isResizing ? 'resizing' : ''}`}
       style={panelStyle}
-      onMouseDown={handleDragStart}
     >
+      {/* Resize handle on the left edge */}
+      <div 
+        className="cep-resize-handle"
+        onMouseDown={handleResizeStart}
+        title="Drag to resize"
+      >
+        <div className="cep-resize-indicator" />
+      </div>
+      
       <div className="cep-header">
-        <div className="cep-drag-handle" title="Drag to move">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="5" cy="5" r="1.5" fill="currentColor"/>
-            <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
-            <circle cx="19" cy="5" r="1.5" fill="currentColor"/>
-            <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
-            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-            <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
-            <circle cx="5" cy="19" r="1.5" fill="currentColor"/>
-            <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
-            <circle cx="19" cy="19" r="1.5" fill="currentColor"/>
-          </svg>
-        </div>
         <h2>Create Event</h2>
         <div className="cep-header-actions">
         {isEditing && (
@@ -967,7 +935,6 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   { id: '3', day: '', time: '', duration: 0, color: OPTION_COLORS[2] }
                 ]);
                 setIsEditing(false);
-                resetPanelPosition();
               }}
               type="button"
             >

@@ -95,14 +95,39 @@ export const AuthPage: React.FC = () => {
     setError(null);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/app`,
+      // First, check if this email is associated with a Google SSO account
+      // We do this by checking if the user exists and their provider
+      await supabase.auth.signInWithPassword({
+        email,
+        password: 'check-provider-dummy-password-that-will-fail'
+      });
+      
+      // If we get here without error, something unexpected happened
+      // But we're mainly catching the error to check the message
+    } catch (checkErr: any) {
+      // If the error indicates the user signed up with OAuth, show a message
+      if (checkErr?.message?.toLowerCase().includes('oauth') || 
+          checkErr?.message?.toLowerCase().includes('google')) {
+        setError('This email is linked to a Google account. Please sign in with Google instead.');
+        setIsLoading(false);
+        return;
+      }
+      // Otherwise, continue with password reset
+    }
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) throw error;
+      
+      // Always show success message for security (don't reveal if email exists)
       setResetEmailSent(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to send reset email');
+      // For security, show success even if email doesn't exist
+      // This prevents email enumeration attacks
+      setResetEmailSent(true);
     } finally {
       setIsLoading(false);
     }
