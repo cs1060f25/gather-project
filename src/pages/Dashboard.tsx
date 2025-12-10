@@ -8,6 +8,58 @@ import { CreateEventPanel, type CreateEventData, type AvailabilityOption } from 
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import './Dashboard.css';
 
+// Google Calendar connection prompt for non-OAuth users
+const CalendarConnectionPrompt: React.FC<{ onConnect: () => void; onDismiss: () => void }> = ({ onConnect, onDismiss }) => (
+  <div className="calendar-connection-prompt">
+    <div className="connection-prompt-content">
+      <div className="connection-prompt-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <h2>Connect Your Calendar</h2>
+      <p>To use Gatherly's scheduling features, you need to connect your Google Calendar.</p>
+      <p className="connection-benefits">This allows you to:</p>
+      <ul>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          See your availability at a glance
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Avoid scheduling conflicts
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Automatically add confirmed events
+        </li>
+      </ul>
+      <div className="connection-prompt-actions">
+        <button className="connect-google-btn" onClick={onConnect}>
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Connect Google Calendar
+        </button>
+        <button className="dismiss-btn" onClick={onDismiss}>
+          I'll do this later
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 // Gatherly Logo SVG Component
 const GatherlyLogo = ({ size = 28 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="-2 -2 28 28" fill="none">
@@ -95,6 +147,13 @@ export const Dashboard: React.FC = () => {
   const [selectedTimeOptions, setSelectedTimeOptions] = useState<TimeOption[]>([]);
   const [suggestedEventData] = useState<Partial<CreateEventData> | undefined>();
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Event detail modal state
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  
+  // Calendar connection prompt state
+  const [showCalendarPrompt, setShowCalendarPrompt] = useState(false);
+  const [hasCheckedCalendarConnection, setHasCheckedCalendarConnection] = useState(false);
 
   // Helper to categorize events
   const categorizeEvent = (title: string): 'work' | 'personal' | 'travel' => {
@@ -300,6 +359,57 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(syncInterval);
   }, [authUser, syncGoogleCalendars]);
 
+  // Check if user has Google Calendar connected
+  useEffect(() => {
+    if (!authUser || hasCheckedCalendarConnection) return;
+    
+    setHasCheckedCalendarConnection(true);
+    
+    // Check if user has a Google token
+    const googleToken = getGoogleToken();
+    
+    // Check if user signed in with Google (has google identity)
+    const isGoogleUser = authUser.app_metadata?.provider === 'google' || 
+                         authUser.identities?.some((i: { provider: string }) => i.provider === 'google');
+    
+    // If no Google token and not dismissed before, show prompt
+    if (!googleToken && !isGoogleUser) {
+      const dismissed = localStorage.getItem('gatherly_calendar_prompt_dismissed');
+      if (!dismissed) {
+        setShowCalendarPrompt(true);
+      }
+    }
+  }, [authUser, hasCheckedCalendarConnection]);
+
+  // Handle Google Calendar connection
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/app`,
+          scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      
+      if (error) {
+        console.error('Error connecting Google Calendar:', error);
+      }
+    } catch (err) {
+      console.error('Error connecting Google Calendar:', err);
+    }
+  };
+
+  // Dismiss calendar connection prompt
+  const handleDismissCalendarPrompt = () => {
+    setShowCalendarPrompt(false);
+    localStorage.setItem('gatherly_calendar_prompt_dismissed', 'true');
+  };
+
   // Load contacts from Supabase
   const loadContacts = async () => {
     if (!authUser) return;
@@ -324,51 +434,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Sync Google Contacts
-  const syncGoogleContacts = async () => {
-    const providerToken = getGoogleToken();
-    if (!providerToken) return;
-
-    try {
-      const response = await fetch(
-        'https://people.googleapis.com/v1/people/me/connections?' +
-        new URLSearchParams({
-          personFields: 'names,emailAddresses',
-          sortOrder: 'FIRST_NAME_ASCENDING',
-          pageSize: '200'
-        }),
-        { headers: { Authorization: `Bearer ${providerToken}` } }
-      );
-
-      if (!response.ok) {
-        if (response.status === 401) localStorage.removeItem('gatherly_google_token');
-        return;
-      }
-
-      const data = await response.json();
-      const googleContacts: Contact[] = (data.connections || [])
-        .map((c: any) => {
-          const email = c.emailAddresses?.[0]?.value;
-          const name = c.names?.[0]?.displayName || email;
-          if (!email) return null;
-          return { id: `g-${email}`, name, email, isGatherly: false };
-        })
-        .filter(Boolean);
-
-      setContacts(prev => {
-        const merged = [...prev];
-        googleContacts.forEach(gc => {
-          if (!merged.find(c => c.email === gc!.email)) {
-            merged.push(gc as Contact);
-          }
-        });
-        return merged;
-      });
-    } catch (error) {
-      console.error('Error syncing Google Contacts:', error);
-    }
-  };
-
+  
   // Load Gatherly events from Supabase
   const loadGatherlyEvents = async () => {
     if (!authUser) return;
@@ -576,10 +642,9 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Handle event click
+  // Handle event click - show event details modal
   const handleEventClick = (event: CalendarEvent) => {
-    console.log('Event clicked:', event);
-    // Could open event details modal
+    setSelectedEvent(event);
   };
 
   // Handle time slot click
@@ -825,6 +890,14 @@ export const Dashboard: React.FC = () => {
         </div>
       </main>
 
+      {/* Calendar Connection Prompt for non-Google OAuth users */}
+      {showCalendarPrompt && (
+        <CalendarConnectionPrompt 
+          onConnect={handleConnectGoogleCalendar}
+          onDismiss={handleDismissCalendarPrompt}
+        />
+      )}
+
       {/* Profile Sidebar - opens as overlay, not blocking right panel */}
       <ProfileSidebar 
         isOpen={showProfile}
@@ -834,8 +907,155 @@ export const Dashboard: React.FC = () => {
         onSignOut={handleSignOut}
         onAddContact={handleAddContact}
         onRemoveContact={handleRemoveContact}
-        onImportContacts={syncGoogleContacts}
       />
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div className="event-detail-modal-overlay" onClick={() => setSelectedEvent(null)}>
+          <div className="event-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="event-detail-close" onClick={() => setSelectedEvent(null)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+            
+            <div className="event-detail-header">
+              <div 
+                className="event-detail-color-bar" 
+                style={{ backgroundColor: selectedEvent.color || '#22c55e' }}
+              />
+              <div className="event-detail-title-section">
+                <h2>{selectedEvent.title}</h2>
+                {(selectedEvent.isGatherlyEvent || selectedEvent.isGatherlyScheduled) && (
+                  <span className="event-detail-badge gatherly">
+                    <svg width="14" height="14" viewBox="-2 -2 28 28" fill="none">
+                      <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" fill="none"/>
+                      <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" fill="none"/>
+                      <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2.5"/>
+                      <path d="M6 14V18" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"/>
+                      <path d="M4 16H8" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"/>
+                    </svg>
+                    Gatherly
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="event-detail-content">
+              {/* Date & Time */}
+              <div className="event-detail-row">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <div className="event-detail-info">
+                  <span className="event-detail-label">
+                    {selectedEvent.date ? new Date(selectedEvent.date + 'T00:00:00').toLocaleDateString('en-US', {
+                      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+                    }) : 'No date'}
+                  </span>
+                  {selectedEvent.time && (
+                    <span className="event-detail-sub">
+                      {new Date(`2000-01-01T${selectedEvent.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      {selectedEvent.endTime && ` - ${new Date(`2000-01-01T${selectedEvent.endTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+                      {selectedEvent.duration && !selectedEvent.endTime && ` (${selectedEvent.duration < 60 ? `${selectedEvent.duration} min` : `${selectedEvent.duration / 60}h`})`}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Location */}
+              {selectedEvent.location && (
+                <div className="event-detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <div className="event-detail-info">
+                    <span className="event-detail-label">{selectedEvent.location}</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Calendar Source */}
+              {selectedEvent.calendarName && (
+                <div className="event-detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                  <div className="event-detail-info">
+                    <span className="event-detail-label">{selectedEvent.calendarName}</span>
+                    <span className="event-detail-sub">Calendar</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Attendees */}
+              {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
+                <div className="event-detail-row attendees">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  <div className="event-detail-info">
+                    <span className="event-detail-label">{selectedEvent.attendees.length} attendee{selectedEvent.attendees.length > 1 ? 's' : ''}</span>
+                    <div className="event-detail-attendees">
+                      {selectedEvent.attendees.slice(0, 5).map((email, idx) => (
+                        <span key={idx} className="attendee-chip">{email}</span>
+                      ))}
+                      {selectedEvent.attendees.length > 5 && (
+                        <span className="attendee-chip more">+{selectedEvent.attendees.length - 5} more</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Description */}
+              {selectedEvent.description && !selectedEvent.description.includes('[Scheduled with Gatherly]') && (
+                <div className="event-detail-row description">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="17" y1="10" x2="3" y2="10"/>
+                    <line x1="21" y1="6" x2="3" y2="6"/>
+                    <line x1="21" y1="14" x2="3" y2="14"/>
+                    <line x1="17" y1="18" x2="3" y2="18"/>
+                  </svg>
+                  <div className="event-detail-info">
+                    <p className="event-detail-description">
+                      {selectedEvent.description.replace('[Scheduled with Gatherly]', '').trim()}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Status for Gatherly events */}
+              {selectedEvent.isGatherlyEvent && selectedEvent.status && (
+                <div className="event-detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {selectedEvent.status === 'pending' ? (
+                      <><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></>
+                    ) : selectedEvent.status === 'confirmed' ? (
+                      <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></>
+                    ) : (
+                      <><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></>
+                    )}
+                  </svg>
+                  <div className="event-detail-info">
+                    <span className={`event-detail-status ${selectedEvent.status}`}>
+                      {selectedEvent.status === 'pending' ? 'Waiting for responses' : 
+                       selectedEvent.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

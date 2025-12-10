@@ -3,6 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import './AuthPage.css';
 
+// Email icon for password reset
+const EmailSentIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    <path d="M16 12l2 2 4-4" stroke="#22c55e" strokeWidth="2.5"/>
+  </svg>
+);
+
 // Gatherly Logo SVG Component
 const GatherlyLogo = ({ size = 32 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="-2 -2 28 28" fill="none">
@@ -33,6 +42,8 @@ export const AuthPage: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   
   // Form fields
   const [email, setEmail] = useState('');
@@ -72,6 +83,30 @@ export const AuthPage: React.FC = () => {
 
   // Note: We don't auto-trigger Google auth anymore
   // The user must click the "Continue with Google" button explicitly
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/app`,
+      });
+      
+      if (error) throw error;
+      setResetEmailSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
@@ -249,6 +284,16 @@ export const AuthPage: React.FC = () => {
               />
             </div>
 
+            {!isSignUp && (
+              <button 
+                type="button" 
+                className="forgot-password-link"
+                onClick={() => setShowForgotPassword(true)}
+              >
+                Forgot password?
+              </button>
+            )}
+
             <button 
               type="submit" 
               className="submit-btn"
@@ -272,6 +317,88 @@ export const AuthPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="forgot-password-modal">
+          <div className="forgot-password-card">
+            <button 
+              className="modal-close-btn"
+              onClick={() => {
+                setShowForgotPassword(false);
+                setResetEmailSent(false);
+                setError(null);
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+            
+            {resetEmailSent ? (
+              <div className="reset-success">
+                <EmailSentIcon />
+                <h2>Check your email</h2>
+                <p>We've sent a password reset link to <strong>{email}</strong></p>
+                <button 
+                  className="submit-btn"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmailSent(false);
+                  }}
+                >
+                  Back to sign in
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2>Reset password</h2>
+                <p className="reset-description">Enter your email and we'll send you a link to reset your password.</p>
+                
+                {error && (
+                  <div className="auth-error">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>{error}</span>
+                  </div>
+                )}
+                
+                <form onSubmit={handleForgotPassword}>
+                  <div className="form-group">
+                    <label htmlFor="resetEmail">Email</label>
+                    <input
+                      type="email"
+                      id="resetEmail"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    className="submit-btn"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <span className="btn-spinner" /> : 'Send reset link'}
+                  </button>
+                </form>
+                
+                <button 
+                  className="back-to-signin"
+                  onClick={() => setShowForgotPassword(false)}
+                >
+                  Back to sign in
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

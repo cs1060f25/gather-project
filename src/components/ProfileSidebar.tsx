@@ -1,6 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProfileSidebar.css';
 import { DayNightToggle } from './DayNightToggle';
+
+// Comprehensive list of timezones
+const TIMEZONES = [
+  { value: 'auto', label: 'Auto-detect' },
+  { value: 'Pacific/Midway', label: '(UTC-11:00) Midway Island' },
+  { value: 'Pacific/Honolulu', label: '(UTC-10:00) Hawaii' },
+  { value: 'America/Anchorage', label: '(UTC-09:00) Alaska' },
+  { value: 'America/Los_Angeles', label: '(UTC-08:00) Pacific Time (US)' },
+  { value: 'America/Denver', label: '(UTC-07:00) Mountain Time (US)' },
+  { value: 'America/Phoenix', label: '(UTC-07:00) Arizona' },
+  { value: 'America/Chicago', label: '(UTC-06:00) Central Time (US)' },
+  { value: 'America/New_York', label: '(UTC-05:00) Eastern Time (US)' },
+  { value: 'America/Toronto', label: '(UTC-05:00) Toronto' },
+  { value: 'America/Bogota', label: '(UTC-05:00) Bogota' },
+  { value: 'America/Caracas', label: '(UTC-04:00) Caracas' },
+  { value: 'America/Halifax', label: '(UTC-04:00) Atlantic Time' },
+  { value: 'America/Sao_Paulo', label: '(UTC-03:00) São Paulo' },
+  { value: 'America/Argentina/Buenos_Aires', label: '(UTC-03:00) Buenos Aires' },
+  { value: 'Atlantic/Azores', label: '(UTC-01:00) Azores' },
+  { value: 'Europe/London', label: '(UTC+00:00) London' },
+  { value: 'Europe/Dublin', label: '(UTC+00:00) Dublin' },
+  { value: 'Europe/Lisbon', label: '(UTC+00:00) Lisbon' },
+  { value: 'Africa/Casablanca', label: '(UTC+00:00) Casablanca' },
+  { value: 'Europe/Paris', label: '(UTC+01:00) Paris' },
+  { value: 'Europe/Berlin', label: '(UTC+01:00) Berlin' },
+  { value: 'Europe/Amsterdam', label: '(UTC+01:00) Amsterdam' },
+  { value: 'Europe/Rome', label: '(UTC+01:00) Rome' },
+  { value: 'Europe/Madrid', label: '(UTC+01:00) Madrid' },
+  { value: 'Africa/Lagos', label: '(UTC+01:00) Lagos' },
+  { value: 'Europe/Athens', label: '(UTC+02:00) Athens' },
+  { value: 'Europe/Istanbul', label: '(UTC+03:00) Istanbul' },
+  { value: 'Europe/Moscow', label: '(UTC+03:00) Moscow' },
+  { value: 'Africa/Nairobi', label: '(UTC+03:00) Nairobi' },
+  { value: 'Asia/Dubai', label: '(UTC+04:00) Dubai' },
+  { value: 'Asia/Karachi', label: '(UTC+05:00) Karachi' },
+  { value: 'Asia/Kolkata', label: '(UTC+05:30) Mumbai, Delhi' },
+  { value: 'Asia/Dhaka', label: '(UTC+06:00) Dhaka' },
+  { value: 'Asia/Bangkok', label: '(UTC+07:00) Bangkok' },
+  { value: 'Asia/Jakarta', label: '(UTC+07:00) Jakarta' },
+  { value: 'Asia/Singapore', label: '(UTC+08:00) Singapore' },
+  { value: 'Asia/Hong_Kong', label: '(UTC+08:00) Hong Kong' },
+  { value: 'Asia/Shanghai', label: '(UTC+08:00) Shanghai' },
+  { value: 'Asia/Taipei', label: '(UTC+08:00) Taipei' },
+  { value: 'Asia/Seoul', label: '(UTC+09:00) Seoul' },
+  { value: 'Asia/Tokyo', label: '(UTC+09:00) Tokyo' },
+  { value: 'Australia/Sydney', label: '(UTC+10:00) Sydney' },
+  { value: 'Australia/Melbourne', label: '(UTC+10:00) Melbourne' },
+  { value: 'Pacific/Auckland', label: '(UTC+12:00) Auckland' },
+  { value: 'Pacific/Fiji', label: '(UTC+12:00) Fiji' },
+];
+
+interface WeatherData {
+  temp: number;
+  condition: string;
+  location: string;
+  icon: string;
+}
 
 interface UserProfile {
   id: string;
@@ -36,21 +93,23 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   onClose, 
   onSignOut,
   onAddContact,
-  onRemoveContact,
-  onImportContacts
+  onRemoveContact
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'people' | 'settings'>('profile');
   const [newContact, setNewContact] = useState({ name: '', email: '' });
   const [showAddContact, setShowAddContact] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [recentPeople, setRecentPeople] = useState<{email: string; name?: string}[]>([]);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>('auto');
+  const [detectedTimezone, setDetectedTimezone] = useState<string>('');
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   
   // Use real contacts only - no mock data
   const contacts = propContacts;
   
   // Load recent people from localStorage
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('gatherly_recent_people');
       if (stored) {
@@ -63,20 +122,84 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       console.error('Error loading recent people:', e);
     }
   }, [isOpen]); // Reload when sidebar opens
-  
+
+  // Auto-detect timezone on mount
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setDetectedTimezone(tz);
+    
+    // Load saved timezone preference
+    const savedTz = localStorage.getItem('gatherly_timezone');
+    if (savedTz) {
+      setSelectedTimezone(savedTz);
+    }
+  }, []);
+
+  // Load weather based on IP
+  useEffect(() => {
+    const loadWeather = async () => {
+      if (!isOpen || activeTab !== 'settings') return;
+      
+      setWeatherLoading(true);
+      try {
+        // First get location from IP
+        const locResponse = await fetch('https://ipapi.co/json/');
+        if (!locResponse.ok) throw new Error('Failed to get location');
+        const locData = await locResponse.json();
+        
+        // Then get weather from Open-Meteo (free, no API key needed)
+        const weatherResponse = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${locData.latitude}&longitude=${locData.longitude}&current=temperature_2m,weather_code&temperature_unit=fahrenheit`
+        );
+        if (!weatherResponse.ok) throw new Error('Failed to get weather');
+        const weatherData = await weatherResponse.json();
+        
+        // Map weather code to condition and icon
+        const code = weatherData.current.weather_code;
+        let condition = 'Clear';
+        let icon = 'sun';
+        
+        if (code === 0) { condition = 'Clear'; icon = 'sun'; }
+        else if (code <= 3) { condition = 'Partly Cloudy'; icon = 'cloud-sun'; }
+        else if (code <= 48) { condition = 'Foggy'; icon = 'cloud'; }
+        else if (code <= 57) { condition = 'Drizzle'; icon = 'cloud-rain'; }
+        else if (code <= 67) { condition = 'Rain'; icon = 'cloud-rain'; }
+        else if (code <= 77) { condition = 'Snow'; icon = 'snowflake'; }
+        else if (code <= 82) { condition = 'Showers'; icon = 'cloud-rain'; }
+        else if (code <= 86) { condition = 'Snow Showers'; icon = 'snowflake'; }
+        else { condition = 'Thunderstorm'; icon = 'cloud-lightning'; }
+        
+        setWeather({
+          temp: Math.round(weatherData.current.temperature_2m),
+          condition,
+          location: `${locData.city}, ${locData.region}`,
+          icon
+        });
+      } catch (err) {
+        console.log('Could not load weather:', err);
+        setWeather(null);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+    
+    loadWeather();
+  }, [isOpen, activeTab]);
+
+  // Handle timezone change
+  const handleTimezoneChange = (value: string) => {
+    setSelectedTimezone(value);
+    localStorage.setItem('gatherly_timezone', value);
+    
+    // If auto-detect, also store the detected timezone
+    if (value === 'auto') {
+      localStorage.setItem('gatherly_detected_timezone', detectedTimezone);
+    }
+  };
+
   const clearRecentPeople = () => {
     localStorage.removeItem('gatherly_recent_people');
     setRecentPeople([]);
-  };
-  
-  const handleImportContacts = async () => {
-    if (!onImportContacts) return;
-    setIsImporting(true);
-    try {
-      await onImportContacts();
-    } finally {
-      setIsImporting(false);
-    }
   };
   
   const handleRemoveContact = (contactId: string) => {
@@ -151,19 +274,57 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               </div>
 
-              <div className="profile-stats">
-                <div className="stat">
-                  <span className="stat-value">12</span>
-                  <span className="stat-label">Events</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">3</span>
-                  <span className="stat-label">Contacts</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">2</span>
-                  <span className="stat-label">Calendars</span>
-                </div>
+              {/* Weather Widget */}
+              <div className="weather-widget">
+                {weatherLoading ? (
+                  <div className="weather-loading">Loading weather...</div>
+                ) : weather ? (
+                  <>
+                    <div className="weather-icon">
+                      {weather.icon === 'sun' && (
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                          <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                      )}
+                      {weather.icon === 'cloud-sun' && (
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+                          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                          <path d="M22 10a5 5 0 0 0-5-5" stroke="#f59e0b"/>
+                        </svg>
+                      )}
+                      {weather.icon === 'cloud' && (
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+                          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                        </svg>
+                      )}
+                      {weather.icon === 'cloud-rain' && (
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+                          <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                          <path d="M16 14v6M8 14v6M12 16v6"/>
+                        </svg>
+                      )}
+                      {weather.icon === 'snowflake' && (
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
+                          <line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/>
+                          <path d="m20 16-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"/>
+                        </svg>
+                      )}
+                      {weather.icon === 'cloud-lightning' && (
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2">
+                          <path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"/>
+                          <path d="m13 12-3 5h4l-3 5"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="weather-info">
+                      <span className="weather-temp">{weather.temp}°F</span>
+                      <span className="weather-condition">{weather.condition}</span>
+                      <span className="weather-location">{weather.location}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="weather-unavailable">Weather unavailable</div>
+                )}
               </div>
 
               <div className="calendar-connection">
@@ -227,16 +388,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 >
                   {showAddContact ? 'Cancel' : '+ Add'}
                 </button>
-                {onImportContacts && (
-                  <button 
-                    className="btn-small import-btn"
-                      onClick={handleImportContacts}
-                      disabled={isImporting}
-                      title="Import from Google Contacts"
-                  >
-                      {isImporting ? 'Importing...' : '📥 Google'}
-                  </button>
-                )}
                 </div>
               </div>
 
@@ -330,34 +481,82 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               </div>
 
               <div className="settings-group">
-                <h4>Notifications</h4>
-                <label className="setting-item">
-                  <span>Email Notifications</span>
-                  <input type="checkbox" className="toggle" defaultChecked />
-                </label>
-                <label className="setting-item">
-                  <span>Calendar Reminders</span>
-                  <input type="checkbox" className="toggle" defaultChecked />
-                </label>
-              </div>
-
-              <div className="settings-group">
-                <h4>Default View</h4>
-                <select className="settings-select">
-                  <option value="month">Month</option>
-                  <option value="week">Week</option>
-                  <option value="agenda">Agenda</option>
-                </select>
-              </div>
-
-              <div className="settings-group">
                 <h4>Time Zone</h4>
-                <select className="settings-select">
-                  <option value="auto">Auto-detect</option>
-                  <option value="EST">Eastern Time (EST)</option>
-                  <option value="PST">Pacific Time (PST)</option>
-                  <option value="UTC">UTC</option>
+                <div className="timezone-info">
+                  {selectedTimezone === 'auto' && detectedTimezone && (
+                    <span className="detected-tz">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <path d="M22 4L12 14.01l-3-3"/>
+                      </svg>
+                      Detected: {detectedTimezone.replace(/_/g, ' ')}
+                    </span>
+                  )}
+                </div>
+                <select 
+                  className="settings-select timezone-select"
+                  value={selectedTimezone}
+                  onChange={(e) => handleTimezoneChange(e.target.value)}
+                >
+                  {TIMEZONES.map(tz => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.value === 'auto' ? `Auto-detect${detectedTimezone ? ` (${detectedTimezone.replace(/_/g, ' ')})` : ''}` : tz.label}
+                    </option>
+                  ))}
                 </select>
+              </div>
+
+              {/* Local Weather */}
+              <div className="settings-group">
+                <h4>Local Weather</h4>
+                <div className="settings-weather-card">
+                  {weatherLoading ? (
+                    <div className="weather-loading-small">Loading...</div>
+                  ) : weather ? (
+                    <div className="settings-weather-content">
+                      <div className="settings-weather-icon">
+                        {weather.icon === 'sun' && (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                          </svg>
+                        )}
+                        {weather.icon === 'cloud-sun' && (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+                            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                          </svg>
+                        )}
+                        {weather.icon === 'cloud' && (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+                            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                          </svg>
+                        )}
+                        {weather.icon === 'cloud-rain' && (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+                            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                            <path d="M16 14v6M8 14v6M12 16v6"/>
+                          </svg>
+                        )}
+                        {weather.icon === 'snowflake' && (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
+                            <line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/>
+                          </svg>
+                        )}
+                        {weather.icon === 'cloud-lightning' && (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2">
+                            <path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"/>
+                            <path d="m13 12-3 5h4l-3 5"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="settings-weather-details">
+                        <span className="settings-weather-temp">{weather.temp}°F · {weather.condition}</span>
+                        <span className="settings-weather-loc">{weather.location}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="weather-unavailable-small">Weather unavailable</div>
+                  )}
+                </div>
               </div>
             </div>
           )}

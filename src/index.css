@@ -56,7 +56,7 @@
   --glass-border: rgba(255, 255, 255, 0.1);
 }
 
-/* Theme Toggle - Exact CodePen Implementation */
+/* Theme Toggle */
 .theme-toggle-label {
   position: fixed;
   top: 18px;
@@ -499,7 +499,7 @@ body {
   /* Down and left */
 }
 
-/* Loading Bar - Exact CodePen Implementation */
+/* Loading Bar */
 .loading-bar-container {
   position: absolute;
   bottom: 40px;

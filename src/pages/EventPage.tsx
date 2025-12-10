@@ -230,25 +230,62 @@ export const EventPage: React.FC = () => {
     if (!event) return;
 
     try {
-      // Delete from Supabase completely
+      // Send cancellation emails to all participants
+      const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
+      const hostEmail = user?.email || '';
+      
+      // Send cancellation notification to each participant
+      const emailPromises = event.participants.map(async (email) => {
+        try {
+          const response = await fetch('/api/send-cancel-notification', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: email,
+              eventTitle: event.title,
+              hostName,
+              hostEmail,
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error(`Failed to send cancellation email to ${email}`);
+          } else {
+            console.log(`Cancellation notification sent to ${email}`);
+          }
+        } catch (err) {
+          console.error(`Error sending cancellation to ${email}:`, err);
+        }
+      });
+      
+      // Wait for all emails to be sent
+      await Promise.all(emailPromises);
+      
+      // Update status to cancelled in Supabase (instead of deleting)
       const { error } = await supabase
         .from('gatherly_events')
-        .delete()
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
         .eq('id', event.id);
       
       if (error) {
-        console.error('Error deleting event in Supabase:', error);
+        console.error('Error cancelling event in Supabase:', error);
+        // If update fails, try delete as fallback
+        await supabase.from('gatherly_events').delete().eq('id', event.id);
       }
     } catch (err) {
-      console.error('Error deleting event:', err);
+      console.error('Error cancelling event:', err);
     }
 
-    // Also delete from localStorage
+    // Also update localStorage
     const stored = localStorage.getItem('gatherly_created_events');
     if (stored) {
       const events: GatherlyEvent[] = JSON.parse(stored);
-      const filtered = events.filter(e => e.id !== event.id);
-      localStorage.setItem('gatherly_created_events', JSON.stringify(filtered));
+      const updated = events.map(e => 
+        e.id === event.id ? { ...e, status: 'cancelled' as const } : e
+      );
+      localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
     }
 
     // Navigate back to events page

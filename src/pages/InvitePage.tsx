@@ -14,6 +14,7 @@ interface GatherlyEventData {
   options: TimeOption[];
   location?: string;
   description?: string;
+  status?: 'pending' | 'confirmed' | 'cancelled';
 }
 
 // Response state for each time option
@@ -56,10 +57,10 @@ export const InvitePage: React.FC = () => {
       // Load the full Gatherly event data to get all time options
       if (data.event_id) {
         try {
-          // First try to get all fields including description
+          // First try to get all fields including description and status
           const { data: eventResult, error: eventError } = await supabase
             .from('gatherly_events')
-            .select('options, location, description')
+            .select('options, location, description, status')
             .eq('id', data.event_id)
             .single();
           
@@ -67,13 +68,14 @@ export const InvitePage: React.FC = () => {
             setEventData({
               options: eventResult.options || [],
               location: eventResult.location || data.event_location,
-              description: eventResult.description
+              description: eventResult.description,
+              status: eventResult.status
             });
           } else if (eventError) {
             // Fallback: try without description column (for older tables)
             const { data: fallbackResult } = await supabase
               .from('gatherly_events')
-              .select('options, location')
+              .select('options, location, status')
               .eq('id', data.event_id)
               .single();
             
@@ -81,7 +83,8 @@ export const InvitePage: React.FC = () => {
               setEventData({
                 options: fallbackResult.options || [],
                 location: fallbackResult.location || data.event_location,
-                description: undefined
+                description: undefined,
+                status: fallbackResult.status
               });
             }
           }
@@ -267,6 +270,51 @@ export const InvitePage: React.FC = () => {
     );
   }
 
+  // Check if event is cancelled
+  if (eventData?.status === 'cancelled') {
+    return (
+      <div className="invite-page">
+        <div className="invite-container">
+          <header className="invite-header">
+            <div className="gatherly-logo">
+              <svg width="32" height="32" viewBox="-2 -2 28 28" fill="none">
+                <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" 
+                      stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2"/>
+                <path d="M6 14V18" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M4 16H8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Gatherly</span>
+            </div>
+          </header>
+          <main className="invite-main">
+            <div className="invite-cancelled">
+              <div className="cancelled-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+              </div>
+              <h1>Event Cancelled</h1>
+              <p>This event has been cancelled by the organizer.</p>
+              {invite && (
+                <div className="cancelled-event-info">
+                  <h3>{invite.event_title}</h3>
+                  <p>Organized by {invite.host_name}</p>
+                </div>
+              )}
+              <a href="/" className="btn-home">Go to Gatherly</a>
+            </div>
+          </main>
+          <footer className="invite-footer">
+            <p>Powered by <a href="/">Gatherly</a></p>
+          </footer>
+        </div>
+      </div>
+    );
+  }
+
   if (!invite) {
     return null;
   }
@@ -404,12 +452,29 @@ export const InvitePage: React.FC = () => {
               {timeOptions.length > 0 && useStepByStep && timeOptions[currentStep] ? (
                 <div className="step-by-step-flow">
                     <div className="step-progress">
-                      <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
+                      <div className="step-nav">
+                        {currentStep > 0 && (
+                          <button 
+                            className="step-back-btn"
+                            onClick={() => setCurrentStep(prev => prev - 1)}
+                            type="button"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                            Back
+                          </button>
+                        )}
+                        <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
+                      </div>
                       <div className="step-dots">
                         {timeOptions.map((_, idx) => (
-                          <span 
+                          <button 
                             key={idx} 
                             className={`step-dot ${idx === currentStep ? 'active' : ''} ${timeResponses[idx] ? 'answered' : ''}`}
+                            onClick={() => setCurrentStep(idx)}
+                            type="button"
+                            title={`Go to option ${idx + 1}`}
                           />
                         ))}
                       </div>
