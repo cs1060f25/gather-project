@@ -997,7 +997,13 @@ export const Dashboard: React.FC = () => {
             
             {/* Notification Dropdown */}
             {showNotifications && (
-              <div className="notification-dropdown">
+              <>
+                {/* Click-outside overlay */}
+                <div 
+                  className="notification-overlay"
+                  onClick={() => setShowNotifications(false)}
+                />
+                <div className="notification-dropdown">
                 <div className="notification-header">
                   <h3>Notifications</h3>
                   {unreadCount > 0 && (
@@ -1072,6 +1078,7 @@ export const Dashboard: React.FC = () => {
                   )}
                 </div>
               </div>
+              </>
             )}
           </div>
 

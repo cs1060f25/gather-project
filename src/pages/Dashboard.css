@@ -120,6 +120,13 @@
   padding: 0 4px;
 }
 
+/* Click-outside overlay for notifications */
+.notification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+}
+
 .notification-dropdown {
   position: absolute;
   top: calc(100% + 8px);
