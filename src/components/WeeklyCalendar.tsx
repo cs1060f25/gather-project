@@ -209,6 +209,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       if (e.isGatherlyEvent && e.status === 'cancelled') {
         return false;
       }
+      // Handle Gatherly scheduled events (Google Calendar events created via Gatherly)
+      if (e.isGatherlyScheduled) {
+        return showConfirmedGatherly;
+      }
       // Handle Gatherly confirmed events
       if (e.calendarId === 'gatherly') {
         return showConfirmedGatherly;

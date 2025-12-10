@@ -153,6 +153,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [selectedHour, setSelectedHour] = useState(9);
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
+  const [timePickerError, setTimePickerError] = useState<string | null>(null);
   
   // User location from IP (for better location suggestions)
   const [userLocation, setUserLocation] = useState('');
@@ -246,6 +247,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     setSelectedHour(hour);
     setSelectedMinute(minute);
     setSelectedPeriod(period);
+    setTimePickerError(null);
     setActivePicker({ type: 'time', optionId });
     setIsEditing(true);
   };
@@ -267,6 +269,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   // Confirm time selection
   const confirmTime = () => {
     if (!activePicker) return;
+    setTimePickerError(null);
     const timeStr = formatTimeValue(selectedHour, selectedMinute, selectedPeriod);
     
     // Check if the selected date is today and time is in the past
@@ -285,7 +288,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         const currentTimeMinutes = today.getHours() * 60 + today.getMinutes();
         
         if (selectedTimeMinutes <= currentTimeMinutes) {
-          alert('Cannot select a time that has already passed today. Please choose a future time.');
+          setTimePickerError('Cannot select a time that has already passed today. Please choose a future time.');
           return;
         }
       }
@@ -1356,12 +1359,24 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                     </button>
                   </div>
                   
+                  {/* Time picker error */}
+                  {timePickerError && (
+                    <div className="cep-time-error">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      <span>{timePickerError}</span>
+                    </div>
+                  )}
+
                   <button type="button" className="cep-time-confirm" onClick={confirmTime}>
                     Set Time
                   </button>
                 </div>
               )}
-              
+
               {/* Duration Picker */}
               {activePicker.type === 'duration' && (
                 <div className="cep-duration-picker">

@@ -2,55 +2,6 @@ import React, { useState, useEffect } from 'react';
 import './ProfileSidebar.css';
 import { DayNightToggle } from './DayNightToggle';
 
-// Comprehensive list of timezones
-const TIMEZONES = [
-  { value: 'auto', label: 'Auto-detect' },
-  { value: 'Pacific/Midway', label: '(UTC-11:00) Midway Island' },
-  { value: 'Pacific/Honolulu', label: '(UTC-10:00) Hawaii' },
-  { value: 'America/Anchorage', label: '(UTC-09:00) Alaska' },
-  { value: 'America/Los_Angeles', label: '(UTC-08:00) Pacific Time (US)' },
-  { value: 'America/Denver', label: '(UTC-07:00) Mountain Time (US)' },
-  { value: 'America/Phoenix', label: '(UTC-07:00) Arizona' },
-  { value: 'America/Chicago', label: '(UTC-06:00) Central Time (US)' },
-  { value: 'America/New_York', label: '(UTC-05:00) Eastern Time (US)' },
-  { value: 'America/Toronto', label: '(UTC-05:00) Toronto' },
-  { value: 'America/Bogota', label: '(UTC-05:00) Bogota' },
-  { value: 'America/Caracas', label: '(UTC-04:00) Caracas' },
-  { value: 'America/Halifax', label: '(UTC-04:00) Atlantic Time' },
-  { value: 'America/Sao_Paulo', label: '(UTC-03:00) São Paulo' },
-  { value: 'America/Argentina/Buenos_Aires', label: '(UTC-03:00) Buenos Aires' },
-  { value: 'Atlantic/Azores', label: '(UTC-01:00) Azores' },
-  { value: 'Europe/London', label: '(UTC+00:00) London' },
-  { value: 'Europe/Dublin', label: '(UTC+00:00) Dublin' },
-  { value: 'Europe/Lisbon', label: '(UTC+00:00) Lisbon' },
-  { value: 'Africa/Casablanca', label: '(UTC+00:00) Casablanca' },
-  { value: 'Europe/Paris', label: '(UTC+01:00) Paris' },
-  { value: 'Europe/Berlin', label: '(UTC+01:00) Berlin' },
-  { value: 'Europe/Amsterdam', label: '(UTC+01:00) Amsterdam' },
-  { value: 'Europe/Rome', label: '(UTC+01:00) Rome' },
-  { value: 'Europe/Madrid', label: '(UTC+01:00) Madrid' },
-  { value: 'Africa/Lagos', label: '(UTC+01:00) Lagos' },
-  { value: 'Europe/Athens', label: '(UTC+02:00) Athens' },
-  { value: 'Europe/Istanbul', label: '(UTC+03:00) Istanbul' },
-  { value: 'Europe/Moscow', label: '(UTC+03:00) Moscow' },
-  { value: 'Africa/Nairobi', label: '(UTC+03:00) Nairobi' },
-  { value: 'Asia/Dubai', label: '(UTC+04:00) Dubai' },
-  { value: 'Asia/Karachi', label: '(UTC+05:00) Karachi' },
-  { value: 'Asia/Kolkata', label: '(UTC+05:30) Mumbai, Delhi' },
-  { value: 'Asia/Dhaka', label: '(UTC+06:00) Dhaka' },
-  { value: 'Asia/Bangkok', label: '(UTC+07:00) Bangkok' },
-  { value: 'Asia/Jakarta', label: '(UTC+07:00) Jakarta' },
-  { value: 'Asia/Singapore', label: '(UTC+08:00) Singapore' },
-  { value: 'Asia/Hong_Kong', label: '(UTC+08:00) Hong Kong' },
-  { value: 'Asia/Shanghai', label: '(UTC+08:00) Shanghai' },
-  { value: 'Asia/Taipei', label: '(UTC+08:00) Taipei' },
-  { value: 'Asia/Seoul', label: '(UTC+09:00) Seoul' },
-  { value: 'Asia/Tokyo', label: '(UTC+09:00) Tokyo' },
-  { value: 'Australia/Sydney', label: '(UTC+10:00) Sydney' },
-  { value: 'Australia/Melbourne', label: '(UTC+10:00) Melbourne' },
-  { value: 'Pacific/Auckland', label: '(UTC+12:00) Auckland' },
-  { value: 'Pacific/Fiji', label: '(UTC+12:00) Fiji' },
-];
 
 interface WeatherData {
   temp: number;
@@ -100,7 +51,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [showAddContact, setShowAddContact] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [recentPeople, setRecentPeople] = useState<{email: string; name?: string}[]>([]);
-  const [selectedTimezone, setSelectedTimezone] = useState<string>('auto');
   const [detectedTimezone, setDetectedTimezone] = useState<string>('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -127,18 +77,14 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   useEffect(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     setDetectedTimezone(tz);
-    
-    // Load saved timezone preference
-    const savedTz = localStorage.getItem('gatherly_timezone');
-    if (savedTz) {
-      setSelectedTimezone(savedTz);
-    }
+    localStorage.setItem('gatherly_timezone', tz);
+    localStorage.setItem('gatherly_detected_timezone', tz);
   }, []);
 
   // Load weather based on IP
   useEffect(() => {
     const loadWeather = async () => {
-      if (!isOpen || activeTab !== 'settings') return;
+      if (!isOpen) return;
       
       setWeatherLoading(true);
       try {
@@ -184,18 +130,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     };
     
     loadWeather();
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
-  // Handle timezone change
-  const handleTimezoneChange = (value: string) => {
-    setSelectedTimezone(value);
-    localStorage.setItem('gatherly_timezone', value);
-    
-    // If auto-detect, also store the detected timezone
-    if (value === 'auto') {
-      localStorage.setItem('gatherly_detected_timezone', detectedTimezone);
-    }
-  };
 
   const clearRecentPeople = () => {
     localStorage.removeItem('gatherly_recent_people');
@@ -482,28 +418,16 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 
               <div className="settings-group">
                 <h4>Time Zone</h4>
-                <div className="timezone-info">
-                  {selectedTimezone === 'auto' && detectedTimezone && (
-                    <span className="detected-tz">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <path d="M22 4L12 14.01l-3-3"/>
-                      </svg>
-                      Detected: {detectedTimezone.replace(/_/g, ' ')}
-                    </span>
-                  )}
+                <div className="timezone-display">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <path d="M22 4L12 14.01l-3-3"/>
+                  </svg>
+                  <span className="timezone-value">
+                    {detectedTimezone ? detectedTimezone.replace(/_/g, ' ') : 'Detecting...'}
+                  </span>
+                  <span className="timezone-label">Auto-detected</span>
                 </div>
-                <select 
-                  className="settings-select timezone-select"
-                  value={selectedTimezone}
-                  onChange={(e) => handleTimezoneChange(e.target.value)}
-                >
-                  {TIMEZONES.map(tz => (
-                    <option key={tz.value} value={tz.value}>
-                      {tz.value === 'auto' ? `Auto-detect${detectedTimezone ? ` (${detectedTimezone.replace(/_/g, ' ')})` : ''}` : tz.label}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Local Weather */}

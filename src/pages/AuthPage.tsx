@@ -44,6 +44,7 @@ export const AuthPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   
   // Form fields
   const [email, setEmail] = useState('');
@@ -66,10 +67,18 @@ export const AuthPage: React.FC = () => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         setIsLoading(false);
+        setError(null);
       }
     };
     
+    // Handle popstate (back/forward button)
+    const handlePopState = () => {
+      setIsLoading(false);
+      setError(null);
+    };
+    
     window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('popstate', handlePopState);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Reset loading state on mount (handles back button)
@@ -77,6 +86,7 @@ export const AuthPage: React.FC = () => {
     
     return () => {
       window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('popstate', handlePopState);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -94,49 +104,50 @@ export const AuthPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     
-    // First, check if the email exists in Gatherly's database
-    try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', email.trim().toLowerCase())
-        .single();
-      
-      if (!profileData) {
-        setError('No account found with this email address. Please sign up first.');
-        setIsLoading(false);
-        return;
-      }
-    } catch {
-      // No profile found - check if we can at least try auth
-      // This handles cases where profile table might not exist or be different
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // First, check if the email exists in Gatherly's database (profiles table)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+    
+    if (profileError && profileError.code !== 'PGRST116') {
+      // PGRST116 is "no rows found" which is expected if user doesn't exist
+      console.log('Profile check error:', profileError);
+    }
+    
+    if (!profileData) {
+      setError('No account found with this email address. Please sign up first.');
+      setIsLoading(false);
+      return;
     }
     
     // Try to sign in with a fake password to check if user exists and their provider
-    try {
-      await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: 'check-provider-dummy-password-that-will-fail'
-      });
-    } catch (checkErr: any) {
-      const errorMessage = checkErr?.message?.toLowerCase() || '';
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password: 'check-provider-dummy-password-that-will-fail'
+    });
+    
+    if (signInError) {
+      const errorMessage = signInError.message?.toLowerCase() || '';
       
       // Check if user signed up with OAuth (Google)
       if (errorMessage.includes('oauth') || errorMessage.includes('google') || 
-          errorMessage.includes('identity') || errorMessage.includes('provider')) {
+          errorMessage.includes('identity') || errorMessage.includes('provider') ||
+          errorMessage.includes('email link')) {
         setError('This email is linked to a Google account. Please sign in with Google instead.');
         setIsLoading(false);
         return;
       }
       
-      // Check if user doesn't exist at all
-      if (errorMessage.includes('invalid login credentials') || errorMessage.includes('user not found')) {
-        // User exists with email/password - proceed with reset
-      }
+      // "Invalid login credentials" means the user exists with email/password - proceed with reset
+      // Any other error, we should still try to send reset email
     }
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       
@@ -192,22 +203,34 @@ export const AuthPage: React.FC = () => {
             data: {
               full_name: fullName,
               phone: phone
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/app`
           }
         });
         
         if (error) throw error;
         
         if (data.user) {
+          // Create profile
           await supabase.from('profiles').upsert({
             id: data.user.id,
-            email: email,
+            email: email.toLowerCase(),
             full_name: fullName,
             phone: phone,
             created_at: new Date().toISOString()
           });
           
-          navigate('/app');
+          // Check if email confirmation is required
+          if (data.user.identities && data.user.identities.length === 0) {
+            // Email confirmation is required - show success message
+            setSignupSuccess(true);
+          } else if (!data.session) {
+            // No session = email confirmation required
+            setSignupSuccess(true);
+          } else {
+            // User is confirmed and has a session
+            navigate('/app');
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -372,6 +395,36 @@ export const AuthPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Signup Success Modal */}
+      {signupSuccess && (
+        <div className="forgot-password-modal">
+          <div className="forgot-password-card">
+            <div className="reset-success">
+              <EmailSentIcon />
+              <h2>Verify your email</h2>
+              <p>We've sent a verification link to <strong>{email}</strong></p>
+              <p className="spam-notice">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Check your spam folder if you don't see it
+              </p>
+              <button 
+                className="submit-btn"
+                onClick={() => {
+                  setSignupSuccess(false);
+                  setIsSignUp(false);
+                }}
+              >
+                Back to sign in
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Forgot Password Modal */}
       {showForgotPassword && (

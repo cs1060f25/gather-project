@@ -421,9 +421,7 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
 }
 
 .create-event-section {
-  flex: 1;
-  min-width: 320px;
-  max-width: 420px;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -563,6 +561,7 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   }
 
   .create-event-section {
+    width: 100%;
     max-height: 60vh;
   }
 }
@@ -1027,10 +1026,6 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   border: 1px solid #ddd;
   font-size: 0.75rem;
   color: #666;
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .attendee-chip.more {

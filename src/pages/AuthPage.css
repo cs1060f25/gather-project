@@ -590,6 +590,23 @@
   line-height: 1.5;
 }
 
+/* Spam notice for email verification */
+.spam-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #f59e0b;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.spam-notice svg {
+  stroke: #f59e0b;
+  flex-shrink: 0;
+}
+
 .redirect-notice {
   font-size: 0.9rem;
   color: #22c55e !important;
