@@ -11,6 +11,7 @@ import { StoryPage } from './pages/StoryPage';
 import { InvitePage } from './pages/InvitePage';
 import { EventsPage } from './pages/EventsPage';
 import { EventPage } from './pages/EventPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 // Auth Context
 interface AuthContextType {
@@ -223,6 +224,12 @@ function AppContent() {
             <EventPage />
           </ProtectedRoute>
         } 
+      />
+      
+      {/* Password Reset Page */}
+      <Route 
+        path="/reset-password" 
+        element={<ResetPasswordPage />} 
       />
       
       {/* Catch all - redirect to home */}

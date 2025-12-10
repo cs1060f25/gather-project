@@ -94,25 +94,45 @@ export const AuthPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     
+    // First, check if the email exists in Gatherly's database
     try {
-      // First, check if this email is associated with a Google SSO account
-      // We do this by checking if the user exists and their provider
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', email.trim().toLowerCase())
+        .single();
+      
+      if (!profileData) {
+        setError('No account found with this email address. Please sign up first.');
+        setIsLoading(false);
+        return;
+      }
+    } catch {
+      // No profile found - check if we can at least try auth
+      // This handles cases where profile table might not exist or be different
+    }
+    
+    // Try to sign in with a fake password to check if user exists and their provider
+    try {
       await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password: 'check-provider-dummy-password-that-will-fail'
       });
-      
-      // If we get here without error, something unexpected happened
-      // But we're mainly catching the error to check the message
     } catch (checkErr: any) {
-      // If the error indicates the user signed up with OAuth, show a message
-      if (checkErr?.message?.toLowerCase().includes('oauth') || 
-          checkErr?.message?.toLowerCase().includes('google')) {
+      const errorMessage = checkErr?.message?.toLowerCase() || '';
+      
+      // Check if user signed up with OAuth (Google)
+      if (errorMessage.includes('oauth') || errorMessage.includes('google') || 
+          errorMessage.includes('identity') || errorMessage.includes('provider')) {
         setError('This email is linked to a Google account. Please sign in with Google instead.');
         setIsLoading(false);
         return;
       }
-      // Otherwise, continue with password reset
+      
+      // Check if user doesn't exist at all
+      if (errorMessage.includes('invalid login credentials') || errorMessage.includes('user not found')) {
+        // User exists with email/password - proceed with reset
+      }
     }
     
     try {
@@ -120,14 +140,19 @@ export const AuthPage: React.FC = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       
-      if (error) throw error;
+      if (error) {
+        // Check specific error messages
+        if (error.message?.includes('User not found') || error.message?.includes('not registered')) {
+          setError('No account found with this email address. Please sign up first.');
+          setIsLoading(false);
+          return;
+        }
+        throw error;
+      }
       
-      // Always show success message for security (don't reveal if email exists)
       setResetEmailSent(true);
     } catch (err: any) {
-      // For security, show success even if email doesn't exist
-      // This prevents email enumeration attacks
-      setResetEmailSent(true);
+      setError(err.message || 'Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -336,7 +361,12 @@ export const AuthPage: React.FC = () => {
             <span>
               {isSignUp ? 'Already have an account?' : "Don't have an account?"}
             </span>
-            <button onClick={() => setIsSignUp(!isSignUp)}>
+            <button onClick={() => {
+              const newMode = isSignUp ? 'signin' : 'signup';
+              // Replace URL instead of push to make back button work intuitively
+              window.history.replaceState(null, '', `/auth?mode=${newMode}`);
+              setIsSignUp(!isSignUp);
+            }}>
               {isSignUp ? 'Sign in' : 'Sign up'}
             </button>
           </div>

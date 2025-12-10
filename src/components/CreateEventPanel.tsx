@@ -387,9 +387,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const handleResizeMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
     
-    // Calculate new width based on mouse movement (dragging left = wider, right = narrower)
-    const deltaX = resizeStartX.current - e.clientX;
-    const newWidth = Math.max(320, Math.min(600, resizeStartWidth.current + deltaX));
+    // Panel is on the right side, handle is on left edge
+    // Dragging left (negative delta) = expand width
+    // Dragging right (positive delta) = shrink width
+    const deltaX = e.clientX - resizeStartX.current;
+    const newWidth = Math.max(320, Math.min(600, resizeStartWidth.current - deltaX));
     
     setPanelWidth(newWidth);
     localStorage.setItem('gatherly_panel_width', String(newWidth));

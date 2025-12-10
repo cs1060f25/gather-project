@@ -454,21 +454,7 @@ export const InvitePage: React.FC = () => {
               {timeOptions.length > 0 && useStepByStep && timeOptions[currentStep] ? (
                 <div className="step-by-step-flow">
                     <div className="step-progress">
-                      <div className="step-nav">
-                        {currentStep > 0 && (
-                          <button 
-                            className="step-back-btn"
-                            onClick={() => setCurrentStep(prev => prev - 1)}
-                            type="button"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M15 18l-6-6 6-6"/>
-                            </svg>
-                            Back
-                          </button>
-                        )}
-                        <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
-                      </div>
+                      <span className="step-label">Time {currentStep + 1} of {timeOptions.length}</span>
                       <div className="step-circles">
                         {timeOptions.map((_, idx) => (
                           <button 
@@ -501,6 +487,19 @@ export const InvitePage: React.FC = () => {
                             )}
                           </span>
                         </div>
+                        {/* Back button inside card */}
+                        {currentStep > 0 && (
+                          <button 
+                            className="step-back-btn-inline"
+                            onClick={() => setCurrentStep(prev => prev - 1)}
+                            type="button"
+                            title="Previous time option"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                       
                       <p className="time-question">Does this time work for you?</p>

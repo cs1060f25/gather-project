@@ -429,7 +429,9 @@
 }
 
 .time-option.selected .option-duration {
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFF;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .confirm-btn {
