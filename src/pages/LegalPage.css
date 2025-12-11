@@ -8,7 +8,7 @@
 }
 
 .legal-header {
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
   background: #FFF;
   border-bottom: 3px solid #1A1A1A;
   position: sticky;
@@ -16,14 +16,22 @@
   z-index: 100;
 }
 
+.legal-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+}
+
 .legal-logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
   text-decoration: none;
   color: #1A1A1A;
   font-size: 1.25rem;
   font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .legal-logo:hover {

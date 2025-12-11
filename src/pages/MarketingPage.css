@@ -790,13 +790,16 @@
     height: 2px;
   }
   
-  /* Fix hero visual spacing from marquee */
+  /* Fix hero visual spacing from marquee - disable parallax on mobile */
   .g-hero {
     padding-bottom: 3rem;
   }
   
   .g-hero-visual {
     margin-bottom: 1rem;
+    transform: none !important; /* Disable parallax on mobile to prevent overlap */
+    position: relative;
+    z-index: 1;
   }
   
   /* Fix steps numbers on mobile */

@@ -439,28 +439,38 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   // Calculate position as percentage of total hours (12 AM to 11 PM = 24 hours)
   const CALENDAR_START_HOUR = 0; // 12 AM
   const CALENDAR_HOURS = 24; // 24 hours total
-  const TOTAL_MINUTES = CALENDAR_HOURS * 60;
   const START_MINUTES = CALENDAR_START_HOUR * 60;
+  const MIN_EVENT_HEIGHT_HOURS = 0.5; // Minimum 30 minutes visual height
 
-  const getEventTopPercent = (time?: string): number => {
+  // Returns the number of hours from calendar start (used with CSS calc and --wc-slot-height)
+  const getEventTopHours = (time?: string): number => {
     if (!time) return 0;
     const minutes = timeToMinutes(time);
-    const percent = ((minutes - START_MINUTES) / TOTAL_MINUTES) * 100;
-    // Clamp to valid range
-    if (percent < 0) return 0;
-    if (percent > 100) return 100;
-    return percent;
+    const hoursFromStart = (minutes - START_MINUTES) / 60;
+    // Clamp to valid range (0 to 24 hours)
+    if (hoursFromStart < 0) return 0;
+    if (hoursFromStart > CALENDAR_HOURS) return CALENDAR_HOURS;
+    return hoursFromStart;
   };
 
-  const getEventHeightPercent = (startTime?: string, endTime?: string, duration?: number): number => {
+  // Returns the height in hours (used with CSS calc and --wc-slot-height)
+  const getEventHeightHours = (startTime?: string, endTime?: string, duration?: number): number => {
     if (startTime && endTime) {
-      const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
-      return Math.max(2, Math.min((diff / TOTAL_MINUTES) * 100, 100));
+      const diffMinutes = timeToMinutes(endTime) - timeToMinutes(startTime);
+      const hours = Math.max(MIN_EVENT_HEIGHT_HOURS, Math.min(diffMinutes / 60, CALENDAR_HOURS));
+      return hours;
     }
     if (duration) {
-      return Math.max(2, Math.min((duration / TOTAL_MINUTES) * 100, 100));
+      const hours = Math.max(MIN_EVENT_HEIGHT_HOURS, Math.min(duration / 60, CALENDAR_HOURS));
+      return hours;
     }
-    return (60 / TOTAL_MINUTES) * 100; // Default 1 hour
+    return 1; // Default 1 hour
+  };
+
+  // Check if event is short (less than 45 minutes for compact display)
+  const isEventShort = (startTime?: string, endTime?: string, duration?: number): boolean => {
+    const heightHours = getEventHeightHours(startTime, endTime, duration);
+    return heightHours < 0.75; // Less than 45 minutes
   };
 
   return (
@@ -709,22 +719,22 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     const eventTime = event.time;
                     const eventEndTime = event.endTime;
                     const eventDuration = event.duration;
-                    const topPercent = getEventTopPercent(eventTime);
-                    const heightPercent = getEventHeightPercent(eventTime, eventEndTime, eventDuration);
+                    const topHours = getEventTopHours(eventTime);
+                    const heightHours = getEventHeightHours(eventTime, eventEndTime, eventDuration);
                     const eventColor = getEventColor(event);
                     const cols = event.totalColumns || 1;
                     const col = event.column || 0;
                     const width = cols > 1 ? `${100 / cols - 2}%` : 'calc(100% - 4px)';
                     const left = cols > 1 ? `${(col / cols) * 100 + 1}%` : '2px';
-                    const isShortEvent = heightPercent < 5;
+                    const isShort = isEventShort(eventTime, eventEndTime, eventDuration);
                     
                     return (
                       <div
                         key={event.id}
-                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.isGatherlyScheduled ? 'gatherly-scheduled' : ''} ${event.status === 'pending' ? 'pending' : ''} ${event.status === 'confirmed' ? 'confirmed' : ''} ${isShortEvent ? 'short-event' : ''}`}
+                        className={`wc-event ${event.isGatherlyEvent ? 'gatherly-event' : ''} ${event.isGatherlyScheduled ? 'gatherly-scheduled' : ''} ${event.status === 'pending' ? 'pending' : ''} ${event.status === 'confirmed' ? 'confirmed' : ''} ${isShort ? 'short-event' : ''}`}
                         style={{ 
-                          top: `${topPercent}%`, 
-                          height: `${Math.max(heightPercent, 2.5)}%`,
+                          top: `calc(${topHours} * var(--wc-slot-height))`, 
+                          height: `calc(${heightHours} * var(--wc-slot-height))`,
                           width,
                           left,
                           right: 'auto',
@@ -753,7 +763,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                             </svg>
                           </span>
                         )}
-                        {isShortEvent ? (
+                        {isShort ? (
                           <div className="wc-event-compact">
                             <span className="wc-event-time">
                               {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''}
@@ -766,7 +776,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                           {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
                         </div>
                         <div className="wc-event-title">{event.title}</div>
-                            {event.location && heightPercent >= 7 && <div className="wc-event-location">{event.location}</div>}
+                            {event.location && heightHours >= 1.2 && <div className="wc-event-location">{event.location}</div>}
                           </>
                         )}
                       </div>
@@ -777,8 +787,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   {editingMode && dayTimeOptions.map((opt) => {
                     const optTime = opt.time;
                     const optDuration = opt.duration;
-                    const topPercent = getEventTopPercent(optTime);
-                    const heightPercent = getEventHeightPercent(optTime, undefined, optDuration);
+                    const topHours = getEventTopHours(optTime);
+                    const heightHours = getEventHeightHours(optTime, undefined, optDuration);
                     const optionNumber = (opt.globalIdx || 0) + 1;
                     
                     return (
@@ -786,8 +796,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                         key={`opt-${opt.globalIdx}`}
                         className="wc-time-option"
                         style={{ 
-                          top: `${topPercent}%`, 
-                          height: `${heightPercent}%`,
+                          top: `calc(${topHours} * var(--wc-slot-height))`, 
+                          height: `calc(${heightHours} * var(--wc-slot-height))`,
                         } as React.CSSProperties}
                       >
                         <span className="wc-option-badge">{optionNumber}</span>

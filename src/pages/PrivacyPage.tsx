@@ -6,17 +6,19 @@ export const PrivacyPage: React.FC = () => {
   return (
     <div className="legal-page">
       <header className="legal-header">
-        <Link to="/" className="legal-logo">
-          <svg width="28" height="28" viewBox="-2 -2 28 28" fill="none">
-            <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" 
-                  stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2"/>
-            <path d="M6 14V18" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M4 16H8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span>Gatherly</span>
-        </Link>
+        <div className="legal-header-inner">
+          <Link to="/" className="legal-logo">
+            <svg width="28" height="28" viewBox="-2 -2 28 28" fill="none">
+              <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" 
+                    stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2"/>
+              <path d="M6 14V18" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4 16H8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Gatherly</span>
+          </Link>
+        </div>
       </header>
 
       <main className="legal-content">

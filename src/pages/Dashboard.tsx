@@ -152,7 +152,9 @@ export const Dashboard: React.FC = () => {
 
   // Event detail modal state
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  
+  const [isReminding, setIsReminding] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
   // Calendar connection prompt state
   const [showCalendarPrompt, setShowCalendarPrompt] = useState(false);
   const [hasCheckedCalendarConnection, setHasCheckedCalendarConnection] = useState(false);
@@ -798,6 +800,58 @@ export const Dashboard: React.FC = () => {
     setSelectedEvent(event);
   };
 
+  // Handle remind for Gatherly events
+  const handleRemindEvent = async () => {
+    if (!selectedEvent || !selectedEvent.isGatherlyEvent) return;
+    setIsReminding(true);
+    try {
+      const response = await fetch('/api/send-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: selectedEvent.id }),
+      });
+      if (!response.ok) throw new Error('Failed to send reminder');
+      alert('Reminder sent successfully!');
+    } catch (error) {
+      console.error('Remind error:', error);
+      alert('Failed to send reminder');
+    } finally {
+      setIsReminding(false);
+    }
+  };
+
+  // Handle cancel for Gatherly events
+  const handleCancelEvent = async () => {
+    if (!selectedEvent || !selectedEvent.isGatherlyEvent) return;
+    if (!confirm('Are you sure you want to cancel this event? All invitees will be notified.')) return;
+    setIsCancelling(true);
+    try {
+      // Send cancel notifications
+      const response = await fetch('/api/send-cancel-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: selectedEvent.id }),
+      });
+      if (!response.ok) throw new Error('Failed to send cancel notification');
+      
+      // Update event status in database
+      const { error } = await supabase
+        .from('gatherly_events')
+        .update({ status: 'cancelled' })
+        .eq('id', selectedEvent.id);
+      if (error) throw error;
+      
+      setSelectedEvent(null);
+      // Refresh events
+      window.location.reload();
+    } catch (error) {
+      console.error('Cancel error:', error);
+      alert('Failed to cancel event');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   // Handle time slot click
   const handleTimeSlotClick = (date: string, time: string) => {
     console.log('Time slot clicked:', date, time);
@@ -1284,7 +1338,7 @@ export const Dashboard: React.FC = () => {
               )}
 
               {/* Actions for Gatherly events */}
-              {selectedEvent.isGatherlyEvent && (
+              {selectedEvent.isGatherlyEvent && selectedEvent.status !== 'cancelled' && (
                 <div className="event-detail-actions">
                   <button 
                     className="event-action-btn view"
@@ -1293,7 +1347,35 @@ export const Dashboard: React.FC = () => {
                       navigate(`/event/${selectedEvent.id}`);
                     }}
                   >
-                    View Details
+                    View
+                  </button>
+                  <button 
+                    className="event-action-btn remind"
+                    onClick={handleRemindEvent}
+                    disabled={isReminding}
+                  >
+                    {isReminding ? (
+                      <span className="btn-spinner" />
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        Remind
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    className="event-action-btn cancel"
+                    onClick={handleCancelEvent}
+                    disabled={isCancelling}
+                  >
+                    {isCancelling ? (
+                      <span className="btn-spinner" />
+                    ) : (
+                      'Cancel'
+                    )}
                   </button>
                 </div>
               )}

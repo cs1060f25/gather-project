@@ -637,7 +637,8 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  /* Use calc for scalable min-height */
+  /* Explicit height for pixel-based event positioning */
+  height: calc(var(--wc-hours-count) * var(--wc-slot-height));
   min-height: calc(var(--wc-hours-count) * var(--wc-slot-height));
 }
 
