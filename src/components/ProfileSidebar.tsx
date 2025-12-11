@@ -127,7 +127,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       } catch (err) {
         console.log('Could not load weather:', err);
         setWeather(null);
-      } finally {
+    } finally {
         setWeatherLoading(false);
     }
     };
@@ -276,7 +276,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                   </span>
                   <span className="connection-name">Google Calendar</span>
                   {isCalendarConnected ? (
-                    <span className="connection-status connected">Connected</span>
+                  <span className="connection-status connected">Connected</span>
                   ) : (
                     <button 
                       className="connection-status not-connected"

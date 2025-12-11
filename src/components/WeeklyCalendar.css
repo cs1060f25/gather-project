@@ -575,7 +575,6 @@
 /* All-day spacer for time column */
 .wc-all-day-spacer {
   background: var(--wc-time-bg, #FAFAFA);
-  border-bottom: 1px solid var(--wc-grid, #E5E5E5);
   flex-shrink: 0;
 }
 

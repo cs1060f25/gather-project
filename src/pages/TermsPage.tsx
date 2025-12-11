@@ -21,7 +21,7 @@ export const TermsPage: React.FC = () => {
 
       <main className="legal-content">
         <h1>Terms of Service</h1>
-        <p className="last-updated">Last updated: December 9, 2024</p>
+        <p className="last-updated">Last updated: December 9, 2025</p>
 
         <section>
           <h2>1. Acceptance of Terms</h2>
@@ -119,7 +119,7 @@ export const TermsPage: React.FC = () => {
           <h2>10. Contact Us</h2>
           <p>
             If you have questions about these Terms, please contact us at{' '}
-            <a href="mailto:support@gatherly.now">support@gatherly.now</a>.
+            <a href="mailto:milan@gatherly.now">milan@gatherly.now</a>.
           </p>
         </section>
       </main>

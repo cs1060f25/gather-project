@@ -623,12 +623,12 @@ export const EventPage: React.FC = () => {
                 </svg>
                 Remind
               </button>
-              <button 
-                className="cancel-btn"
-                onClick={() => setShowCancelConfirm(true)}
-              >
-                Cancel Event
-              </button>
+            <button 
+              className="cancel-btn"
+              onClick={() => setShowCancelConfirm(true)}
+            >
+              Cancel Event
+            </button>
             </>
           )}
           <button 

@@ -121,7 +121,7 @@ export const PrivacyPage: React.FC = () => {
           </ul>
           <p>
             To exercise these rights, contact us at{' '}
-            <a href="mailto:privacy@gatherly.now">privacy@gatherly.now</a>.
+            <a href="mailto:milan@gatherly.now">milan@gatherly.now</a>.
           </p>
         </section>
 
@@ -173,7 +173,7 @@ export const PrivacyPage: React.FC = () => {
           <h2>12. Contact Us</h2>
           <p>
             For questions about this Privacy Policy or our data practices, contact us at{' '}
-            <a href="mailto:privacy@gatherly.now">privacy@gatherly.now</a>.
+            <a href="mailto:milan@gatherly.now">milan@gatherly.now</a>.
           </p>
         </section>
       </main>

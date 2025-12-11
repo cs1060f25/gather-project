@@ -68,33 +68,7 @@
 }
 
 .cep-resize-indicator {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 8px 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.cep-resize-indicator::before,
-.cep-resize-indicator::after {
-  content: '';
-  width: 4px;
-  height: 4px;
-  background: #22c55e;
-  border-radius: 50%;
-}
-
-.cep-resize-indicator span {
-  width: 4px;
-  height: 4px;
-  background: #22c55e;
-  border-radius: 50%;
-}
-
-.cep-resize-handle:hover .cep-resize-indicator,
-.create-event-panel.resizing .cep-resize-indicator {
-  opacity: 1;
+  display: none;
 }
 
 /* Resizing State */

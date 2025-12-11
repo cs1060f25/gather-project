@@ -167,7 +167,7 @@ export const Dashboard: React.FC = () => {
     read: boolean;
     created_at: string;
     event_id?: string;
-  }
+    }
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -180,7 +180,7 @@ export const Dashboard: React.FC = () => {
     }
     if (lowerTitle.includes('meeting') || lowerTitle.includes('standup') || lowerTitle.includes('sync') || lowerTitle.includes('call')) {
       return 'work';
-    }
+          }
     return 'personal';
   };
 
@@ -306,6 +306,7 @@ export const Dashboard: React.FC = () => {
               description: item.description,
               important: true,
                   isGatherlyScheduled,
+                  htmlLink: item.htmlLink, // Store the direct link to view event in Google Calendar
                 };
               });
           }
@@ -910,8 +911,8 @@ export const Dashboard: React.FC = () => {
             optionNumber: idx + 1 // 1, 2, or 3 for pending event options
         };
         gatherlyCalEvents.push(calEvent);
-        }
       }
+    }
     }
 
     // Filter Google Calendar events to remove duplicates of confirmed Gatherly events
@@ -931,7 +932,7 @@ export const Dashboard: React.FC = () => {
       
       return true;
     });
-
+    
     // Merge with filtered Google calendar events
     const merged: CalendarEvent[] = [...filteredGoogleEvents, ...gatherlyCalEvents];
     return merged;
@@ -1168,7 +1169,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Profile Sidebar - opens as overlay, not blocking right panel */}
-      <ProfileSidebar
+      <ProfileSidebar 
         isOpen={showProfile}
         user={user}
         contacts={contacts}

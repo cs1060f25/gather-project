@@ -113,8 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         <p style="font-size: 14px; color: #666; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">When works for you?</p>
         <div style="background: #fff; border: 2px solid #e5e5e5; border-radius: 8px; padding: 15px;">
           <ul style="margin: 0; padding-left: 18px; color: #333; line-height: 1.8;">
-            ${formattedTimes}
-          </ul>
+          ${formattedTimes}
+        </ul>
         </div>
       </div>
       

@@ -993,13 +993,10 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       style={panelStyle}
     >
       {/* Resize handle on the left edge */}
-      <div 
+      <div
         className="cep-resize-handle"
         onMouseDown={handleResizeStart}
-        title="Drag to resize"
-      >
-        <div className="cep-resize-indicator" />
-      </div>
+      />
       
       <div className="cep-header">
         <h2>Create Event</h2>

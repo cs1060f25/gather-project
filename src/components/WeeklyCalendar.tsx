@@ -22,6 +22,7 @@ export interface CalendarEvent {
   status?: 'pending' | 'confirmed' | 'cancelled';
   color?: string; // Calendar color for the event
   optionNumber?: number; // 1, 2, or 3 for pending Gatherly event options
+  htmlLink?: string; // Direct link to view event in Google Calendar
 }
 
 export interface GoogleCalendar {

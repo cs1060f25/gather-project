@@ -441,20 +441,15 @@ export const EventsPage: React.FC = () => {
                 const isGatherlyEvent = event.isGatherly || event.source === 'gatherly';
                 const isGatherlyScheduled = event.isGatherlyScheduled || false;
                 
-                // Build Google Calendar URL for non-Gatherly events
-                const googleCalendarUrl = !isGatherlyEvent && event.calendarId && event.id
-                  ? `https://calendar.google.com/calendar/u/0/r/eventedit/${event.id}`
-                  : null;
-                
                 return (
                   <div
-                    key={event.id}
+                    key={event.id} 
                     className={`event-card-today ${!isGatherlyEvent ? 'non-gatherly clickable' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
                     onClick={() => {
                       if (isGatherlyEvent) {
                         navigate(`/event/${event.id}`);
-                      } else if (googleCalendarUrl) {
-                        window.open(googleCalendarUrl, '_blank');
+                      } else if (event.htmlLink) {
+                        window.open(event.htmlLink, '_blank');
                       }
                     }}
                   >
@@ -516,11 +511,6 @@ export const EventsPage: React.FC = () => {
                 const dayName = eventDate.toLocaleDateString('en-US', { weekday: 'short' });
                 const monthDay = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 
-                // Build Google Calendar URL for non-Gatherly events
-                const googleCalendarUrl = !isGatherlyEvent && event.calendarId && event.id
-                  ? `https://calendar.google.com/calendar/u/0/r/eventedit/${event.id}`
-                  : null;
-                
                 return (
                   <div
                     key={event.id}
@@ -528,8 +518,8 @@ export const EventsPage: React.FC = () => {
                     onClick={() => {
                       if (isGatherlyEvent) {
                         navigate(`/event/${event.id}`);
-                      } else if (googleCalendarUrl) {
-                        window.open(googleCalendarUrl, '_blank');
+                      } else if (event.htmlLink) {
+                        window.open(event.htmlLink, '_blank');
                       }
                     }}
                   >
