@@ -624,3 +624,27 @@
 .auth-error-card .auth-btn {
   margin-top: 1rem;
 }
+
+/* Auth button styles */
+.auth-btn {
+  display: inline-block;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 3px solid #1A1A1A;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  width: 100%;
+}
+
+.auth-btn.primary {
+  background: #22c55e;
+  color: #FFF;
+}
+
+.auth-btn.primary:hover {
+  background: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 #1A1A1A;
+}

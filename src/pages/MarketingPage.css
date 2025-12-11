@@ -251,10 +251,10 @@
   z-index: 1;
 }
 
-/* Ensure marquee is always above hero visual when scrolling */
+/* Marquee banner - NOT sticky, just part of normal flow */
 .g-marquee {
   position: relative;
-  z-index: 50;
+  z-index: 10;
 }
 
 .visual-card {
