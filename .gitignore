@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 .vercel
 supabase/.temp/
+
+# Service account keys (sensitive!)
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!vercel.json
+inbound-avatar*.json
