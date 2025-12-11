@@ -23,7 +23,7 @@ export const PrivacyPage: React.FC = () => {
 
       <main className="legal-content">
         <h1>Privacy Policy</h1>
-        <p className="last-updated">Last updated: December 9, 2024</p>
+        <p className="last-updated">Last updated: December 9, 2025</p>
 
         <section>
           <h2>1. Introduction</h2>

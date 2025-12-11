@@ -101,6 +101,25 @@ export const EventsPage: React.FC = () => {
   const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
   const [remindingEventId, setRemindingEventId] = useState<string | null>(null);
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+  
+  // Custom confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+  } | null>(null);
+  
+  // Alert modal state
+  const [alertModal, setAlertModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
 
   // Check calendar connection on mount
   useEffect(() => {
@@ -719,9 +738,18 @@ export const EventsPage: React.FC = () => {
                       className="pending-action-btn cancel"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`Cancel "${event.title}"? This will notify all invitees.`)) {
-                          handleCancel(event);
-                        }
+                        setConfirmModal({
+                          show: true,
+                          title: 'Cancel Event',
+                          message: `Are you sure you want to cancel "${event.title}"? All invitees will be notified.`,
+                          confirmText: 'Cancel Event',
+                          cancelText: 'Keep Event',
+                          isDestructive: true,
+                          onConfirm: () => {
+                            setConfirmModal(null);
+                            handleCancel(event);
+                          }
+                        });
                       }}
                       disabled={cancellingEventId === event.id}
                       title="Cancel event"
@@ -888,6 +916,66 @@ export const EventsPage: React.FC = () => {
         onImportContacts={async () => {}}
         isCalendarConnected={isCalendarConnected}
       />
+
+      {/* Custom Confirm Modal */}
+      {confirmModal?.show && (
+        <div className="gatherly-modal-overlay" onClick={() => setConfirmModal(null)}>
+          <div className="gatherly-modal confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{confirmModal.title}</h3>
+            <p>{confirmModal.message}</p>
+            <div className="gatherly-modal-actions">
+              <button 
+                className="gatherly-modal-btn secondary"
+                onClick={() => setConfirmModal(null)}
+              >
+                {confirmModal.cancelText || 'Cancel'}
+              </button>
+              <button 
+                className={`gatherly-modal-btn ${confirmModal.isDestructive ? 'destructive' : 'primary'}`}
+                onClick={confirmModal.onConfirm}
+              >
+                {confirmModal.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Modal */}
+      {alertModal?.show && (
+        <div className="gatherly-modal-overlay" onClick={() => setAlertModal(null)}>
+          <div className={`gatherly-modal alert-modal ${alertModal.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="alert-icon">
+              {alertModal.type === 'success' && (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <path d="M22 4L12 14.01l-3-3"/>
+                </svg>
+              )}
+              {alertModal.type === 'error' && (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+              )}
+              {alertModal.type === 'info' && (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+              )}
+            </div>
+            <h3>{alertModal.title}</h3>
+            <p>{alertModal.message}</p>
+            <button 
+              className="gatherly-modal-btn primary"
+              onClick={() => setAlertModal(null)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
