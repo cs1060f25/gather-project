@@ -1090,6 +1090,36 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   word-break: break-word;
 }
 
+/* Event detail actions */
+.event-detail-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #E5E5E5;
+}
+
+.event-action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 2px solid #1A1A1A;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.event-action-btn.view {
+  background: #22c55e;
+  color: #FFF;
+  border-color: #22c55e;
+}
+
+.event-action-btn.view:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
 /* Dark mode for event detail modal */
 .dark-mode .event-detail-modal {
   background: #2A2A2A;
@@ -1132,6 +1162,14 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
 
 .dark-mode .event-detail-description {
   color: #ccc;
+}
+
+.dark-mode .event-detail-actions {
+  border-top-color: #444;
+}
+
+.dark-mode .event-action-btn {
+  border-color: #444;
 }
 
 /* Mobile responsive */

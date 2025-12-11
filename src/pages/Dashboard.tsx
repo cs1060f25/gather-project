@@ -1282,6 +1282,21 @@ export const Dashboard: React.FC = () => {
                   </span>
                 </div>
               )}
+
+              {/* Actions for Gatherly events */}
+              {selectedEvent.isGatherlyEvent && (
+                <div className="event-detail-actions">
+                  <button 
+                    className="event-action-btn view"
+                    onClick={() => {
+                      setSelectedEvent(null);
+                      navigate(`/event/${selectedEvent.id}`);
+                    }}
+                  >
+                    View Details
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
