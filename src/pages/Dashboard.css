@@ -1235,3 +1235,139 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     margin: 0 1rem;
   }
 }
+
+/* ===== GATHERLY CUSTOM MODALS ===== */
+.gatherly-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: modalOverlayFade 0.2s ease;
+}
+
+@keyframes modalOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gatherly-modal {
+  background: #FFF;
+  border: 3px solid #1A1A1A;
+  box-shadow: 6px 6px 0 #1A1A1A;
+  padding: 1.5rem;
+  max-width: 380px;
+  width: 90%;
+  animation: modalSlideUp 0.2s ease;
+}
+
+@keyframes modalSlideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.gatherly-modal h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0 0 0.75rem 0;
+}
+
+.gatherly-modal p {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.5;
+}
+
+.gatherly-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.gatherly-modal-btn {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 2px solid #1A1A1A;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gatherly-modal-btn.secondary {
+  background: #FFF;
+  color: #1A1A1A;
+}
+
+.gatherly-modal-btn.secondary:hover {
+  background: #F5F5F5;
+}
+
+.gatherly-modal-btn.primary {
+  background: #22c55e;
+  color: #FFF;
+  border-color: #22c55e;
+}
+
+.gatherly-modal-btn.primary:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.gatherly-modal-btn.destructive {
+  background: #dc2626;
+  color: #FFF;
+  border-color: #dc2626;
+}
+
+.gatherly-modal-btn.destructive:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* Alert Modal */
+.alert-modal {
+  text-align: center;
+}
+
+.alert-modal .alert-icon {
+  margin-bottom: 1rem;
+}
+
+.alert-modal .gatherly-modal-btn {
+  width: 100%;
+}
+
+/* Dark mode */
+.dark-mode .gatherly-modal {
+  background: #2A2A2A;
+  border-color: #444;
+  box-shadow: 6px 6px 0 #000;
+}
+
+.dark-mode .gatherly-modal h3 {
+  color: #FFF;
+}
+
+.dark-mode .gatherly-modal p {
+  color: #AAA;
+}
+
+.dark-mode .gatherly-modal-btn.secondary {
+  background: #333;
+  color: #FFF;
+  border-color: #555;
+}
+
+.dark-mode .gatherly-modal-btn.secondary:hover {
+  background: #444;
+}

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
 
 interface ReminderEmailData {
   to: string;
@@ -12,6 +13,10 @@ interface ReminderEmailData {
   scheduledTime?: string;
   location?: string;
 }
+
+// Initialize Supabase client for server-side
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -36,6 +41,109 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const resend = new Resend(apiKey);
 
   try {
+    // Check if we received eventId (bulk reminder) or individual data
+    const { eventId, ...individualData } = req.body;
+
+    if (eventId) {
+      // Bulk reminder: look up event and all pending invites
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: 'Database not configured' });
+      }
+      
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Get event details
+      const { data: event, error: eventError } = await supabase
+        .from('gatherly_events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (eventError || !event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Get all pending invites for this event
+      const { data: invites, error: invitesError } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('status', 'pending');
+      
+      if (invitesError) {
+        return res.status(500).json({ error: 'Failed to fetch invites' });
+      }
+      
+      if (!invites || invites.length === 0) {
+        return res.status(200).json({ success: true, message: 'No pending invites to remind' });
+      }
+
+      // Get host info
+      const { data: hostProfile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', event.organizer_id)
+        .single();
+      
+      const hostName = hostProfile?.full_name || event.host_name || 'Event organizer';
+      const hostEmail = hostProfile?.email || event.host_email || '';
+      
+      const baseUrl = process.env.SITE_URL || 'https://gatherly.now';
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'Gatherly <reminders@gatherly.now>';
+      
+      // Send reminder to each pending invitee
+      const results = [];
+      for (const invite of invites) {
+        const inviteUrl = `${baseUrl}/invite/${invite.token}`;
+        const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        
+        const subject = `Quick nudge from ${hostName} about ${event.title}`;
+        const htmlContent = generatePendingReminderHtml({
+          eventTitle: event.title,
+          hostName,
+          inviteUrl,
+          location: event.location,
+          baseUrl
+        });
+
+        try {
+          const { data, error } = await resend.emails.send({
+            from: fromEmail,
+            to: [invite.invitee_email],
+            replyTo: hostEmail,
+            subject,
+            headers: {
+              'X-Entity-Ref-ID': uniqueId,
+              'Message-ID': `<${uniqueId}@gatherly.now>`,
+            },
+            html: htmlContent
+          });
+
+          results.push({
+            email: invite.invitee_email,
+            success: !error,
+            id: data?.id,
+            error: error?.message
+          });
+        } catch (err) {
+          results.push({
+            email: invite.invitee_email,
+            success: false,
+            error: err instanceof Error ? err.message : 'Unknown error'
+          });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      return res.status(200).json({ 
+        success: true, 
+        sent: successCount,
+        total: invites.length,
+        results 
+      });
+    }
+
+    // Individual reminder (legacy support)
     const { 
       to, 
       eventTitle, 
@@ -46,7 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       scheduledDate,
       scheduledTime,
       location 
-    } = req.body as ReminderEmailData;
+    } = individualData as ReminderEmailData;
 
     if (!to || !eventTitle || !hostName || !reminderType) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -60,10 +168,84 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let htmlContent: string;
 
     if (reminderType === 'pending') {
-      // Reminder to pick a time
       const inviteUrl = `${baseUrl}/invite/${inviteToken}`;
       subject = `Quick nudge from ${hostName} about ${eventTitle}`;
-      htmlContent = `
+      htmlContent = generatePendingReminderHtml({
+        eventTitle,
+        hostName,
+        inviteUrl,
+        location,
+        baseUrl
+      });
+    } else {
+      // Reminder for scheduled event
+      const formattedDate = scheduledDate ? new Date(scheduledDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      }) : 'TBD';
+      
+      const formattedTime = scheduledTime ? (() => {
+        const [hours, minutes] = scheduledTime.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+        return `${displayHour}:${minutes} ${ampm}`;
+      })() : 'TBD';
+
+      subject = `See you soon! ${eventTitle} is coming up`;
+      htmlContent = generateScheduledReminderHtml({
+        eventTitle,
+        hostName,
+        formattedDate,
+        formattedTime,
+        location,
+        baseUrl
+      });
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: [to],
+      replyTo: hostEmail,
+      subject,
+      headers: {
+        'X-Entity-Ref-ID': uniqueId,
+        'Message-ID': `<${uniqueId}@gatherly.now>`,
+      },
+      html: htmlContent
+    });
+
+    if (error) {
+      console.error('Resend API error:', JSON.stringify(error, null, 2));
+      return res.status(500).json({ 
+        error: 'Failed to send reminder email', 
+        details: error
+      });
+    }
+
+    return res.status(200).json({ success: true, id: data?.id });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error sending reminder:', errorMessage, error);
+    return res.status(500).json({ 
+      error: 'Failed to send reminder email',
+      message: errorMessage
+    });
+  }
+}
+
+// Helper function to generate pending reminder HTML
+function generatePendingReminderHtml(params: {
+  eventTitle: string;
+  hostName: string;
+  inviteUrl: string;
+  location?: string;
+  baseUrl: string;
+}): string {
+  const { eventTitle, hostName, inviteUrl, location, baseUrl } = params;
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -120,26 +302,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   </div>
 </body>
 </html>
-      `;
-    } else {
-      // Reminder for scheduled event
-      const formattedDate = scheduledDate ? new Date(scheduledDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      }) : 'TBD';
-      
-      const formattedTime = scheduledTime ? (() => {
-        const [hours, minutes] = scheduledTime.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-        return `${displayHour}:${minutes} ${ampm}`;
-      })() : 'TBD';
+  `;
+}
 
-      subject = `See you soon! ${eventTitle} is coming up`;
-      htmlContent = `
+// Helper function to generate scheduled reminder HTML
+function generateScheduledReminderHtml(params: {
+  eventTitle: string;
+  hostName: string;
+  formattedDate: string;
+  formattedTime: string;
+  location?: string;
+  baseUrl: string;
+}): string {
+  const { eventTitle, hostName, formattedDate, formattedTime, location, baseUrl } = params;
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -200,36 +376,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   </div>
 </body>
 </html>
-      `;
-    }
-
-    const { data, error } = await resend.emails.send({
-      from: fromEmail,
-      to: [to],
-      replyTo: hostEmail,
-      subject,
-      headers: {
-        'X-Entity-Ref-ID': uniqueId,
-        'Message-ID': `<${uniqueId}@gatherly.now>`,
-      },
-      html: htmlContent
-    });
-
-    if (error) {
-      console.error('Resend API error:', JSON.stringify(error, null, 2));
-      return res.status(500).json({ 
-        error: 'Failed to send reminder email', 
-        details: error
-      });
-    }
-
-    return res.status(200).json({ success: true, id: data?.id });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error sending reminder:', errorMessage, error);
-    return res.status(500).json({ 
-      error: 'Failed to send reminder email',
-      message: errorMessage
-    });
-  }
+  `;
 }

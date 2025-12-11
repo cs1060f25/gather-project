@@ -588,7 +588,7 @@
 
 .cep-option {
   display: grid;
-  grid-template-columns: auto 1fr 100px 85px;
+  grid-template-columns: auto 2fr 1.2fr 1fr;
   gap: 0.4rem;
   align-items: center;
   padding: 0.5rem 0.6rem;
@@ -1088,7 +1088,7 @@
 /* Responsive */
 @media (max-width: 1200px) {
   .cep-option {
-    grid-template-columns: auto 1fr 1fr 70px;
+    grid-template-columns: auto 2fr 1.2fr 1fr;
     gap: 0.35rem;
   }
 

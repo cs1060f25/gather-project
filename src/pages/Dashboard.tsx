@@ -154,6 +154,25 @@ export const Dashboard: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isReminding, setIsReminding] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  
+  // Custom confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+  } | null>(null);
+  
+  // Alert modal state (for success/error messages)
+  const [alertModal, setAlertModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
 
   // Calendar connection prompt state
   const [showCalendarPrompt, setShowCalendarPrompt] = useState(false);
@@ -805,51 +824,84 @@ export const Dashboard: React.FC = () => {
     if (!selectedEvent || !selectedEvent.isGatherlyEvent) return;
     setIsReminding(true);
     try {
+      // Extract the real event ID from formatted ID (gatherly-{uuid}-{index})
+      const eventId = selectedEvent.id.startsWith('gatherly-') 
+        ? selectedEvent.id.replace(/^gatherly-/, '').replace(/-\d+$/, '').replace(/-confirmed$/, '')
+        : selectedEvent.id;
       const response = await fetch('/api/send-reminder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: selectedEvent.id }),
+        body: JSON.stringify({ eventId }),
       });
       if (!response.ok) throw new Error('Failed to send reminder');
-      alert('Reminder sent successfully!');
+      setAlertModal({
+        show: true,
+        title: 'Reminder Sent',
+        message: 'All invitees have been reminded to respond.',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Remind error:', error);
-      alert('Failed to send reminder');
+      setAlertModal({
+        show: true,
+        title: 'Failed to Send',
+        message: 'Could not send reminder. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsReminding(false);
     }
   };
 
-  // Handle cancel for Gatherly events
-  const handleCancelEvent = async () => {
+  // Handle cancel for Gatherly events - shows confirm modal
+  const handleCancelEvent = () => {
     if (!selectedEvent || !selectedEvent.isGatherlyEvent) return;
-    if (!confirm('Are you sure you want to cancel this event? All invitees will be notified.')) return;
-    setIsCancelling(true);
-    try {
-      // Send cancel notifications
-      const response = await fetch('/api/send-cancel-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: selectedEvent.id }),
-      });
-      if (!response.ok) throw new Error('Failed to send cancel notification');
-      
-      // Update event status in database
-      const { error } = await supabase
-        .from('gatherly_events')
-        .update({ status: 'cancelled' })
-        .eq('id', selectedEvent.id);
-      if (error) throw error;
-      
-      setSelectedEvent(null);
-      // Refresh events
-      window.location.reload();
-    } catch (error) {
-      console.error('Cancel error:', error);
-      alert('Failed to cancel event');
-    } finally {
-      setIsCancelling(false);
-    }
+    // Extract the real event ID from formatted ID (gatherly-{uuid}-{index})
+    const eventId = selectedEvent.id.startsWith('gatherly-') 
+      ? selectedEvent.id.replace(/^gatherly-/, '').replace(/-\d+$/, '').replace(/-confirmed$/, '')
+      : selectedEvent.id;
+    setConfirmModal({
+      show: true,
+      title: 'Cancel Event',
+      message: `Are you sure you want to cancel "${selectedEvent.title}"? All invitees will be notified.`,
+      confirmText: 'Cancel Event',
+      cancelText: 'Keep Event',
+      isDestructive: true,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setIsCancelling(true);
+        try {
+          // Send cancel notifications
+          const response = await fetch('/api/send-cancel-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventId }),
+          });
+          if (!response.ok) throw new Error('Failed to send cancel notification');
+          
+          // Update event status in database
+          const { error } = await supabase
+            .from('gatherly_events')
+            .update({ status: 'cancelled' })
+            .eq('id', eventId);
+          if (error) throw error;
+          
+          setSelectedEvent(null);
+          // Refresh events
+          window.location.reload();
+        } catch (error) {
+          console.error('Cancel error:', error);
+          setAlertModal({
+            show: true,
+            title: 'Failed to Cancel',
+            message: 'Could not cancel event. Please try again.',
+            type: 'error'
+          });
+        } finally {
+          setIsCancelling(false);
+        }
+      }
+    });
   };
 
   // Handle time slot click
@@ -1340,11 +1392,15 @@ export const Dashboard: React.FC = () => {
               {/* Actions for Gatherly events */}
               {selectedEvent.isGatherlyEvent && selectedEvent.status !== 'cancelled' && (
                 <div className="event-detail-actions">
-                  <button 
+                  <button
                     className="event-action-btn view"
                     onClick={() => {
                       setSelectedEvent(null);
-                      navigate(`/event/${selectedEvent.id}`);
+                      // Extract the real event ID from formatted ID (gatherly-{uuid}-{index})
+                      const eventId = selectedEvent.id.startsWith('gatherly-') 
+                        ? selectedEvent.id.replace(/^gatherly-/, '').replace(/-\d+$/, '').replace(/-confirmed$/, '')
+                        : selectedEvent.id;
+                      navigate(`/event/${eventId}`);
                     }}
                   >
                     View
@@ -1380,6 +1436,66 @@ export const Dashboard: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Confirm Modal */}
+      {confirmModal?.show && (
+        <div className="gatherly-modal-overlay" onClick={() => setConfirmModal(null)}>
+          <div className="gatherly-modal confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{confirmModal.title}</h3>
+            <p>{confirmModal.message}</p>
+            <div className="gatherly-modal-actions">
+              <button 
+                className="gatherly-modal-btn secondary"
+                onClick={() => setConfirmModal(null)}
+              >
+                {confirmModal.cancelText || 'Cancel'}
+              </button>
+              <button 
+                className={`gatherly-modal-btn ${confirmModal.isDestructive ? 'destructive' : 'primary'}`}
+                onClick={confirmModal.onConfirm}
+              >
+                {confirmModal.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Modal */}
+      {alertModal?.show && (
+        <div className="gatherly-modal-overlay" onClick={() => setAlertModal(null)}>
+          <div className={`gatherly-modal alert-modal ${alertModal.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="alert-icon">
+              {alertModal.type === 'success' && (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <path d="M22 4L12 14.01l-3-3"/>
+                </svg>
+              )}
+              {alertModal.type === 'error' && (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+              )}
+              {alertModal.type === 'info' && (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+              )}
+            </div>
+            <h3>{alertModal.title}</h3>
+            <p>{alertModal.message}</p>
+            <button 
+              className="gatherly-modal-btn primary"
+              onClick={() => setAlertModal(null)}
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
