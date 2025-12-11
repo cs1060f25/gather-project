@@ -106,44 +106,59 @@ export const AuthPage: React.FC = () => {
     
     const normalizedEmail = email.trim().toLowerCase();
     
-    // First, check if the email exists in Gatherly's database (profiles table)
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
+    // Check if user exists by trying to sign up with same email
+    // If user exists, signUp will return the user without creating a new one (with fake session)
+    // or return an error indicating user already exists
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: 'dummy-check-password-12345678',
+      options: {
+        // Don't actually send confirmation email
+        emailRedirectTo: undefined
+      }
+    });
     
-    if (profileError && profileError.code !== 'PGRST116') {
-      // PGRST116 is "no rows found" which is expected if user doesn't exist
-      console.log('Profile check error:', profileError);
+    // Check various conditions to determine user state
+    if (signUpError) {
+      const errorMsg = signUpError.message?.toLowerCase() || '';
+      if (errorMsg.includes('already registered') || errorMsg.includes('already exists')) {
+        // User exists - continue to check if SSO or email/password
+      } else {
+        // Some other error
+        console.log('SignUp check error:', signUpError.message);
+      }
     }
     
-    if (!profileData) {
+    // If signUp returns a user with no identities, user doesn't exist (new signup attempt)
+    // If signUp returns a user with identities, user exists
+    const userExists = signUpData?.user?.identities && signUpData.user.identities.length > 0;
+    
+    if (!userExists && !signUpError?.message?.toLowerCase().includes('already')) {
+      // User doesn't exist
       setError('No account found with this email address. Please sign up first.');
       setIsLoading(false);
       return;
     }
     
-    // Try to sign in with a fake password to check if user exists and their provider
+    // User exists - check if they're SSO-only by trying to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
-      password: 'check-provider-dummy-password-that-will-fail'
+      password: 'check-provider-dummy-password-that-will-fail-12345'
     });
     
     if (signInError) {
       const errorMessage = signInError.message?.toLowerCase() || '';
       
-      // Check if user signed up with OAuth (Google)
+      // Check if user signed up with OAuth (Google) - these users can't reset password
       if (errorMessage.includes('oauth') || errorMessage.includes('google') || 
           errorMessage.includes('identity') || errorMessage.includes('provider') ||
-          errorMessage.includes('email link')) {
+          errorMessage.includes('email link') || errorMessage.includes('signed up with')) {
         setError('This email is linked to a Google account. Please sign in with Google instead.');
         setIsLoading(false);
         return;
       }
       
-      // "Invalid login credentials" means the user exists with email/password - proceed with reset
-      // Any other error, we should still try to send reset email
+      // "Invalid login credentials" or "Email not confirmed" means the user exists with email/password
     }
     
     try {
@@ -152,12 +167,6 @@ export const AuthPage: React.FC = () => {
       });
       
       if (error) {
-        // Check specific error messages
-        if (error.message?.includes('User not found') || error.message?.includes('not registered')) {
-          setError('No account found with this email address. Please sign up first.');
-          setIsLoading(false);
-          return;
-        }
         throw error;
       }
       
