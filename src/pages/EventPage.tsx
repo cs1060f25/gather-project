@@ -140,7 +140,8 @@ export const EventPage: React.FC = () => {
           status: supabaseEvent.status,
           createdAt: supabaseEvent.created_at,
           confirmedOption: supabaseEvent.confirmed_option,
-          responses: supabaseEvent.responses
+          responses: supabaseEvent.responses,
+          addGoogleMeet: supabaseEvent.add_google_meet || false
         };
         setEvent(gatherlyEvent);
         setIsGatherlyEvent(true);

@@ -636,7 +636,8 @@ export const Dashboard: React.FC = () => {
           status: e.status,
           createdAt: e.created_at,
           confirmedOption: e.confirmed_option,
-          responses: e.responses
+          responses: e.responses,
+          addGoogleMeet: e.add_google_meet || false
         }));
         setGatherlyEvents(events);
         // Also update localStorage for offline access
@@ -663,7 +664,7 @@ export const Dashboard: React.FC = () => {
     }
     
     try {
-      // Save all fields including location and description
+      // Save all fields including location, description, and Google Meet preference
       const { error } = await supabase.from('gatherly_events').insert({
         id: event.id,
         user_id: authUser.id,
@@ -673,7 +674,8 @@ export const Dashboard: React.FC = () => {
         options: event.options,
         participants: event.participants,
         status: event.status,
-        created_at: event.createdAt
+        created_at: event.createdAt,
+        add_google_meet: event.addGoogleMeet || false
       });
       
       if (error) {
