@@ -100,6 +100,13 @@ export const EventsPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
   const [remindingEventId, setRemindingEventId] = useState<string | null>(null);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+
+  // Check calendar connection on mount
+  useEffect(() => {
+    const googleToken = getGoogleToken();
+    setIsCalendarConnected(!!googleToken);
+  }, []);
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -660,7 +667,7 @@ export const EventsPage: React.FC = () => {
                     onClick={() => navigate(`/event/${event.id}`)}
                   >
                     <div className="pending-event-header">
-                      <h3 className="event-title">{event.title}</h3>
+                  <h3 className="event-title">{event.title}</h3>
                       <span className="event-responses">
                         {inviteCounts[event.id]?.responded || 0}/{inviteCounts[event.id]?.total || event.participants.length} Responses
                       </span>
@@ -681,8 +688,8 @@ export const EventsPage: React.FC = () => {
                       </div>
                     )}
                     
-                    <div className="event-meta">
-                      <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
+                  <div className="event-meta">
+                    <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
                     </div>
                   </div>
 
@@ -879,6 +886,7 @@ export const EventsPage: React.FC = () => {
         onAddContact={async () => {}}
         onRemoveContact={async () => {}}
         onImportContacts={async () => {}}
+        isCalendarConnected={isCalendarConnected}
       />
     </div>
   );
