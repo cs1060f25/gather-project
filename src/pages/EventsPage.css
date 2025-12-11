@@ -937,11 +937,13 @@
 .event-detail-actions {
   padding: 1rem 1.5rem 1.5rem;
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   border-top: 2px solid #E5E5E5;
 }
 
-.btn-view-gcal {
+.btn-view-gcal,
+.btn-edit-gcal {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -957,9 +959,18 @@
 }
 
 .btn-view-gcal:hover {
+  background: #F5F5F5;
+}
+
+.btn-edit-gcal {
   background: #22c55e;
   color: #FFF;
   border-color: #22c55e;
+}
+
+.btn-edit-gcal:hover {
+  background: #16a34a;
+  border-color: #16a34a;
 }
 
 .btn-close-modal {
@@ -1017,8 +1028,18 @@
 }
 
 .dark-mode .btn-view-gcal:hover {
+  background: #333;
+}
+
+.dark-mode .btn-edit-gcal {
   background: #22c55e;
+  color: #FFF;
   border-color: #22c55e;
+}
+
+.dark-mode .btn-edit-gcal:hover {
+  background: #16a34a;
+  border-color: #16a34a;
 }
 
 .dark-mode .btn-close-modal {
