@@ -86,10 +86,26 @@ export const InvitePage: React.FC = () => {
                 description: undefined,
                 status: fallbackResult.status
               });
+            } else {
+              // Event not found in database - likely scheduled (old behavior deleted it)
+              // or cancelled. Mark as confirmed to block further responses.
+              setEventData({
+                options: [],
+                location: data.event_location,
+                description: undefined,
+                status: 'confirmed'
+              });
             }
           }
         } catch (err) {
           console.log('Could not load full event data:', err);
+          // On error, block responses just to be safe
+          setEventData({
+            options: [],
+            location: data.event_location,
+            description: undefined,
+            status: 'confirmed'
+          });
         }
       }
       
