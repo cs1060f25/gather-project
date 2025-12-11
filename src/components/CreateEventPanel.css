@@ -1004,6 +1004,72 @@
   }
 }
 
+/* Mobile-specific improvements */
+@media (max-width: 480px) {
+  .create-event-panel {
+    border-top-width: 2px;
+  }
+
+  .cep-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .cep-header h2 {
+    font-size: 1rem;
+  }
+
+  .cep-tabs {
+    padding: 0.5rem 1rem;
+    gap: 0.25rem;
+  }
+
+  .cep-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    min-width: 70px;
+  }
+
+  .cep-form {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .cep-field label {
+    font-size: 0.65rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .cep-field input[type="text"],
+  .cep-field textarea {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .cep-submit {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .cep-chat {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .cep-chat-input {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .cep-chat-submit {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Resize handle hidden on mobile */
+  .cep-resize-handle {
+    display: none;
+  }
+}
+
 /* ===== CUSTOM PICKER STYLES ===== */
 
 /* Picker Button */

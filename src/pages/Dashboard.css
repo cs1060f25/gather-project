@@ -591,6 +591,43 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     border-width: 2px;
     box-shadow: 2px 2px 0 #1A1A1A;
   }
+
+  .dashboard-main {
+    gap: 0;
+  }
+
+  .calendar-section {
+    min-height: 35vh;
+    max-height: 45vh;
+  }
+
+  .create-event-section {
+    max-height: 55vh;
+    border-top: 2px solid #1A1A1A;
+  }
+
+  /* Notification dropdown mobile */
+  .notification-dropdown {
+    right: 0.5rem;
+    width: calc(100vw - 1rem);
+    max-width: 320px;
+  }
+}
+
+/* Very small mobile screens */
+@media (max-width: 360px) {
+  .dashboard-header {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .calendar-section {
+    min-height: 30vh;
+    max-height: 40vh;
+  }
+
+  .create-event-section {
+    max-height: 60vh;
+  }
 }
 
 /* Profile Sidebar Overlay - doesn't block right panel */
