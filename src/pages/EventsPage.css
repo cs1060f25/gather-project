@@ -380,19 +380,78 @@
 /* Pending Event Row */
 .pending-event-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: stretch;
+  gap: 0;
   background: #FFF;
   border: 3px solid #1A1A1A;
-  padding: 1rem 1.25rem;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease;
 }
 
 .pending-event-row:hover {
-  transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 #1A1A1A;
+}
+
+.pending-event-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+}
+
+.pending-event-actions {
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #E5E5E5;
+}
+
+.pending-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #FFF;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 90px;
+}
+
+.pending-action-btn.remind {
+  color: #22c55e;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.pending-action-btn.remind:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.pending-action-btn.cancel {
+  color: #ef4444;
+}
+
+.pending-action-btn.cancel:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.pending-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pending-action-btn .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .pending-event-header {
@@ -609,6 +668,26 @@
   color: #888;
 }
 
+.dark-mode .pending-event-actions {
+  border-left-color: #444;
+}
+
+.dark-mode .pending-action-btn {
+  background: #333;
+}
+
+.dark-mode .pending-action-btn.remind {
+  border-bottom-color: #444;
+}
+
+.dark-mode .pending-action-btn.remind:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.dark-mode .pending-action-btn.cancel:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+}
+
 .dark-mode .pending-option-badge {
   background: #333;
   border-color: #444;
@@ -678,8 +757,37 @@
 
   .pending-event-row {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .pending-event-content {
+    padding: 0.75rem;
+  }
+
+  .pending-event-actions {
+    flex-direction: row;
+    border-left: none;
+    border-top: 2px solid #E5E5E5;
+  }
+
+  .pending-action-btn {
+    flex: 1;
+    padding: 0.5rem;
+    min-width: auto;
+  }
+
+  .pending-action-btn.remind {
+    border-bottom: none;
+    border-right: 1px solid #E5E5E5;
+  }
+
+  .dark-mode .pending-event-actions {
+    border-top-color: #444;
+  }
+
+  .dark-mode .pending-action-btn.remind {
+    border-right-color: #444;
   }
 
   .pending-event-row .event-meta {
@@ -704,7 +812,12 @@
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
-  animation: fadeIn 0.2s ease;
+  animation: eventModalOverlayFade 0.15s ease-out forwards;
+}
+
+@keyframes eventModalOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .event-detail-modal {
@@ -716,17 +829,17 @@
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  animation: slideUp 0.25s ease;
+  animation: eventModalScale 0.2s ease-out forwards;
 }
 
-@keyframes slideUp {
+@keyframes eventModalScale {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 

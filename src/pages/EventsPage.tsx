@@ -98,6 +98,8 @@ export const EventsPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [inviteCounts, setInviteCounts] = useState<Record<string, { responded: number; total: number }>>({});
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
+  const [remindingEventId, setRemindingEventId] = useState<string | null>(null);
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -369,6 +371,76 @@ export const EventsPage: React.FC = () => {
     };
   }, [googleEvents, gatherlyEvents]);
 
+  // Handle sending reminders
+  const handleRemind = async (event: GatherlyEvent) => {
+    setRemindingEventId(event.id);
+    try {
+      const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
+      
+      for (const email of event.participants) {
+        await fetch('/api/send-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            eventTitle: event.title,
+            hostName,
+            hostEmail: user?.email,
+            reminderType: 'pending',
+            eventDetails: event.options?.[0] ? {
+              date: event.options[0].day,
+              time: event.options[0].time,
+              location: event.location || event.options[0].location
+            } : undefined
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Failed to send reminders:', error);
+    } finally {
+      setRemindingEventId(null);
+    }
+  };
+
+  // Handle cancelling event
+  const handleCancel = async (event: GatherlyEvent) => {
+    setCancellingEventId(event.id);
+    try {
+      const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
+      
+      // Send cancellation emails
+      for (const email of event.participants) {
+        await fetch('/api/send-cancel-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            eventTitle: event.title,
+            hostName,
+            hostEmail: user?.email
+          })
+        });
+      }
+
+      // Update event status in database
+      const { error } = await supabase
+        .from('gatherly_events')
+        .update({ status: 'cancelled' })
+        .eq('id', event.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setGatherlyEvents(prev => 
+        prev.map(e => e.id === event.id ? { ...e, status: 'cancelled' } : e)
+      );
+    } catch (error) {
+      console.error('Failed to cancel event:', error);
+    } finally {
+      setCancellingEventId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="events-page">
@@ -579,13 +651,16 @@ export const EventsPage: React.FC = () => {
                 };
                 
                 return (
-                <Link 
+                <div 
                   key={event.id}
-                  to={`/event/${event.id}`}
                   className="pending-event-row"
                 >
+                  <div 
+                    className="pending-event-content"
+                    onClick={() => navigate(`/event/${event.id}`)}
+                  >
                     <div className="pending-event-header">
-                  <h3 className="event-title">{event.title}</h3>
+                      <h3 className="event-title">{event.title}</h3>
                       <span className="event-responses">
                         {inviteCounts[event.id]?.responded || 0}/{inviteCounts[event.id]?.total || event.participants.length} Responses
                       </span>
@@ -606,10 +681,58 @@ export const EventsPage: React.FC = () => {
                       </div>
                     )}
                     
-                  <div className="event-meta">
-                    <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
+                    <div className="event-meta">
+                      <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
+                    </div>
                   </div>
-                </Link>
+
+                  <div className="pending-event-actions">
+                    <button
+                      className="pending-action-btn remind"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemind(event);
+                      }}
+                      disabled={remindingEventId === event.id}
+                      title="Send reminder to invitees"
+                    >
+                      {remindingEventId === event.id ? (
+                        <svg className="spinner" width="14" height="14" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="31.416" strokeDashoffset="10"/>
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                      )}
+                      Remind
+                    </button>
+                    <button
+                      className="pending-action-btn cancel"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Cancel "${event.title}"? This will notify all invitees.`)) {
+                          handleCancel(event);
+                        }
+                      }}
+                      disabled={cancellingEventId === event.id}
+                      title="Cancel event"
+                    >
+                      {cancellingEventId === event.id ? (
+                        <svg className="spinner" width="14" height="14" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="31.416" strokeDashoffset="10"/>
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M15 9l-6 6M9 9l6 6"/>
+                        </svg>
+                      )}
+                      Cancel
+                    </button>
+                  </div>
+                </div>
                 );
               })
             )}
