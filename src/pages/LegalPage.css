@@ -9,13 +9,13 @@
 
 .legal-header {
   padding: 1rem 1.5rem;
-  background: #FFF;
+  background: #FAFAFA;
   border-bottom: 3px solid #1A1A1A;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .legal-header-inner {
