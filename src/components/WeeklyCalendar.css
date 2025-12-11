@@ -467,6 +467,8 @@
   overflow-x: hidden;
   position: relative;
   align-items: stretch;
+  /* Ensure bottom content is fully visible when scrolling */
+  padding-bottom: calc(var(--wc-slot-height) / 2);
 }
 
 /* ===== TIME COLUMN ===== */

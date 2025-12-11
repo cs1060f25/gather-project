@@ -819,15 +819,23 @@ export const Dashboard: React.FC = () => {
     setSelectedEvent(event);
   };
 
+  // Extract real event ID from formatted calendar ID
+  const extractEventId = (formattedId: string): string => {
+    if (formattedId.startsWith('gatherly-')) {
+      let eventId = formattedId.slice(9); // Remove 'gatherly-' prefix
+      // Remove -confirmed or -0, -1, -2 suffix
+      eventId = eventId.replace(/-confirmed$/, '').replace(/-\d+$/, '');
+      return eventId;
+    }
+    return formattedId;
+  };
+
   // Handle remind for Gatherly events
   const handleRemindEvent = async () => {
     if (!selectedEvent || !selectedEvent.isGatherlyEvent) return;
     setIsReminding(true);
     try {
-      // Extract the real event ID from formatted ID (gatherly-{uuid}-{index})
-      const eventId = selectedEvent.id.startsWith('gatherly-') 
-        ? selectedEvent.id.replace(/^gatherly-/, '').replace(/-\d+$/, '').replace(/-confirmed$/, '')
-        : selectedEvent.id;
+      const eventId = extractEventId(selectedEvent.id);
       const response = await fetch('/api/send-reminder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -856,10 +864,7 @@ export const Dashboard: React.FC = () => {
   // Handle cancel for Gatherly events - shows confirm modal
   const handleCancelEvent = () => {
     if (!selectedEvent || !selectedEvent.isGatherlyEvent) return;
-    // Extract the real event ID from formatted ID (gatherly-{uuid}-{index})
-    const eventId = selectedEvent.id.startsWith('gatherly-') 
-      ? selectedEvent.id.replace(/^gatherly-/, '').replace(/-\d+$/, '').replace(/-confirmed$/, '')
-      : selectedEvent.id;
+    const eventId = extractEventId(selectedEvent.id);
     setConfirmModal({
       show: true,
       title: 'Cancel Event',
@@ -1396,11 +1401,7 @@ export const Dashboard: React.FC = () => {
                     className="event-action-btn view"
                     onClick={() => {
                       setSelectedEvent(null);
-                      // Extract the real event ID from formatted ID (gatherly-{uuid}-{index})
-                      const eventId = selectedEvent.id.startsWith('gatherly-') 
-                        ? selectedEvent.id.replace(/^gatherly-/, '').replace(/-\d+$/, '').replace(/-confirmed$/, '')
-                        : selectedEvent.id;
-                      navigate(`/event/${eventId}`);
+                      navigate(`/event/${extractEventId(selectedEvent.id)}`);
                     }}
                   >
                     View
