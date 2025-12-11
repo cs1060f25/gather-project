@@ -363,12 +363,12 @@ export const AuthPage: React.FC = () => {
               <h2>Verify your email</h2>
               <p>We've sent a verification link to <strong>{email}</strong></p>
               <p className="spam-notice">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                Check your spam folder if you don't see it
+                <span>Check your spam folder if you don't see it</span>
               </p>
               <button 
                 className="submit-btn"
@@ -407,12 +407,12 @@ export const AuthPage: React.FC = () => {
                 <h2>Check your email</h2>
                 <p>If an account exists for <strong>{email}</strong>, we've sent a password reset link.</p>
                 <p className="spam-notice">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  Check spam. SSO accounts use Google sign-in.
+                  <span>Check spam. SSO accounts use Google sign-in.</span>
                 </p>
                 <button 
                   className="submit-btn"
