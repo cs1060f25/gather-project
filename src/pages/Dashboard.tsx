@@ -406,10 +406,10 @@ export const Dashboard: React.FC = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/app`,
-          scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
+          scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly',
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'consent', // Always force consent when explicitly connecting calendar
           }
         }
       });

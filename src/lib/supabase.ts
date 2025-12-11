@@ -115,6 +115,10 @@ export const signUpWithEmail = async (email: string, password: string, fullName?
 };
 
 export const signInWithGoogle = async () => {
+    // Check if we need to force consent (no existing Google token)
+    const existingToken = localStorage.getItem('gatherly_google_token');
+    const needsConsent = !existingToken;
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -122,7 +126,8 @@ export const signInWithGoogle = async () => {
             scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly',
             queryParams: {
                 access_type: 'offline',
-                prompt: 'select_account', // Changed from 'consent' to allow remembered sessions
+                // Force consent if no token exists to get a fresh provider_token
+                prompt: needsConsent ? 'consent' : 'select_account',
             }
         },
     });
