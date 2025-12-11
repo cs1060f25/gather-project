@@ -382,20 +382,28 @@ export const Dashboard: React.FC = () => {
     
     setHasCheckedCalendarConnection(true);
     
-    // Check if user has a Google token
+    // Check if user has a Google token - this is required for calendar access
     const googleToken = getGoogleToken();
     
-    // Check if user signed in with Google (has google identity)
+    // Check if user originally signed up with Google (has google identity)
     const isGoogleUser = authUser.app_metadata?.provider === 'google' || 
                          authUser.identities?.some((i: { provider: string }) => i.provider === 'google');
     
-    // Determine if calendar is connected
-    const calendarConnected = !!(googleToken || isGoogleUser);
+    // Calendar is ONLY connected if we have a valid Google token
+    // Even if user is a Google user, they need a token for calendar access
+    const calendarConnected = !!googleToken;
     setIsCalendarConnected(calendarConnected);
     
-    // If no Google token and not a Google user, show prompt
+    // Show prompt if no Google token
+    // This handles both: non-Google users AND Google users who logged in with email/password
     if (!calendarConnected) {
       setShowCalendarPrompt(true);
+      
+      // If this is a Google user without a token, they logged in with email/password
+      // Log this for debugging
+      if (isGoogleUser) {
+        console.log('Google user logged in without OAuth - calendar reconnection needed');
+      }
     }
   }, [authUser, hasCheckedCalendarConnection]);
 
