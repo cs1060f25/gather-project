@@ -50,7 +50,6 @@ export const AuthPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
 
   // Handle back navigation and page restore - reset loading state
   useEffect(() => {
@@ -159,8 +158,7 @@ export const AuthPage: React.FC = () => {
           password,
           options: {
             data: {
-              full_name: fullName,
-              phone: phone
+              full_name: fullName
             },
             emailRedirectTo: `${window.location.origin}/app`
           }
@@ -174,7 +172,6 @@ export const AuthPage: React.FC = () => {
             id: data.user.id,
             email: email.toLowerCase(),
             full_name: fullName,
-            phone: phone,
             created_at: new Date().toISOString()
           });
           
@@ -277,16 +274,6 @@ export const AuthPage: React.FC = () => {
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label htmlFor="phone">Phone (optional)</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (555) 000-0000"
-                  />
-                </div>
               </>
             )}
 
