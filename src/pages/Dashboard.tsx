@@ -1181,12 +1181,12 @@ export const Dashboard: React.FC = () => {
         onConnectCalendar={handleConnectGoogleCalendar}
       />
 
-      {/* Event Detail Modal */}
+      {/* Event Detail Modal - Compact */}
       {selectedEvent && (
         <div className="event-detail-modal-overlay" onClick={() => setSelectedEvent(null)}>
           <div className="event-detail-modal" onClick={(e) => e.stopPropagation()}>
             <button className="event-detail-close" onClick={() => setSelectedEvent(null)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
@@ -1199,16 +1199,7 @@ export const Dashboard: React.FC = () => {
               <div className="event-detail-title-section">
                 <h2>{selectedEvent.title}</h2>
                 {(selectedEvent.isGatherlyEvent || selectedEvent.isGatherlyScheduled) && (
-                  <span className="event-detail-badge gatherly">
-                    <svg width="14" height="14" viewBox="-2 -2 28 28" fill="none">
-                      <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" fill="none"/>
-                      <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" fill="none"/>
-                      <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" strokeWidth="2.5"/>
-                      <path d="M6 14V18" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"/>
-                      <path d="M4 16H8" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"/>
-                    </svg>
-                    Gatherly
-                  </span>
+                  <span className="event-detail-badge gatherly">Gatherly</span>
                 )}
               </div>
             </div>
@@ -1216,90 +1207,61 @@ export const Dashboard: React.FC = () => {
             <div className="event-detail-content">
               {/* Date & Time */}
               <div className="event-detail-row">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18"/>
                 </svg>
-                <div className="event-detail-info">
-                  <span className="event-detail-label">
-                    {selectedEvent.date ? new Date(selectedEvent.date + 'T00:00:00').toLocaleDateString('en-US', {
-                      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-                    }) : 'No date'}
-                  </span>
+                <span className="event-detail-label">
+                  {selectedEvent.date ? new Date(selectedEvent.date + 'T00:00:00').toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric'
+                  }) : 'No date'}
                   {selectedEvent.time && (
                     <span className="event-detail-sub">
                       {new Date(`2000-01-01T${selectedEvent.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                       {selectedEvent.endTime && ` - ${new Date(`2000-01-01T${selectedEvent.endTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
-                      {selectedEvent.duration && !selectedEvent.endTime && ` (${selectedEvent.duration < 60 ? `${selectedEvent.duration} min` : `${selectedEvent.duration / 60}h`})`}
                     </span>
                   )}
-                </div>
+                </span>
               </div>
               
               {/* Location */}
               {selectedEvent.location && (
                 <div className="event-detail-row">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                   </svg>
-                  <div className="event-detail-info">
-                    <span className="event-detail-label">{selectedEvent.location}</span>
-                  </div>
+                  <span className="event-detail-label">{selectedEvent.location}</span>
                 </div>
               )}
               
-              {/* Calendar Source */}
+              {/* Calendar */}
               {selectedEvent.calendarName && (
                 <div className="event-detail-row">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
                   </svg>
-                  <div className="event-detail-info">
-                    <span className="event-detail-label">{selectedEvent.calendarName}</span>
-                    <span className="event-detail-sub">Calendar</span>
-                  </div>
+                  <span className="event-detail-label">{selectedEvent.calendarName}</span>
                 </div>
               )}
               
               {/* Attendees */}
               {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
-                <div className="event-detail-row attendees">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className="event-detail-row" style={{ alignItems: 'flex-start' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginTop: '2px' }}>
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
                   <div className="event-detail-info">
                     <span className="event-detail-label">{selectedEvent.attendees.length} attendee{selectedEvent.attendees.length > 1 ? 's' : ''}</span>
                     <div className="event-detail-attendees">
-                      {selectedEvent.attendees.slice(0, 5).map((email, idx) => (
+                      {selectedEvent.attendees.slice(0, 3).map((email, idx) => (
                         <span key={idx} className="attendee-chip">{email}</span>
                       ))}
-                      {selectedEvent.attendees.length > 5 && (
-                        <span className="attendee-chip more">+{selectedEvent.attendees.length - 5} more</span>
+                      {selectedEvent.attendees.length > 3 && (
+                        <span className="attendee-chip more">+{selectedEvent.attendees.length - 3}</span>
                       )}
                     </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Description */}
-              {selectedEvent.description && !selectedEvent.description.includes('[Scheduled with Gatherly]') && (
-                <div className="event-detail-row description">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="17" y1="10" x2="3" y2="10"/>
-                    <line x1="21" y1="6" x2="3" y2="6"/>
-                    <line x1="21" y1="14" x2="3" y2="14"/>
-                    <line x1="17" y1="18" x2="3" y2="18"/>
-                  </svg>
-                  <div className="event-detail-info">
-                    <p className="event-detail-description">
-                      {selectedEvent.description.replace('[Scheduled with Gatherly]', '').trim()}
-                    </p>
                   </div>
                 </div>
               )}
@@ -1307,21 +1269,17 @@ export const Dashboard: React.FC = () => {
               {/* Status for Gatherly events */}
               {selectedEvent.isGatherlyEvent && selectedEvent.status && (
                 <div className="event-detail-row">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    {selectedEvent.status === 'pending' ? (
-                      <><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></>
-                    ) : selectedEvent.status === 'confirmed' ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {selectedEvent.status === 'confirmed' ? (
                       <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></>
                     ) : (
-                      <><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></>
+                      <><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></>
                     )}
                   </svg>
-                  <div className="event-detail-info">
-                    <span className={`event-detail-status ${selectedEvent.status}`}>
-                      {selectedEvent.status === 'pending' ? 'Waiting for responses' : 
-                       selectedEvent.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
-                    </span>
-                  </div>
+                  <span className={`event-detail-status ${selectedEvent.status}`}>
+                    {selectedEvent.status === 'pending' ? 'Pending' : 
+                     selectedEvent.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
+                  </span>
                 </div>
               )}
             </div>
