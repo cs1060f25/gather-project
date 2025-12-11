@@ -227,6 +227,19 @@
   background: #00ff90;
 }
 
+.connection-status.not-connected {
+  background: #f59e0b;
+  color: #111;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.connection-status.not-connected:hover {
+  background: #fbbf24;
+  transform: translateY(-1px);
+}
+
 /* People Section */
 .people-header {
   display: flex;

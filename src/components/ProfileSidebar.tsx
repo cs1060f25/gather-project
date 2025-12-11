@@ -35,6 +35,8 @@ interface ProfileSidebarProps {
   onAddContact: (contact: Contact) => void;
   onRemoveContact?: (contactId: string) => void;
   onImportContacts?: () => void;
+  isCalendarConnected?: boolean;
+  onConnectCalendar?: () => void;
 }
 
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 
@@ -44,7 +46,9 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   onClose, 
   onSignOut,
   onAddContact,
-  onRemoveContact
+  onRemoveContact,
+  isCalendarConnected = false,
+  onConnectCalendar
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'people' | 'settings'>('profile');
   const [newContact, setNewContact] = useState({ name: '', email: '' });
@@ -272,7 +276,16 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                     </svg>
                   </span>
                   <span className="connection-name">Google Calendar</span>
-                  <span className="connection-status connected">Connected</span>
+                  {isCalendarConnected ? (
+                    <span className="connection-status connected">Connected</span>
+                  ) : (
+                    <button 
+                      className="connection-status not-connected"
+                      onClick={onConnectCalendar}
+                    >
+                      Connect
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

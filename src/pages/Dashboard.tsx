@@ -1158,7 +1158,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Profile Sidebar - opens as overlay, not blocking right panel */}
-      <ProfileSidebar 
+      <ProfileSidebar
         isOpen={showProfile}
         user={user}
         contacts={contacts}
@@ -1166,6 +1166,8 @@ export const Dashboard: React.FC = () => {
         onSignOut={handleSignOut}
         onAddContact={handleAddContact}
         onRemoveContact={handleRemoveContact}
+        isCalendarConnected={isCalendarConnected}
+        onConnectCalendar={handleConnectGoogleCalendar}
       />
 
       {/* Event Detail Modal */}
