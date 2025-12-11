@@ -106,62 +106,10 @@ export const AuthPage: React.FC = () => {
     
     const normalizedEmail = email.trim().toLowerCase();
     
-    // Check if user exists by trying to sign up with same email
-    // If user exists, signUp will return the user without creating a new one (with fake session)
-    // or return an error indicating user already exists
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password: 'dummy-check-password-12345678',
-      options: {
-        // Don't actually send confirmation email
-        emailRedirectTo: undefined
-      }
-    });
-    
-    // Check various conditions to determine user state
-    if (signUpError) {
-      const errorMsg = signUpError.message?.toLowerCase() || '';
-      if (errorMsg.includes('already registered') || errorMsg.includes('already exists')) {
-        // User exists - continue to check if SSO or email/password
-      } else {
-        // Some other error
-        console.log('SignUp check error:', signUpError.message);
-      }
-    }
-    
-    // If signUp returns a user with no identities, user doesn't exist (new signup attempt)
-    // If signUp returns a user with identities, user exists
-    const userExists = signUpData?.user?.identities && signUpData.user.identities.length > 0;
-    
-    if (!userExists && !signUpError?.message?.toLowerCase().includes('already')) {
-      // User doesn't exist
-      setError('No account found with this email address. Please sign up first.');
-      setIsLoading(false);
-      return;
-    }
-    
-    // User exists - check if they're SSO-only by trying to sign in
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password: 'check-provider-dummy-password-that-will-fail-12345'
-    });
-    
-    if (signInError) {
-      const errorMessage = signInError.message?.toLowerCase() || '';
-      
-      // Check if user signed up with OAuth (Google) - these users can't reset password
-      if (errorMessage.includes('oauth') || errorMessage.includes('google') || 
-          errorMessage.includes('identity') || errorMessage.includes('provider') ||
-          errorMessage.includes('email link') || errorMessage.includes('signed up with')) {
-        setError('This email is linked to a Google account. Please sign in with Google instead.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // "Invalid login credentials" or "Email not confirmed" means the user exists with email/password
-    }
-    
     try {
+      // Send password reset email
+      // Supabase will only send to users who signed up with email/password
+      // SSO-only users and non-existent users won't receive an email
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -170,6 +118,7 @@ export const AuthPage: React.FC = () => {
         throw error;
       }
       
+      // Always show success message (security best practice - don't reveal if email exists)
       setResetEmailSent(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email. Please try again.');
@@ -456,7 +405,15 @@ export const AuthPage: React.FC = () => {
               <div className="reset-success">
                 <EmailSentIcon />
                 <h2>Check your email</h2>
-                <p>We've sent a password reset link to <strong>{email}</strong></p>
+                <p>If an account exists for <strong>{email}</strong>, we've sent a password reset link.</p>
+                <p className="spam-notice">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Check spam. SSO accounts use Google sign-in.
+                </p>
                 <button 
                   className="submit-btn"
                   onClick={() => {
