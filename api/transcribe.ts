@@ -92,43 +92,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const transcription = await whisperResponse.json() as { text: string };
-    const rawText = transcription.text;
+    let text = transcription.text.trim();
+    
+    // Simple cleanup: remove common filler words but keep the meaning intact
+    text = text
+      .replace(/\b(um|uh|er|ah|like,? you know|you know,?)\b/gi, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
 
-    // Clean up the transcription with GPT to make it more natural
-    const cleanupResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a text cleanup assistant. Clean up the following voice transcription to be more natural and readable for a scheduling context. Fix any obvious transcription errors, remove filler words (um, uh, like), and format it as a clear scheduling request. Keep it concise. Only return the cleaned text, nothing else.`
-          },
-          {
-            role: 'user',
-            content: rawText
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.3,
-      }),
-    });
-
-    if (!cleanupResponse.ok) {
-      // If cleanup fails, just return the raw transcription
-      return res.status(200).json({ text: rawText });
-    }
-
-    const cleanupResult = await cleanupResponse.json() as {
-      choices: Array<{ message: { content: string } }>;
-    };
-    const cleanedText = cleanupResult.choices[0]?.message?.content || rawText;
-
-    return res.status(200).json({ text: cleanedText.trim() });
+    return res.status(200).json({ text });
   } catch (error) {
     console.error('Transcription error:', error);
     return res.status(500).json({ error: 'Failed to process audio' });

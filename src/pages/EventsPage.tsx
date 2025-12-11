@@ -24,6 +24,7 @@ interface CalendarEvent {
   time?: string;
   endTime?: string;
   location?: string;
+  description?: string;
   attendees?: string[];
   source: 'google' | 'gatherly';
   calendarId?: string;
@@ -34,6 +35,7 @@ interface CalendarEvent {
   isGatherlyScheduled?: boolean; // Google Calendar event that was created via Gatherly
   responses?: number;
   totalInvites?: number;
+  htmlLink?: string;
 }
 
 interface GatherlyEvent {
@@ -95,6 +97,7 @@ export const EventsPage: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [inviteCounts, setInviteCounts] = useState<Record<string, { responded: number; total: number }>>({});
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -448,8 +451,8 @@ export const EventsPage: React.FC = () => {
                     onClick={() => {
                       if (isGatherlyEvent) {
                         navigate(`/event/${event.id}`);
-                      } else if (event.htmlLink) {
-                        window.open(event.htmlLink, '_blank');
+                      } else {
+                        setSelectedEvent(event);
                       }
                     }}
                   >
@@ -518,8 +521,8 @@ export const EventsPage: React.FC = () => {
                     onClick={() => {
                       if (isGatherlyEvent) {
                         navigate(`/event/${event.id}`);
-                      } else if (event.htmlLink) {
-                        window.open(event.htmlLink, '_blank');
+                      } else {
+                        setSelectedEvent(event);
                       }
                     }}
                   >
@@ -613,6 +616,121 @@ export const EventsPage: React.FC = () => {
           </div>
         </section>
       </main>
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div className="event-detail-modal-overlay" onClick={() => setSelectedEvent(null)}>
+          <div className="event-detail-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setSelectedEvent(null)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+            
+            <div className="event-detail-header">
+              <h2>{selectedEvent.title}</h2>
+              {selectedEvent.isGatherlyScheduled && (
+                <span className="gatherly-scheduled-badge">
+                  <GatherlyLogo size={14} />
+                  Scheduled with Gatherly
+                </span>
+              )}
+            </div>
+
+            <div className="event-detail-info">
+              <div className="detail-row">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>
+                  {new Date(selectedEvent.date + 'T00:00:00').toLocaleDateString('en-US', { 
+                    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
+                  })}
+                </span>
+              </div>
+              
+              {selectedEvent.time && (
+                <div className="detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                  <span>
+                    {new Date(`2000-01-01T${selectedEvent.time}`).toLocaleTimeString('en-US', { 
+                      hour: 'numeric', minute: '2-digit' 
+                    })}
+                    {selectedEvent.endTime && ` - ${new Date(`2000-01-01T${selectedEvent.endTime}`).toLocaleTimeString('en-US', { 
+                      hour: 'numeric', minute: '2-digit' 
+                    })}`}
+                  </span>
+                </div>
+              )}
+              
+              {selectedEvent.location && (
+                <div className="detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>{selectedEvent.location}</span>
+                </div>
+              )}
+
+              {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
+                <div className="detail-row attendees-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  <div className="attendees-list">
+                    {selectedEvent.attendees.slice(0, 5).map((email, i) => (
+                      <span key={i} className="attendee-chip">{email}</span>
+                    ))}
+                    {selectedEvent.attendees.length > 5 && (
+                      <span className="attendee-more">+{selectedEvent.attendees.length - 5} more</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedEvent.calendarName && (
+                <div className="detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <path d="M3 10h18"/>
+                  </svg>
+                  <span style={{ color: selectedEvent.calendarColor }}>{selectedEvent.calendarName}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="event-detail-actions">
+              {selectedEvent.htmlLink && (
+                <a 
+                  href={selectedEvent.htmlLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="btn-view-gcal"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  Open in Google Calendar
+                </a>
+              )}
+              <button className="btn-close-modal" onClick={() => setSelectedEvent(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Sidebar */}
       <ProfileSidebar 
