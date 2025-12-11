@@ -126,7 +126,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         setWeather(null);
       } finally {
         setWeatherLoading(false);
-      }
+    }
     };
     
     loadWeather();
@@ -251,12 +251,12 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                           <path d="m13 12-3 5h4l-3 5"/>
                         </svg>
                       )}
-                    </div>
+                </div>
                     <div className="weather-info">
                       <span className="weather-temp">{weather.temp}°F</span>
                       <span className="weather-condition">{weather.condition}</span>
                       <span className="weather-location">{weather.location}</span>
-                    </div>
+                </div>
                   </>
                 ) : (
                   <div className="weather-unavailable">Weather unavailable</div>

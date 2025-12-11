@@ -667,64 +667,64 @@ export const InvitePage: React.FC = () => {
                     )}
                   </div>
                 )}
-
+                
               {/* Always show response buttons when no time options available */}
               {timeOptions.length === 0 && (
                 <>
-                  <p className="invite-question">Can you make it?</p>
+              <p className="invite-question">Can you make it?</p>
 
-                  <div className="response-buttons">
-                    <button
-                      className={`btn-response btn-yes ${response === 'accepted' ? 'selected' : ''}`}
-                      onClick={() => handleResponse('accepted')}
-                      disabled={responding}
-                    >
-                      {responding && response === 'accepted' ? (
-                        <span className="loading-spinner-small"></span>
-                      ) : (
-                        <>
+              <div className="response-buttons">
+                <button
+                  className={`btn-response btn-yes ${response === 'accepted' ? 'selected' : ''}`}
+                  onClick={() => handleResponse('accepted')}
+                  disabled={responding}
+                >
+                  {responding && response === 'accepted' ? (
+                    <span className="loading-spinner-small"></span>
+                  ) : (
+                    <>
                           <span className="btn-emoji">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                           </span>
-                          <span>Yes, I'm in!</span>
-                        </>
-                      )}
-                    </button>
+                      <span>Yes, I'm in!</span>
+                    </>
+                  )}
+                </button>
 
-                    <button
-                      className={`btn-response btn-maybe ${response === 'maybe' ? 'selected' : ''}`}
-                      onClick={() => handleResponse('maybe')}
-                      disabled={responding}
-                    >
-                      {responding && response === 'maybe' ? (
-                        <span className="loading-spinner-small"></span>
-                      ) : (
-                        <>
+                <button
+                  className={`btn-response btn-maybe ${response === 'maybe' ? 'selected' : ''}`}
+                  onClick={() => handleResponse('maybe')}
+                  disabled={responding}
+                >
+                  {responding && response === 'maybe' ? (
+                    <span className="loading-spinner-small"></span>
+                  ) : (
+                    <>
                           <span className="btn-emoji">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                           </span>
-                          <span>Maybe</span>
-                        </>
-                      )}
-                    </button>
+                      <span>Maybe</span>
+                    </>
+                  )}
+                </button>
 
-                    <button
-                      className={`btn-response btn-no ${response === 'declined' ? 'selected' : ''}`}
-                      onClick={() => handleResponse('declined')}
-                      disabled={responding}
-                    >
-                      {responding && response === 'declined' ? (
-                        <span className="loading-spinner-small"></span>
-                      ) : (
-                        <>
+                <button
+                  className={`btn-response btn-no ${response === 'declined' ? 'selected' : ''}`}
+                  onClick={() => handleResponse('declined')}
+                  disabled={responding}
+                >
+                  {responding && response === 'declined' ? (
+                    <span className="loading-spinner-small"></span>
+                  ) : (
+                    <>
                           <span className="btn-emoji">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                           </span>
-                          <span>Can't make it</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                      <span>Can't make it</span>
+                    </>
+                  )}
+                </button>
+              </div>
                 </>
               )}
             </div>

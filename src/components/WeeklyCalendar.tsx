@@ -476,7 +476,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       <div className="wc-top-bar">
         {/* Month Label - left (clickable date picker) */}
         <div className="wc-date-picker-wrapper" ref={datePickerRef}>
-          <button
+          <button 
             className={`wc-month-label ${hoveredMonth !== null && showDatePicker ? 'previewing' : ''}`}
             onClick={() => {
               setShowDatePicker(!showDatePicker);
@@ -761,10 +761,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                           </div>
                         ) : (
                           <>
-                            <div className="wc-event-time">
-                              {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
-                            </div>
-                            <div className="wc-event-title">{event.title}</div>
+                        <div className="wc-event-time">
+                          {event.time ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day'}
+                        </div>
+                        <div className="wc-event-title">{event.title}</div>
                             {event.location && heightPercent >= 7 && <div className="wc-event-location">{event.location}</div>}
                           </>
                         )}

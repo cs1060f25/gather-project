@@ -85,6 +85,26 @@ export const ResetPasswordPage: React.FC = () => {
 
       if (error) throw error;
 
+      // Clear ALL Gatherly cached data to prevent stale data from previous sessions
+      const keysToRemove = [
+        'gatherly_google_token',
+        'gatherly_calendars_cache',
+        'gatherly_panel_width',
+        'gatherly_recent_people',
+        'gatherly_timezone',
+        'gatherly_detected_timezone',
+        'gatherly_theme'
+      ];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Also clear any Supabase auth tokens
+      const localStorageKeys = Object.keys(localStorage);
+      localStorageKeys.forEach(key => {
+        if (key.startsWith('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+
       // Sign out after password reset to clear any cached sessions
       await supabase.auth.signOut();
       
@@ -155,14 +175,27 @@ export const ResetPasswordPage: React.FC = () => {
   return (
     <div className="auth-page">
       <div className="auth-container">
-        <div className="auth-logo">
+        <div className="auth-logo" style={{ marginBottom: '1.5rem' }}>
           <GatherlyLogo size={40} />
-          <span className="auth-logo-text">Gatherly</span>
+          <span className="logo-text">Gatherly</span>
         </div>
 
         <div className="auth-card">
-          <h1>Set New Password</h1>
-          <p className="auth-subtitle">Enter your new password below</p>
+          <div className="auth-header">
+            <h1 className="auth-title">Set New Password</h1>
+            <p className="auth-subtitle">Enter your new password below</p>
+          </div>
+
+          {error && (
+            <div className="auth-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -190,14 +223,12 @@ export const ResetPasswordPage: React.FC = () => {
               />
             </div>
 
-            {error && <div className="auth-error">{error}</div>}
-
             <button 
               type="submit" 
-              className="auth-btn primary"
+              className="submit-btn"
               disabled={isLoading}
             >
-              {isLoading ? 'Updating...' : 'Update Password'}
+              {isLoading ? <span className="btn-spinner" /> : 'Update Password'}
             </button>
           </form>
         </div>

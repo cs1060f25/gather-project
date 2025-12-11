@@ -187,7 +187,7 @@ export const AuthPage: React.FC = () => {
             setSignupSuccess(true);
           } else {
             // User is confirmed and has a session
-            navigate('/app');
+          navigate('/app');
           }
         }
       } else {

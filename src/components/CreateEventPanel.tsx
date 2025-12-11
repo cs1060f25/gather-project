@@ -197,7 +197,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         setActivePicker(null);
       }
     };
-
+    
     if (activePicker) {
       document.addEventListener('keydown', handleEscapeKey);
       return () => {
@@ -758,7 +758,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           
           if (isVirtual) {
             // Virtual locations don't need validation
-            setLocation(parsed.location);
+          setLocation(parsed.location);
           } else {
             // Validate physical location through Places API
             try {
@@ -1006,22 +1006,22 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                                   loc.mainText.includes('Teams') || loc.mainText.includes('Discord') || 
                                   loc.mainText.includes('Slack');
                 return (
-                  <button
-                    key={idx}
-                    type="button"
-                    className="cep-location-suggestion"
-                    onMouseDown={() => selectLocation(loc)}
-                  >
-                    <span className="cep-loc-icon">
+                <button
+                  key={idx}
+                  type="button"
+                  className="cep-location-suggestion"
+                  onMouseDown={() => selectLocation(loc)}
+                >
+                  <span className="cep-loc-icon">
                       {isVirtual ? <VideoIcon /> : <LocationPinIcon />}
                     </span>
                     <span className="cep-loc-text">
                       <span className="cep-loc-main">{loc.mainText}</span>
                       {loc.secondaryText && (
                         <span className="cep-loc-secondary">{loc.secondaryText}</span>
-                      )}
-                    </span>
-                  </button>
+                    )}
+                  </span>
+                </button>
                 );
               })}
             </div>
@@ -1045,7 +1045,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
               onFocus={() => {
                 // Only show suggestions if there's already input
                 if (participantInput.length > 0) {
-                  setShowSuggestions(true);
+                setShowSuggestions(true);
                 }
                 handleFocus();
               }}
@@ -1293,15 +1293,15 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                       const x = centerX + radiusPercent * Math.cos(angle);
                       const y = centerY + radiusPercent * Math.sin(angle);
                       return (
-                        <button
-                          key={h}
-                          type="button"
+                          <button
+                            key={h}
+                            type="button"
                           className={`cep-clock-hour ${selectedHour === h ? 'selected' : ''}`}
                           style={{ left: `${x}%`, top: `${y}%` }}
-                          onClick={() => setSelectedHour(h)}
-                        >
-                          {h}
-                        </button>
+                            onClick={() => setSelectedHour(h)}
+                          >
+                            {h}
+                          </button>
                       );
                     })}
                     
@@ -1315,38 +1315,38 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                       style={{ transform: `rotate(${selectedMinute * 6}deg)` }}
                     />
                     <div className="cep-clock-center" />
-                  </div>
+                      </div>
                   
                   {/* Minute wheel */}
                   <div className="cep-minute-wheel">
                     <span className="cep-minute-label">Minutes</span>
                     <div className="cep-minute-options">
-                      {[0, 15, 30, 45].map(m => (
-                        <button
-                          key={m}
-                          type="button"
+                        {[0, 15, 30, 45].map(m => (
+                          <button
+                            key={m}
+                            type="button"
                           className={`cep-minute-btn ${selectedMinute === m ? 'selected' : ''}`}
-                          onClick={() => setSelectedMinute(m)}
-                        >
+                            onClick={() => setSelectedMinute(m)}
+                          >
                           :{m.toString().padStart(2, '0')}
-                        </button>
-                      ))}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
                   
                   {/* AM/PM Toggle */}
                   <div className="cep-period-toggle">
-                    <button
-                      type="button"
+                          <button
+                            type="button"
                       className={`cep-period-btn ${selectedPeriod === 'AM' ? 'selected' : ''}`}
                       onClick={() => setSelectedPeriod('AM')}
-                    >
+                          >
                       <svg className="period-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="5"/>
                         <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                       </svg>
                       <span>AM</span>
-                    </button>
+                          </button>
                     <button
                       type="button"
                       className={`cep-period-btn ${selectedPeriod === 'PM' ? 'selected' : ''}`}
@@ -1357,7 +1357,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                       </svg>
                       <span>PM</span>
                     </button>
-                  </div>
+                      </div>
                   
                   {/* Time picker error */}
                   {timePickerError && (
@@ -1376,7 +1376,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   </button>
                 </div>
               )}
-
+              
               {/* Duration Picker */}
               {activePicker.type === 'duration' && (
                 <div className="cep-duration-picker">
@@ -1392,7 +1392,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                   <div className="cep-duration-header">
                     <div className="cep-slot-machine-frame">
                       <span className="cep-slot-title">DURATION</span>
-                    </div>
+                  </div>
                   </div>
                   <div className="cep-slot-machine">
                     <div className="cep-slot-window">
@@ -1400,12 +1400,12 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                         {DURATION_OPTIONS.filter(d => d.value > 0).map((d) => {
                           const isSelected = availabilityOptions.find(o => o.id === activePicker.optionId)?.duration === d.value;
                           return (
-                            <button
-                              key={d.value}
-                              type="button"
+                      <button
+                        key={d.value}
+                        type="button"
                               className={`cep-slot-item ${isSelected ? 'selected' : ''}`}
-                              onClick={() => selectDuration(d.value)}
-                            >
+                        onClick={() => selectDuration(d.value)}
+                      >
                               <div className="cep-slot-content">
                                 {d.value <= 15 ? (
                                   <svg className="cep-slot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1432,12 +1432,12 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                                     <polyline points="12 6 12 12 16 14"/>
                                   </svg>
                                 )}
-                                <span className="cep-slot-value">{d.label}</span>
-                                <span className="cep-slot-desc">
+                        <span className="cep-slot-value">{d.label}</span>
+                        <span className="cep-slot-desc">
                                   {d.value < 60 ? `${d.value} min` : d.value === 60 ? '1 hour' : `${d.value / 60}h`}
-                                </span>
+                        </span>
                               </div>
-                            </button>
+                      </button>
                           );
                         })}
                       </div>

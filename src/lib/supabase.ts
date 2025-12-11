@@ -140,6 +140,18 @@ export const signInWithApple = async () => {
 };
 
 export const signOut = async () => {
+    // Clear all Gatherly cached data on sign out
+    const keysToRemove = [
+        'gatherly_google_token',
+        'gatherly_calendars_cache',
+        'gatherly_panel_width',
+        'gatherly_recent_people',
+        'gatherly_timezone',
+        'gatherly_detected_timezone',
+        'gatherly_theme'
+    ];
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
     const { error } = await supabase.auth.signOut();
     return { error };
 };

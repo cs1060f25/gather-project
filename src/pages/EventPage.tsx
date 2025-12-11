@@ -603,17 +603,17 @@ export const EventPage: React.FC = () => {
                   return (
                     <div key={email} className="response-item-card">
                       <div className="response-item-header">
-                        <div className={`response-avatar ${status}`}>
-                          {email[0].toUpperCase()}
-                        </div>
+                      <div className={`response-avatar ${status}`}>
+                        {email[0].toUpperCase()}
+                      </div>
                         <div className="response-header-info">
-                          <span className="response-email">{email}</span>
+                        <span className="response-email">{email}</span>
                           <span className={`response-status-badge ${status}`}>
                             {status === 'accepted' && 'Responded'}
                             {status === 'declined' && 'Declined All'}
                             {status === 'maybe' && 'Responded'}
-                            {status === 'pending' && 'Waiting...'}
-                          </span>
+                          {status === 'pending' && 'Waiting...'}
+                        </span>
                         </div>
                         {invite?.responded_at && (
                           <span className="response-date">
@@ -644,9 +644,9 @@ export const EventPage: React.FC = () => {
                             const dayStr = optDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                             const timeStr = formatTime(opt.time);
                             
-                            return (
+                              return (
                               <div 
-                                key={idx} 
+                                  key={idx} 
                                 className={`response-option-row ${optResponse}`}
                               >
                                 <span className="option-label">Option {idx + 1}</span>
@@ -663,9 +663,9 @@ export const EventPage: React.FC = () => {
                                   )}
                                 </span>
                               </div>
-                            );
-                          })}
-                        </div>
+                              );
+                            })}
+                          </div>
                       )}
                     </div>
                   );

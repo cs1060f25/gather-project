@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoadingScreen } from './components/LoadingScreen';
-import { supabase } from './lib/supabase';
+import { supabase, signOut as signOutHelper } from './lib/supabase';
 import './App.css';
 
 import { MarketingPage } from './pages/MarketingPage';
@@ -128,7 +128,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await signOutHelper();
     setUser(null);
   };
 

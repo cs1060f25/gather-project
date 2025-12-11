@@ -221,16 +221,16 @@ export const EventsPage: React.FC = () => {
                 const isGatherlyScheduled = item.description?.includes('[Scheduled with Gatherly]') || false;
                 
                 return {
-                  id: item.id,
-                  title: item.summary || 'Untitled Event',
-                  date: item.start?.date || item.start?.dateTime?.split('T')[0],
-                  time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-                  endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
-                  location: item.location || 'TBD',
-                  attendees: (item.attendees || []).map((a: any) => a.email),
-                  source: 'google' as const,
-                  calendarId: cal.id,
-                  calendarName: cal.name,
+                id: item.id,
+                title: item.summary || 'Untitled Event',
+                date: item.start?.date || item.start?.dateTime?.split('T')[0],
+                time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+                endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+                location: item.location || 'TBD',
+                attendees: (item.attendees || []).map((a: any) => a.email),
+                source: 'google' as const,
+                calendarId: cal.id,
+                calendarName: cal.name,
                   // Use green for Gatherly-scheduled events
                   calendarColor: isGatherlyScheduled ? '#22c55e' : cal.color,
                   isGatherly: false,
@@ -316,19 +316,19 @@ export const EventsPage: React.FC = () => {
         }
         
         return {
-          id: ge.id,
-          title: ge.title,
-          date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
-          time: ge.confirmedOption?.time || ge.options[0]?.time,
-          location: ge.location || ge.options?.[0]?.location || 'TBD',
-          attendees: ge.participants,
-          source: 'gatherly' as const,
-          status: ge.status,
-          isGatherly: true,
-          calendarName: 'Gatherly',
-          calendarColor: '#22c55e',
-          responses: ge.responses?.length || 0,
-          totalInvites: ge.participants.length
+      id: ge.id,
+      title: ge.title,
+      date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
+      time: ge.confirmedOption?.time || ge.options[0]?.time,
+      location: ge.location || ge.options?.[0]?.location || 'TBD',
+      attendees: ge.participants,
+      source: 'gatherly' as const,
+      status: ge.status,
+      isGatherly: true,
+      calendarName: 'Gatherly',
+      calendarColor: '#22c55e',
+      responses: ge.responses?.length || 0,
+      totalInvites: ge.participants.length
         };
       });
 
@@ -458,7 +458,7 @@ export const EventsPage: React.FC = () => {
                     <div className="event-footer">
                       {/* Only show responses for Gatherly events */}
                       {isGatherlyEvent && (
-                        <span className="event-responses">
+                      <span className="event-responses">
                           {inviteCounts[event.id]?.responded || 0}/{inviteCounts[event.id]?.total || event.totalInvites || 0} Responses
                         </span>
                       )}
@@ -468,7 +468,7 @@ export const EventsPage: React.FC = () => {
                             hour: 'numeric', 
                             minute: '2-digit' 
                           })}
-                        </span>
+                      </span>
                       )}
                       <span 
                         className="event-category-badge"
@@ -575,13 +575,13 @@ export const EventsPage: React.FC = () => {
                 };
                 
                 return (
-                  <Link 
-                    key={event.id}
-                    to={`/event/${event.id}`}
-                    className="pending-event-row"
-                  >
+                <Link 
+                  key={event.id}
+                  to={`/event/${event.id}`}
+                  className="pending-event-row"
+                >
                     <div className="pending-event-header">
-                      <h3 className="event-title">{event.title}</h3>
+                  <h3 className="event-title">{event.title}</h3>
                       <span className="event-responses">
                         {inviteCounts[event.id]?.responded || 0}/{inviteCounts[event.id]?.total || event.participants.length} Responses
                       </span>
@@ -602,10 +602,10 @@ export const EventsPage: React.FC = () => {
                       </div>
                     )}
                     
-                    <div className="event-meta">
-                      <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
-                    </div>
-                  </Link>
+                  <div className="event-meta">
+                    <span className="event-location">{event.location || event.options?.[0]?.location || 'TBD'}</span>
+                  </div>
+                </Link>
                 );
               })
             )}

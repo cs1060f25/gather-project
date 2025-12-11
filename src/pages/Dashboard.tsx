@@ -149,7 +149,7 @@ export const Dashboard: React.FC = () => {
   const [selectedTimeOptions, setSelectedTimeOptions] = useState<TimeOption[]>([]);
   const [suggestedEventData] = useState<Partial<CreateEventData> | undefined>();
   const [isCreating, setIsCreating] = useState(false);
-  
+
   // Event detail modal state
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   
@@ -265,21 +265,21 @@ export const Dashboard: React.FC = () => {
       const fetchPromises = googleCalendars
         .filter(cal => cal.id !== 'gatherly' && cal.id !== 'gatherly-pending')
         .map(async (cal) => {
-          try {
-            const eventsResponse = await fetch(
-              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?` +
-              new URLSearchParams({
-                timeMin,
-                timeMax,
+        try {
+          const eventsResponse = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?` +
+            new URLSearchParams({
+              timeMin,
+              timeMax,
                 maxResults: '2500',
-                singleEvents: 'true',
-                orderBy: 'startTime'
-              }),
-              { headers: { Authorization: `Bearer ${providerToken}` } }
-            );
+              singleEvents: 'true',
+              orderBy: 'startTime'
+            }),
+            { headers: { Authorization: `Bearer ${providerToken}` } }
+          );
 
-            if (eventsResponse.ok) {
-              const eventsData = await eventsResponse.json();
+          if (eventsResponse.ok) {
+            const eventsData = await eventsResponse.json();
               return (eventsData.items || []).map((item: any) => {
                 // Check if this event was created via Gatherly
                 const isGatherlyScheduled = item.description?.includes('[Scheduled with Gatherly]') || false;
@@ -290,30 +290,30 @@ export const Dashboard: React.FC = () => {
                 }
                 
                 return {
-                  id: `gcal-${item.id}`,
-                  title: item.summary || 'Untitled Event',
-                  date: item.start?.date || item.start?.dateTime?.split('T')[0],
-                  time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
-                  endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
-                  category: categorizeEvent(item.summary || ''),
-                  source: 'google' as const,
-                  calendarId: cal.id,
-                  calendarName: cal.name,
+              id: `gcal-${item.id}`,
+              title: item.summary || 'Untitled Event',
+              date: item.start?.date || item.start?.dateTime?.split('T')[0],
+              time: item.start?.dateTime?.split('T')[1]?.slice(0, 5),
+              endTime: item.end?.dateTime?.split('T')[1]?.slice(0, 5),
+              category: categorizeEvent(item.summary || ''),
+              source: 'google' as const,
+              calendarId: cal.id,
+              calendarName: cal.name,
                   // Use green color for Gatherly-scheduled events, otherwise calendar color
                   color: isGatherlyScheduled ? '#22c55e' : cal.color,
-                  attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
-                  location: item.location,
-                  description: item.description,
-                  important: true,
+              attendees: (item.attendees || []).filter((a: any) => a.email).map((a: any) => a.email),
+              location: item.location,
+              description: item.description,
+              important: true,
                   isGatherlyScheduled,
                 };
               });
-            }
-            return [];
-          } catch (err) {
-            console.error(`Error fetching events for calendar ${cal.name}:`, err);
-            return [];
           }
+            return [];
+        } catch (err) {
+          console.error(`Error fetching events for calendar ${cal.name}:`, err);
+            return [];
+        }
         });
 
       const results = await Promise.all(fetchPromises);
@@ -574,7 +574,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  
+
   // Load Gatherly events from Supabase
   const loadGatherlyEvents = async () => {
     if (!authUser) return;
@@ -665,7 +665,7 @@ export const Dashboard: React.FC = () => {
   // Toggle calendar visibility - persist to localStorage
   const handleCalendarToggle = useCallback((calendarId: string) => {
     setCalendars(prev => {
-      const updated = prev.map(cal =>
+      const updated = prev.map(cal => 
       cal.id === calendarId ? { ...cal, selected: !cal.selected } : cal
       );
       // Save selected state to localStorage
@@ -853,7 +853,7 @@ export const Dashboard: React.FC = () => {
     
     // Track confirmed Gatherly events to filter out duplicates from Google Calendar
     const confirmedGatherlyKeys = new Set<string>();
-
+    
     for (const ge of gatherlyEvents) {
       // For confirmed events, only show the confirmed option
       if (ge.status === 'confirmed' && ge.confirmedOption) {
@@ -880,26 +880,26 @@ export const Dashboard: React.FC = () => {
         confirmedGatherlyKeys.add(key);
       } else if (ge.status === 'pending') {
         // For pending events, show all options with option numbers - use 'gatherly-pending' calendar
-        for (let idx = 0; idx < ge.options.length; idx++) {
-          const opt = ge.options[idx];
-          const calEvent: CalendarEvent = {
-            id: `gatherly-${ge.id}-${idx}`,
-            date: opt.day,
-            time: opt.time,
-            endTime: undefined,
-            title: ge.title,
-            category: 'gatherly',
-            duration: opt.duration,
-            attendees: ge.participants,
+      for (let idx = 0; idx < ge.options.length; idx++) {
+        const opt = ge.options[idx];
+        const calEvent: CalendarEvent = {
+        id: `gatherly-${ge.id}-${idx}`,
+        date: opt.day,
+        time: opt.time,
+        endTime: undefined,
+        title: ge.title,
+          category: 'gatherly',
+        duration: opt.duration,
+        attendees: ge.participants,
             location: ge.location,
-            source: 'gatherly',
+          source: 'gatherly',
             calendarId: 'gatherly-pending', // Use pending calendar for pending events
-            isGatherlyEvent: true,
-            status: ge.status,
+        isGatherlyEvent: true,
+        status: ge.status,
             suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color })),
             optionNumber: idx + 1 // 1, 2, or 3 for pending event options
-          };
-          gatherlyCalEvents.push(calEvent);
+        };
+        gatherlyCalEvents.push(calEvent);
         }
       }
     }
