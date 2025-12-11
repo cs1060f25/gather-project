@@ -15,7 +15,6 @@ interface UserProfile {
   email: string;
   full_name?: string;
   avatar_url?: string;
-  phone?: string;
 }
 
 interface Contact {

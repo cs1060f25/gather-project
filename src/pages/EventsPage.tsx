@@ -441,15 +441,20 @@ export const EventsPage: React.FC = () => {
                 const isGatherlyEvent = event.isGatherly || event.source === 'gatherly';
                 const isGatherlyScheduled = event.isGatherlyScheduled || false;
                 
+                // Build Google Calendar URL for non-Gatherly events
+                const googleCalendarUrl = !isGatherlyEvent && event.calendarId && event.id
+                  ? `https://calendar.google.com/calendar/u/0/r/eventedit/${event.id}`
+                  : null;
+                
                 return (
-                  <Link 
-                    key={event.id} 
-                    to={isGatherlyEvent ? `/event/${event.id}` : '#'}
-                    className={`event-card-today ${!isGatherlyEvent ? 'non-gatherly' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
-                    onClick={(e) => {
-                      if (!isGatherlyEvent) {
-                        e.preventDefault();
-                        // Could optionally show a toast or info that this is a Google Calendar event
+                  <div
+                    key={event.id}
+                    className={`event-card-today ${!isGatherlyEvent ? 'non-gatherly clickable' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
+                    onClick={() => {
+                      if (isGatherlyEvent) {
+                        navigate(`/event/${event.id}`);
+                      } else if (googleCalendarUrl) {
+                        window.open(googleCalendarUrl, '_blank');
                       }
                     }}
                   >
@@ -484,7 +489,7 @@ export const EventsPage: React.FC = () => {
                       </div>
                     )}
                     <div className="event-card-bottom-bar" style={{ background: calendarColor }} />
-                  </Link>
+                  </div>
                 );
               })
             )}
@@ -511,14 +516,20 @@ export const EventsPage: React.FC = () => {
                 const dayName = eventDate.toLocaleDateString('en-US', { weekday: 'short' });
                 const monthDay = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 
+                // Build Google Calendar URL for non-Gatherly events
+                const googleCalendarUrl = !isGatherlyEvent && event.calendarId && event.id
+                  ? `https://calendar.google.com/calendar/u/0/r/eventedit/${event.id}`
+                  : null;
+                
                 return (
-                  <Link 
-                    key={event.id} 
-                    to={isGatherlyEvent ? `/event/${event.id}` : '#'}
-                    className={`event-card-upcoming ${!isGatherlyEvent ? 'non-gatherly' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
-                    onClick={(e) => {
-                      if (!isGatherlyEvent) {
-                        e.preventDefault();
+                  <div
+                    key={event.id}
+                    className={`event-card-upcoming ${!isGatherlyEvent ? 'non-gatherly clickable' : ''} ${isGatherlyScheduled ? 'gatherly-scheduled' : ''}`}
+                    onClick={() => {
+                      if (isGatherlyEvent) {
+                        navigate(`/event/${event.id}`);
+                      } else if (googleCalendarUrl) {
+                        window.open(googleCalendarUrl, '_blank');
                       }
                     }}
                   >
@@ -540,7 +551,7 @@ export const EventsPage: React.FC = () => {
                       </div>
                     )}
                     <div className="event-card-bottom-bar" style={{ background: calendarColor }} />
-                  </Link>
+                  </div>
                 );
               })}
             </div>

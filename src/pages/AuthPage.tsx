@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, signInWithGoogle } from '../lib/supabase';
 import './AuthPage.css';
 
 // Email icon for password reset
@@ -131,13 +131,8 @@ export const AuthPage: React.FC = () => {
     setError(null);
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/app`,
-          scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events'
-        }
-      });
+      // Use centralized signInWithGoogle for consistent scopes
+      const { error } = await signInWithGoogle();
       
       if (error) throw error;
     } catch (err: any) {

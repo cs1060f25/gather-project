@@ -24,13 +24,27 @@ export const ResetPasswordPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  // Check if we have a valid session from the password reset link
+  // Check if we have a valid recovery session from the password reset link
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Check if this is a recovery session (from password reset link)
+      // OR if user is already logged in (which means the link is being clicked while signed in)
       if (session) {
-        setHasSession(true);
+        // Check if it's a recovery type session by looking at aal (authenticator assurance level)
+        // Recovery sessions have specific characteristics
+        const isRecoverySession = session.user?.aud === 'authenticated' && 
+          (window.location.hash.includes('type=recovery') || 
+           sessionStorage.getItem('gatherly_recovery_mode') === 'true');
+        
+        if (isRecoverySession) {
+          setHasSession(true);
+        } else {
+          // User is logged in but this is NOT a recovery session
+          // They clicked an old/invalid reset link while already signed in
+          setError('This reset link is expired or invalid. If you need to change your password, please sign out first and request a new reset link.');
+        }
       } else {
         // No valid session - redirect to auth page
         setError('Invalid or expired reset link. Please request a new password reset.');
@@ -44,12 +58,16 @@ export const ResetPasswordPage: React.FC = () => {
     const type = hashParams.get('type');
 
     if (accessToken && refreshToken && type === 'recovery') {
+      // Mark this as a recovery mode session
+      sessionStorage.setItem('gatherly_recovery_mode', 'true');
+      
       // Set the session from the recovery tokens
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
       }).then(({ error }) => {
         if (error) {
+          sessionStorage.removeItem('gatherly_recovery_mode');
           setError('Invalid or expired reset link. Please request a new password reset.');
         } else {
           setHasSession(true);
@@ -85,6 +103,9 @@ export const ResetPasswordPage: React.FC = () => {
 
       if (error) throw error;
 
+      // Clear recovery mode flag
+      sessionStorage.removeItem('gatherly_recovery_mode');
+      
       // Clear ALL Gatherly cached data to prevent stale data from previous sessions
       const keysToRemove = [
         'gatherly_google_token',

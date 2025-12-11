@@ -174,6 +174,7 @@
   scroll-snap-align: start;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 4px 4px 0 #1A1A1A;
+  cursor: pointer;
 }
 
 .event-card-today:hover {
@@ -287,6 +288,7 @@
   scroll-snap-align: start;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 3px 3px 0 #1A1A1A;
+  cursor: pointer;
 }
 
 .event-card-upcoming:hover {
@@ -294,13 +296,14 @@
   box-shadow: 5px 5px 0 #1A1A1A;
 }
 
-.event-card-upcoming.non-gatherly {
-  cursor: default;
+/* Non-Gatherly cards are now clickable - open in Google Calendar */
+.event-card-upcoming.non-gatherly.clickable {
+  cursor: pointer;
 }
 
-.event-card-upcoming.non-gatherly:hover {
-  transform: none;
-  box-shadow: 3px 3px 0 #1A1A1A;
+.event-card-upcoming.non-gatherly.clickable:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #1A1A1A;
 }
 
 /* Gatherly scheduled events - Google Calendar events created via Gatherly */
@@ -465,14 +468,14 @@
   font-weight: 600;
 }
 
-/* Non-Gatherly event cards - less emphasis on click */
-.event-card-today.non-gatherly {
-  cursor: default;
+/* Non-Gatherly event cards - clickable to open in Google Calendar */
+.event-card-today.non-gatherly.clickable {
+  cursor: pointer;
 }
 
-.event-card-today.non-gatherly:hover {
-  transform: none;
-  box-shadow: 4px 4px 0 #1A1A1A;
+.event-card-today.non-gatherly.clickable:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1A1A1A;
 }
 
 /* Empty State */

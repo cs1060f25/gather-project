@@ -233,16 +233,22 @@
   border: 3px solid #1A1A1A;
   font-family: 'DM Mono', monospace;
   font-size: 0.95rem;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .form-group input::placeholder {
   color: #999;
+  transition: color 0.15s ease;
 }
 
 .form-group input:focus {
   outline: none;
   box-shadow: 4px 4px 0 #22c55e;
+  transform: translateY(-2px);
+}
+
+.form-group input:focus::placeholder {
+  color: #BBB;
 }
 
 /* Submit Button */

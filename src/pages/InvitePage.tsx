@@ -500,6 +500,19 @@ export const InvitePage: React.FC = () => {
                             </svg>
                           </button>
                         )}
+                        {/* Forward button inside card */}
+                        {currentStep < timeOptions.length - 1 && timeResponses[currentStep] && (
+                          <button 
+                            className="step-forward-btn-inline"
+                            onClick={() => setCurrentStep(prev => prev + 1)}
+                            type="button"
+                            title="Next time option"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                       
                       <p className="time-question">Does this time work for you?</p>

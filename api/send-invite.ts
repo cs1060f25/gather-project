@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       from: fromEmail,
       to: [to],
       replyTo: hostEmail,
-      subject: `${hostName} invited you to: ${eventTitle}`,
+      subject: `${hostName} wants to meet up - ${eventTitle}`,
       headers: {
         'X-Entity-Ref-ID': uniqueId,
         'Message-ID': `<${uniqueId}@gatherly.now>`,
@@ -83,39 +83,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: white; border: 3px solid #1a1a1a; box-shadow: 8px 8px 0 #1a1a1a; padding: 30px;">
       
-      <!-- Header -->
+      <!-- Header with Logo -->
       <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1a1a1a; padding-bottom: 20px;">
-        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; margin: 0; color: #1a1a1a;">📅 Gatherly</h1>
-        <p style="color: #666; margin-top: 5px;">You've been invited to an event!</p>
+        <div style="display: inline-block; margin-bottom: 10px;">
+          <svg width="40" height="40" viewBox="-2 -2 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M13 6V12L17 14" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="6" cy="16" r="5.2" fill="none" stroke="#22c55e" stroke-width="2"/>
+            <path d="M6 14V18" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 16H8" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; margin: 0; color: #1a1a1a;">Gatherly</h1>
       </div>
       
-      <!-- Event Details -->
+      <!-- Personal Message -->
       <div style="margin-bottom: 25px;">
-        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 0 0 10px 0; color: #1a1a1a;">${eventTitle}</h2>
-        <p style="color: #666; margin: 0;">Organized by <strong>${hostName}</strong></p>
-        ${location ? `<p style="color: #666; margin: 5px 0 0 0;">${location}</p>` : ''}
+        <p style="font-size: 18px; color: #333; margin: 0 0 15px 0; line-height: 1.5;">
+          Hey there! <strong>${hostName}</strong> would love to get together with you.
+        </p>
+        <div style="background: #fafafa; border-left: 4px solid #22c55e; padding: 15px 20px; margin-bottom: 15px;">
+          <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin: 0 0 8px 0; color: #1a1a1a;">${eventTitle}</h2>
+          ${location ? `<p style="color: #666; margin: 0; font-size: 14px;">${location}</p>` : ''}
+        </div>
       </div>
       
       <!-- Suggested Times -->
-      <div style="background: #f9f9f9; border: 2px solid #1a1a1a; padding: 20px; margin-bottom: 25px;">
-        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; margin: 0 0 15px 0;">Suggested Times:</h3>
-        <ul style="margin: 0; padding-left: 20px; color: #333;">
-          ${formattedTimes}
-        </ul>
+      <div style="margin-bottom: 25px;">
+        <p style="font-size: 14px; color: #666; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">When works for you?</p>
+        <div style="background: #fff; border: 2px solid #e5e5e5; border-radius: 8px; padding: 15px;">
+          <ul style="margin: 0; padding-left: 18px; color: #333; line-height: 1.8;">
+            ${formattedTimes}
+          </ul>
+        </div>
       </div>
       
       <!-- CTA Button -->
       <div style="text-align: center; margin-bottom: 25px;">
         <a href="${inviteUrl}" 
-           style="display: inline-block; background: #22c55e; color: white; text-decoration: none; padding: 15px 40px; font-weight: bold; font-size: 16px; border: 3px solid #1a1a1a; box-shadow: 4px 4px 0 #1a1a1a; transition: all 0.1s;">
-          Respond to Invite
+           style="display: inline-block; background: #22c55e; color: white; text-decoration: none; padding: 16px 48px; font-weight: bold; font-size: 16px; border: 3px solid #1a1a1a; box-shadow: 4px 4px 0 #1a1a1a;">
+          Share Your Availability
         </a>
+        <p style="color: #999; font-size: 12px; margin-top: 12px;">Takes less than 30 seconds</p>
       </div>
       
       <!-- Footer -->
       <div style="text-align: center; color: #999; font-size: 12px; border-top: 2px solid #eee; padding-top: 20px;">
-        <p style="margin: 0;">This invite was sent via <a href="${baseUrl}" style="color: #22c55e;">Gatherly</a></p>
-        <p style="margin: 5px 0 0 0;">If you didn't expect this email, you can safely ignore it.</p>
+        <p style="margin: 0;">Sent with <a href="${baseUrl}" style="color: #22c55e; text-decoration: none;">Gatherly</a> - schedule faster together</p>
+        <p style="margin: 8px 0 0 0;">Not expecting this? Feel free to ignore it.</p>
       </div>
       
     </div>

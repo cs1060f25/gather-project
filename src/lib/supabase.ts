@@ -114,6 +114,16 @@ export const signUpWithEmail = async (email: string, password: string, fullName?
     return { data, error };
 };
 
+// Google OAuth scopes - only request what we need (OAuth 2.0 policy compliance)
+// - calendar.readonly: List user's calendars
+// - calendar.events: Read and create calendar events (includes read access)
+// - contacts.readonly: Auto-suggest contacts when adding participants
+export const GOOGLE_OAUTH_SCOPES = [
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/contacts.readonly'
+].join(' ');
+
 export const signInWithGoogle = async () => {
     // Check if we need to force consent (no existing Google token)
     const existingToken = localStorage.getItem('gatherly_google_token');
@@ -123,11 +133,14 @@ export const signInWithGoogle = async () => {
         provider: 'google',
         options: {
             redirectTo: `${window.location.origin}/app`,
-            scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly',
+            scopes: GOOGLE_OAUTH_SCOPES,
             queryParams: {
                 access_type: 'offline',
                 // Force consent if no token exists to get a fresh provider_token
                 prompt: needsConsent ? 'consent' : 'select_account',
+                // Enable incremental authorization (OAuth 2.0 best practice)
+                // This allows requesting additional scopes later without losing existing grants
+                include_granted_scopes: 'true',
             }
         },
     });

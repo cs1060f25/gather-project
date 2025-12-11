@@ -14,22 +14,44 @@ const greetings = [
     { text: 'Konnichiwa', image: kanjiImage, alt: 'Kanji Peace Symbol', id: 'konnichiwa' }
 ];
 
-// Generate stars data
+// Generate stars data for parallax rushing effect
 const generateStars = (count: number) => {
     const stars = [];
+    const glowColors = ['white', 'green', 'blue', 'purple'];
+    
     for (let i = 0; i < count; i++) {
-        const angle = (i / count) * 360;
-        const duration = 5000 + Math.random() * 10000;
-        const fadeStart = Math.random() * 30;
-        const size = Math.random() > 0.5 ? 2 : 1;
-        // Add depth for parallax effect (0.2 to 1.0)
-        const depth = 0.2 + Math.random() * 0.8;
-        stars.push({ angle, duration, fadeStart, size, depth, id: i });
+        // Random angle from center (0-360 degrees)
+        const angle = Math.random() * 360;
+        // Random duration for rushing toward camera
+        const duration = 2000 + Math.random() * 4000;
+        // Random delay so stars appear at different times
+        const delay = Math.random() * 3000;
+        // Size varies - starts small, grows as it comes toward you
+        const baseSize = 1 + Math.random() * 2;
+        // Depth layer (0-1) affects parallax intensity
+        const depth = Math.random();
+        // Random glow color
+        const glowColor = glowColors[Math.floor(Math.random() * glowColors.length)];
+        // Starting position (near center)
+        const startX = 45 + Math.random() * 10; // 45-55% from left
+        const startY = 45 + Math.random() * 10; // 45-55% from top
+        
+        stars.push({ 
+            angle, 
+            duration, 
+            delay, 
+            baseSize, 
+            depth, 
+            glowColor,
+            startX,
+            startY,
+            id: i 
+        });
     }
     return stars;
 };
 
-const starsData = generateStars(200);
+const starsData = generateStars(150);
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -101,38 +123,32 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
 
     return (
         <div className={`loading-screen ${isExiting ? 'exit' : ''}`} ref={containerRef}>
-            {/* Galaxy background */}
-            <div className="galaxy">
-                <div className="galaxy-layer layer-1" />
-                <div className="galaxy-layer layer-2" />
-                <div className="galaxy-layer layer-3" />
-            </div>
-
-            {/* Stars Animation */}
+            {/* Stars Animation - Parallax rushing toward viewer */}
             <div 
                 className="stars-container"
                 style={{
-                    transform: `translate(${mousePos.x * -15}px, ${mousePos.y * -15}px)`,
-                    transition: 'transform 0.1s ease-out'
+                    transform: `translate(${mousePos.x * -20}px, ${mousePos.y * -20}px)`,
+                    transition: 'transform 0.15s ease-out'
                 }}
             >
                 {starsData.map((star) => {
-                    // Parallax offset based on mouse and star depth
-                    const parallaxX = mousePos.x * 30 * star.depth;
-                    const parallaxY = mousePos.y * 30 * star.depth;
+                    // Enhanced parallax offset based on mouse and star depth
+                    const parallaxX = mousePos.x * 50 * star.depth;
+                    const parallaxY = mousePos.y * 50 * star.depth;
                     
                     return (
                         <span
                             key={star.id}
-                            className="star"
+                            className={`star glow-${star.glowColor}`}
                             style={{
-                                width: `${star.size}px`,
-                                height: `${star.size}px`,
-                                left: '50%',
-                                top: '50%',
-                                animationName: `starMove${star.id}, starFade${star.id}`,
-                                animationDuration: `${star.duration}ms, ${star.duration}ms`,
-                                animationDelay: '-3s, -3s',
+                                width: `${star.baseSize}px`,
+                                height: `${star.baseSize}px`,
+                                left: `${star.startX}%`,
+                                top: `${star.startY}%`,
+                                animationName: `starRush${star.id}`,
+                                animationDuration: `${star.duration}ms`,
+                                animationDelay: `${star.delay}ms`,
+                                animationIterationCount: 'infinite',
                                 marginLeft: `${parallaxX}px`,
                                 marginTop: `${parallaxY}px`,
                             }}
@@ -141,25 +157,32 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
                 })}
             </div>
             
-            {/* Inject keyframes for stars */}
+            {/* Inject keyframes for rushing stars */}
             <style>
                 {starsData.map((star) => {
                     const radians = (star.angle * Math.PI) / 180;
-                    const endX = 80 * Math.cos(radians);
-                    const endY = 80 * Math.sin(radians);
-                    const fadeStart = star.fadeStart;
-                    const fadeEnd = fadeStart + 15;
+                    // Stars rush outward from center
+                    const endX = 120 * Math.cos(radians);
+                    const endY = 120 * Math.sin(radians);
+                    // Stars grow as they approach
+                    const endSize = star.baseSize * (3 + star.depth * 4);
                     
                     return `
-                        @keyframes starMove${star.id} {
-                            0% { transform: translate(0, 0); }
-                            100% { transform: translate(${endX}vw, ${endY}vh); }
-                        }
-                        @keyframes starFade${star.id} {
-                            0% { opacity: 0; }
-                            ${fadeStart}% { opacity: 0; }
-                            ${fadeEnd}% { opacity: 0.8; }
-                            100% { opacity: 0.8; }
+                        @keyframes starRush${star.id} {
+                            0% { 
+                                transform: translate(0, 0) scale(0.1);
+                                opacity: 0;
+                            }
+                            10% {
+                                opacity: 1;
+                            }
+                            80% {
+                                opacity: 1;
+                            }
+                            100% { 
+                                transform: translate(${endX}vw, ${endY}vh) scale(${endSize});
+                                opacity: 0;
+                            }
                         }
                     `;
                 }).join('')}

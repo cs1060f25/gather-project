@@ -12,6 +12,8 @@ import { InvitePage } from './pages/InvitePage';
 import { EventsPage } from './pages/EventsPage';
 import { EventPage } from './pages/EventPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 
 // Auth Context
 interface AuthContextType {
@@ -232,6 +234,10 @@ function AppContent() {
         path="/reset-password" 
         element={<ResetPasswordPage />} 
       />
+      
+      {/* Legal Pages */}
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />

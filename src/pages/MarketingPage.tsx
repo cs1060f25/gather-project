@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DemoModal } from '../components/DemoModal';
-import { supabase } from '../lib/supabase';
 import './MarketingPage.css';
 
 // Gatherly Logo SVG Component
@@ -134,13 +133,9 @@ export const MarketingPage: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/app`,
-          scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events'
-        }
-      });
+      // Use centralized signInWithGoogle for consistent scopes
+      const { signInWithGoogle } = await import('../lib/supabase');
+      await signInWithGoogle();
     } catch (error) {
       console.error('Google sign-in error:', error);
     }
@@ -308,7 +303,7 @@ export const MarketingPage: React.FC = () => {
           <span className="g-section-badge">Features</span>
           <h2 className="g-section-title">Everything you need</h2>
           <p className="g-section-desc">
-            Powerful features wrapped in a simple experience
+            Your sign to never use When2Meet again.
           </p>
         </div>
 
@@ -380,6 +375,8 @@ export const MarketingPage: React.FC = () => {
             <a href="#features">Features</a>
             <a href="#how-it-works">How it works</a>
             <a href="/story">Our Story</a>
+            <a href="/terms">Terms</a>
+            <a href="/privacy">Privacy</a>
           </div>
           <p className="footer-copy">© 2025 Gatherly. All rights reserved.</p>
         </div>

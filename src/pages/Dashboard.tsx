@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
-import { supabase, getGoogleTokenSync as getGoogleToken } from '../lib/supabase';
+import { supabase, getGoogleTokenSync as getGoogleToken, GOOGLE_OAUTH_SCOPES } from '../lib/supabase';
 import { createInvites, sendInviteEmails } from '../lib/invites';
 import { WeeklyCalendar, type CalendarEvent, type GoogleCalendar, type TimeOption } from '../components/WeeklyCalendar';
 import { CreateEventPanel, type CreateEventData, type AvailabilityOption } from '../components/CreateEventPanel';
@@ -77,7 +77,6 @@ interface UserProfile {
   email: string;
   full_name?: string;
   avatar_url?: string;
-  phone?: string;
 }
 
 interface Contact {
@@ -106,6 +105,7 @@ interface GatherlyEvent {
   createdAt: string;
   confirmedOption?: AvailabilityOption;
   responses?: GatherlyEventResponse[];
+  addGoogleMeet?: boolean;
 }
 
 export const Dashboard: React.FC = () => {
@@ -341,7 +341,6 @@ export const Dashboard: React.FC = () => {
         email: authUser.email || '',
         full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || '',
         avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '',
-        phone: authUser.user_metadata?.phone || '',
       });
       
       // Load contacts and gatherly events (calendar sync handled by periodic effect)
@@ -414,14 +413,16 @@ export const Dashboard: React.FC = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/app`,
-          scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly',
+          scopes: GOOGLE_OAUTH_SCOPES,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent', // Always force consent when explicitly connecting calendar
+            // Enable incremental authorization (OAuth 2.0 best practice)
+            include_granted_scopes: 'true',
           }
         }
       });
-      
+
       if (error) {
         console.error('Error connecting Google Calendar:', error);
       }
@@ -725,7 +726,8 @@ export const Dashboard: React.FC = () => {
         options: data.availabilityOptions,
         participants: inviteParticipants,
         status: 'pending',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        addGoogleMeet: data.addGoogleMeet
       };
       
       await saveGatherlyEvent(gatherlyEvent);

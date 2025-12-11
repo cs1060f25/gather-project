@@ -101,6 +101,7 @@
   font-size: 0.95rem;
   border: 3px solid var(--g-border);
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transition: all 0.15s ease;
   text-decoration: none;
 }

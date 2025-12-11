@@ -302,6 +302,203 @@ body {
   background: var(--text-tertiary);
 }
 
+/* ===== GLOBAL ANIMATIONS ===== */
+
+/* Smooth transition defaults */
+:root {
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-elastic: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Dropdown Animation Base */
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdownSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+
+@keyframes dropdownSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Stagger animation for list items */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button press effect */
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Global smooth transitions for interactive elements */
+button, 
+a, 
+input, 
+select, 
+textarea,
+[role="button"],
+[role="menuitem"],
+[role="option"] {
+  transition: 
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Loading Screen & Logo Animation - Neobrutalist */
 .loading-screen {
   position: fixed;
@@ -309,7 +506,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: #FAFAFA;
+  background: #000000;
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -318,6 +515,7 @@ body {
   overflow: hidden;
   will-change: opacity, transform;
   font-family: 'Space Grotesk', sans-serif;
+  perspective: 1000px;
 }
 
 .loading-screen.exit {
@@ -326,7 +524,7 @@ body {
   pointer-events: none;
 }
 
-/* Stars Animation Container */
+/* Stars Animation Container - Parallax rushing effect */
 .stars-container {
   position: absolute;
   top: 0;
@@ -336,47 +534,54 @@ body {
   overflow: hidden;
   pointer-events: none;
   z-index: 1;
+  transform-style: preserve-3d;
 }
 
+/* Remove galaxy layers for pure black background */
 .galaxy {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-  background: transparent;
+  display: none;
 }
 
 .galaxy-layer {
-  position: absolute;
-  inset: -30%;
-  border-radius: 50%;
-  opacity: 0.45;
-  mix-blend-mode: screen;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(99,102,241,0.4), transparent 35%),
-    radial-gradient(circle at 70% 40%, rgba(16,185,129,0.35), transparent 40%),
-    radial-gradient(circle at 40% 70%, rgba(14,165,233,0.32), transparent 45%),
-    radial-gradient(circle at 80% 80%, rgba(244,114,182,0.28), transparent 35%);
-  filter: blur(10px);
+  display: none;
 }
 
-.galaxy-layer.layer-1 { animation: galaxy-spin 42s linear infinite; }
-.galaxy-layer.layer-2 { animation: galaxy-spin 58s linear infinite reverse; opacity: 0.35; transform: scale(1.15); }
-.galaxy-layer.layer-3 { animation: galaxy-spin 76s linear infinite; opacity: 0.28; transform: scale(1.3); }
-
-@keyframes galaxy-spin {
-  to { transform: rotate(360deg); }
-}
-
+/* Glowing stars rushing toward viewer */
 .star {
-  opacity: 0;
   position: absolute;
-  background: var(--text-primary);
-  box-shadow: 0px 0px 10px 0px var(--text-tertiary);
-  border-radius: 100%;
-  animation-timing-function: linear, ease-in-out;
-  animation-iteration-count: infinite, infinite;
+  background: #FFFFFF;
+  border-radius: 50%;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Star glow effect - different colors for variety */
+.star.glow-white {
+  box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.8),
+              0 0 12px 4px rgba(255, 255, 255, 0.4),
+              0 0 20px 8px rgba(255, 255, 255, 0.2);
+}
+
+.star.glow-green {
+  background: #22c55e;
+  box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.8),
+              0 0 12px 4px rgba(34, 197, 94, 0.4),
+              0 0 20px 8px rgba(34, 197, 94, 0.2);
+}
+
+.star.glow-blue {
+  background: #60a5fa;
+  box-shadow: 0 0 6px 2px rgba(96, 165, 250, 0.8),
+              0 0 12px 4px rgba(96, 165, 250, 0.4),
+              0 0 20px 8px rgba(96, 165, 250, 0.2);
+}
+
+.star.glow-purple {
+  background: #a78bfa;
+  box-shadow: 0 0 6px 2px rgba(167, 139, 250, 0.8),
+              0 0 12px 4px rgba(167, 139, 250, 0.4),
+              0 0 20px 8px rgba(167, 139, 250, 0.2);
 }
 
 .loading-center-container {
@@ -413,10 +618,11 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: lowercase;
-  color: #1A1A1A;
+  color: #FFFFFF;
   opacity: 0;
   animation: fadeIn 0.4s ease-out 0.3s forwards;
   font-family: 'Space Grotesk', sans-serif;
+  text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
 }
 
 /* Billboard-style sliding greeting animations */
@@ -466,11 +672,12 @@ body {
   font-size: clamp(1.5rem, 6vw, 3.2rem);
   font-weight: 300;
   letter-spacing: -0.03em;
-  color: var(--text-primary);
+  color: #FFFFFF;
   margin: 0;
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
 }
 
 .greeting-symbol {
@@ -499,7 +706,7 @@ body {
   /* Down and left */
 }
 
-/* Loading Bar */
+/* Loading Bar - Dark theme style */
 .loading-bar-container {
   position: absolute;
   bottom: 40px;
@@ -508,34 +715,33 @@ body {
   width: calc(100% - 80px);
   max-width: 400px;
   height: 24px;
-  background: #FFF;
-  border: 3px solid #1A1A1A;
-  box-shadow: 4px 4px 0 #1A1A1A;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
 }
 
 .loading-bar-container .bar {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: #FFF;
-}
-
-.dark-mode .loading-bar-container .bar {
-  background: #FFF;
+  background: transparent;
 }
 
 .loading-bar-container .progress {
   position: relative;
   height: 100%;
-  background: #22c55e;
-  font-family: 'DM Mono', monospace;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  font-family: 'Space Grotesk', monospace;
   font-size: 11px;
   padding-left: 10px;
-  color: #FFF;
+  color: #000;
   transition: width 0.1s linear;
   display: flex;
   align-items: center;
   font-weight: 700;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
 }
 
 @keyframes loadProgress {

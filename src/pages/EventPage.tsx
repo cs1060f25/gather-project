@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
 import { ProfileSidebar } from '../components/ProfileSidebar';
-import { getEventInvites, type Invite } from '../lib/invites';
+import { getEventInvites, createNotification, type Invite } from '../lib/invites';
 import './EventPage.css';
 
 interface Contact {
@@ -44,6 +44,7 @@ interface GatherlyEvent {
   createdAt: string;
   confirmedOption?: { day: string; time: string; duration: number };
   responses?: { email: string; selectedOptions: number[]; respondedAt: string }[];
+  addGoogleMeet?: boolean;
 }
 
 interface GoogleEvent {
@@ -70,6 +71,9 @@ export const EventPage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [sendingReminders, setSendingReminders] = useState(false);
+  const [reminderSuccess, setReminderSuccess] = useState<string | null>(null);
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -336,6 +340,12 @@ export const EventPage: React.FC = () => {
             start: { dateTime: string; timeZone: string };
             end: { dateTime: string; timeZone: string };
             attendees: { email: string }[];
+            conferenceData?: {
+              createRequest: {
+                requestId: string;
+                conferenceSolutionKey: { type: string };
+              };
+            };
           } = {
             summary: event.title,
             description: descriptionWithMarker,
@@ -355,10 +365,25 @@ export const EventPage: React.FC = () => {
             calendarEvent.location = event.location;
           }
           
+          // Add Google Meet if requested
+          if (event.addGoogleMeet) {
+            calendarEvent.conferenceData = {
+              createRequest: {
+                requestId: `gatherly-${event.id}-${Date.now()}`,
+                conferenceSolutionKey: { type: 'hangoutsMeet' }
+              }
+            };
+          }
+          
           console.log('Creating Google Calendar event:', calendarEvent);
           
+          // Add conferenceDataVersion=1 to enable Google Meet creation
+          const apiUrl = event.addGoogleMeet 
+            ? 'https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1'
+            : 'https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all';
+          
           const response = await fetch(
-            'https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all',
+            apiUrl,
             {
               method: 'POST',
               headers: {
@@ -373,18 +398,57 @@ export const EventPage: React.FC = () => {
             const createdEvent = await response.json();
             console.log('Google Calendar event created successfully:', createdEvent.id);
             
-            // Delete the Gatherly event from Supabase since it's now on GCal
+            // Create notifications for all participants
+            for (const participantEmail of event.participants) {
+              // Find participant's user ID from profiles table
+              const { data: participantProfile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('email', participantEmail.toLowerCase())
+                .single();
+              
+              if (participantProfile?.id) {
+                const dateStr = confirmedOption.day;
+                const timeStr = confirmedOption.time;
+                const formattedDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { 
+                  weekday: 'short', 
+                  month: 'short', 
+                  day: 'numeric' 
+                });
+                const formattedTime = new Date(`2000-01-01T${timeStr}`).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit'
+                });
+                
+                await createNotification(
+                  participantProfile.id,
+                  'event_scheduled',
+                  `${event.title} has been scheduled`,
+                  `${formattedDate} at ${formattedTime}`,
+                  event.id
+                );
+              }
+            }
+            
+            // Update the Gatherly event status to 'confirmed' (keep it for invite link blocking)
             await supabase
               .from('gatherly_events')
-              .delete()
+              .update({ 
+                status: 'confirmed', 
+                confirmed_option: confirmedOption 
+              })
               .eq('id', event.id);
             
-            // Delete from localStorage
+            // Update localStorage
             const storedEvents = localStorage.getItem('gatherly_created_events');
             if (storedEvents) {
               const events: GatherlyEvent[] = JSON.parse(storedEvents);
-              const filtered = events.filter(e => e.id !== event.id);
-              localStorage.setItem('gatherly_created_events', JSON.stringify(filtered));
+              const updated = events.map(e => 
+                e.id === event.id 
+                  ? { ...e, status: 'confirmed' as const, confirmedOption } 
+                  : e
+              );
+              localStorage.setItem('gatherly_created_events', JSON.stringify(updated));
             }
             
             // Navigate back to events page
@@ -418,6 +482,60 @@ export const EventPage: React.FC = () => {
 
     setEvent({ ...event, status: 'confirmed', confirmedOption });
     setIsConfirming(false);
+  };
+
+  // Send reminder to specific invitee(s)
+  const sendReminder = async (emails: string[]) => {
+    if (!event || emails.length === 0) return;
+    
+    setSendingReminders(true);
+    setReminderSuccess(null);
+    
+    const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
+    const hostEmail = user?.email || '';
+    
+    const reminderType = event.status === 'pending' ? 'pending' : 'scheduled';
+    
+    let successCount = 0;
+    
+    for (const email of emails) {
+      try {
+        // Find invite token for this email (for pending events)
+        const invite = invites.find(i => i.invitee_email.toLowerCase() === email.toLowerCase());
+        
+        const response = await fetch('/api/send-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            eventTitle: event.title,
+            hostName,
+            hostEmail,
+            reminderType,
+            inviteToken: invite?.token,
+            scheduledDate: event.confirmedOption?.day,
+            scheduledTime: event.confirmedOption?.time,
+            location: event.location
+          }),
+        });
+        
+        if (response.ok) {
+          successCount++;
+        } else {
+          console.error(`Failed to send reminder to ${email}`);
+        }
+      } catch (err) {
+        console.error(`Error sending reminder to ${email}:`, err);
+      }
+    }
+    
+    setSendingReminders(false);
+    setShowReminderModal(false);
+    
+    if (successCount > 0) {
+      setReminderSuccess(`Reminder sent to ${successCount} participant${successCount > 1 ? 's' : ''}`);
+      setTimeout(() => setReminderSuccess(null), 3000);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -493,12 +611,25 @@ export const EventPage: React.FC = () => {
         </div>
         <div className="header-right">
           {isGatherlyEvent && event?.status !== 'cancelled' && (
-            <button 
-              className="cancel-btn"
-              onClick={() => setShowCancelConfirm(true)}
-            >
-              Cancel Event
-            </button>
+            <>
+              <button 
+                className="remind-btn"
+                onClick={() => setShowReminderModal(true)}
+                title="Send reminder to invitees"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                Remind
+              </button>
+              <button 
+                className="cancel-btn"
+                onClick={() => setShowCancelConfirm(true)}
+              >
+                Cancel Event
+              </button>
+            </>
           )}
           <button 
             className="profile-button"
@@ -749,6 +880,93 @@ export const EventPage: React.FC = () => {
           </div>
         ) : null}
       </main>
+
+      {/* Reminder Success Toast */}
+      {reminderSuccess && (
+        <div className="reminder-toast">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          {reminderSuccess}
+        </div>
+      )}
+
+      {/* Reminder Modal */}
+      {showReminderModal && event && (
+        <div className="modal-overlay">
+          <div className="modal reminder-modal">
+            <h3>Send Reminder</h3>
+            <p>
+              {event.status === 'pending' 
+                ? 'Remind invitees to pick their available times.'
+                : 'Remind participants about this upcoming event.'}
+            </p>
+            
+            <div className="reminder-options">
+              <button 
+                className="btn-primary"
+                onClick={() => sendReminder(event.participants)}
+                disabled={sendingReminders}
+              >
+                {sendingReminders ? (
+                  <>
+                    <svg className="spinner" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="30 70" />
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Remind All ({event.participants.length})
+                  </>
+                )}
+              </button>
+              
+              {event.status === 'pending' && (
+                <div className="reminder-individual">
+                  <p className="reminder-subtitle">Or remind specific invitees who haven't responded:</p>
+                  <div className="reminder-invitee-list">
+                    {event.participants.map(email => {
+                      const invite = invites.find(i => i.invitee_email.toLowerCase() === email.toLowerCase());
+                      const hasResponded = invite?.status !== 'pending';
+                      
+                      return (
+                        <div key={email} className={`reminder-invitee ${hasResponded ? 'responded' : ''}`}>
+                          <span className="invitee-email">{email}</span>
+                          <span className={`invitee-status ${hasResponded ? 'responded' : 'pending'}`}>
+                            {hasResponded ? 'Responded' : 'Pending'}
+                          </span>
+                          {!hasResponded && (
+                            <button 
+                              className="remind-individual-btn"
+                              onClick={() => sendReminder([email])}
+                              disabled={sendingReminders}
+                            >
+                              Remind
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowReminderModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Confirmation Modal */}
       {showCancelConfirm && (

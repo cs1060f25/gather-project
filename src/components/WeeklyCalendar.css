@@ -299,11 +299,16 @@
   color: var(--wc-text, #1A1A1A);
   cursor: pointer;
   border-radius: 50%;
-  transition: all 0.1s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .wc-nav-btn:hover {
   background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.1);
+}
+
+.wc-nav-btn:active {
+  transform: scale(0.95);
 }
 
 .wc-today-btn {
@@ -316,11 +321,17 @@
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .wc-today-btn:hover {
   background: #16a34a;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.wc-today-btn:active {
+  transform: scale(0.98);
 }
 
 /* Views dropdown - right */
@@ -349,6 +360,10 @@
   box-shadow: 3px 3px 0 var(--wc-border, #1A1A1A);
 }
 
+.wc-dropdown-toggle svg {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .wc-dropdown-toggle svg.rotated {
   transform: rotate(180deg);
 }
@@ -364,6 +379,19 @@
   max-height: 300px;
   overflow-y: auto;
   z-index: 100;
+  animation: wcDropdownSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top right;
+}
+
+@keyframes wcDropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .wc-dropdown-item {
@@ -376,7 +404,7 @@
   font-weight: 500;
   color: var(--wc-text, #1A1A1A);
   border-bottom: 1px solid var(--wc-grid, #E5E5E5);
-  transition: background 0.1s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .wc-dropdown-item:last-child {
@@ -385,6 +413,7 @@
 
 .wc-dropdown-item:hover {
   background: var(--wc-hover, #F5F5F5);
+  padding-left: 16px;
 }
 
 .wc-dropdown-item input {

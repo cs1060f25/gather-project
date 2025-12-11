@@ -23,6 +23,7 @@ export interface CreateEventData {
   location: string;
   participants: string[];
   availabilityOptions: AvailabilityOption[];
+  addGoogleMeet?: boolean;
 }
 
 interface CreateEventPanelProps {
@@ -146,6 +147,13 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [isProcessingChat, setIsProcessingChat] = useState(false);
+  const [addGoogleMeet, setAddGoogleMeet] = useState(false);
+  
+  // Voice dictation state
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   
   // Custom picker state
   const [activePicker, setActivePicker] = useState<ActivePicker | null>(null);
@@ -666,7 +674,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       description,
       location: finalLocation,
       participants,
-      availabilityOptions
+      availabilityOptions,
+      addGoogleMeet
     });
 
     // Reset form to blank state
@@ -679,7 +688,76 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       { id: '2', day: '', time: '', duration: 0, color: OPTION_COLORS[1] },
       { id: '3', day: '', time: '', duration: 0, color: OPTION_COLORS[2] }
     ]);
+    setAddGoogleMeet(false);
     setIsEditing(false);
+  };
+
+  // Voice dictation handlers
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setIsRecording(false);
+        setIsTranscribing(true);
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+        
+        try {
+          // Convert blob to base64
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = (reader.result as string).split(',')[1];
+            
+            // Send to transcription API
+            const response = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ audio: base64Audio }),
+            });
+            
+            if (response.ok) {
+              const { text } = await response.json();
+              if (text) {
+                setChatInput(prev => prev ? `${prev} ${text}` : text);
+              }
+            } else {
+              console.error('Transcription failed');
+            }
+            setIsTranscribing(false);
+          };
+        } catch (err) {
+          console.error('Transcription error:', err);
+          setIsTranscribing(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+    }
   };
 
   const handleChatSubmit = async (e: React.FormEvent) => {
@@ -1026,6 +1104,26 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
               })}
             </div>
           )}
+          
+          {/* Google Meet Toggle */}
+          <label className="cep-meet-toggle">
+            <input
+              type="checkbox"
+              checked={addGoogleMeet}
+              onChange={(e) => {
+                setAddGoogleMeet(e.target.checked);
+                setIsEditing(true);
+              }}
+            />
+            <span className="cep-meet-toggle-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 10l5-5m0 0v4m0-4h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <rect x="3" y="7" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="2"/>
+                <path d="M15 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <span className="cep-meet-toggle-text">Add Google Meet</span>
+          </label>
         </div>
 
         {/* People */}
@@ -1487,14 +1585,39 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             type="text"
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
-            placeholder={isProcessingChat ? 'Processing...' : PLACEHOLDER_SUGGESTIONS[placeholderIndex]}
+            placeholder={isRecording ? 'Listening...' : isTranscribing ? 'Transcribing...' : isProcessingChat ? 'Processing...' : PLACEHOLDER_SUGGESTIONS[placeholderIndex]}
             className="cep-chat-input"
-            disabled={isProcessingChat}
+            disabled={isProcessingChat || isRecording || isTranscribing}
           />
+          {/* Voice dictation button */}
+          <button 
+            type="button"
+            className={`cep-voice-btn ${isRecording ? 'recording' : ''} ${isTranscribing ? 'transcribing' : ''}`}
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isProcessingChat || isTranscribing}
+            title={isRecording ? 'Stop recording' : 'Voice input'}
+          >
+            {isRecording ? (
+              <div className="cep-voice-waves">
+                <span></span><span></span><span></span>
+              </div>
+            ) : isTranscribing ? (
+              <svg className="cep-voice-spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="30 70" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            )}
+          </button>
           <button 
             type="submit" 
             className="cep-chat-submit" 
-            disabled={!chatInput.trim() || isProcessingChat}
+            disabled={!chatInput.trim() || isProcessingChat || isRecording || isTranscribing}
           >
             {isProcessingChat ? (
               <svg className="cep-chat-spinner" viewBox="0 0 24 24">

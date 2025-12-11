@@ -107,6 +107,38 @@ export async function getInviteByToken(token: string): Promise<Invite | null> {
   }
 }
 
+// Create a notification for a user
+export async function createNotification(
+  userId: string,
+  type: string,
+  title: string,
+  message?: string,
+  eventId?: string
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        type,
+        title,
+        message,
+        event_id: eventId,
+        read: false,
+        created_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error('Error creating notification:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error creating notification:', err);
+    return false;
+  }
+}
+
 // Respond to an invite
 export async function respondToInvite(
   token: string,
@@ -115,6 +147,9 @@ export async function respondToInvite(
   optionResponses?: Record<string, 'yes' | 'maybe' | 'no'>
 ): Promise<InviteResponse> {
   try {
+    // First get the current invite to have the host info
+    const currentInvite = await getInviteByToken(token);
+    
     const { data, error } = await supabase
       .from('invites')
       .update({
@@ -131,6 +166,29 @@ export async function respondToInvite(
       return { success: false, message: error.message };
     }
 
+    const invite = data as Invite;
+    
+    // Create notification for the event host
+    if (currentInvite?.host_email) {
+      // Find the host's user ID from profiles table
+      const { data: hostProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', currentInvite.host_email)
+        .single();
+      
+      if (hostProfile?.id) {
+        const statusText = status === 'accepted' ? 'accepted' : status === 'declined' ? 'declined' : 'responded with maybe to';
+        await createNotification(
+          hostProfile.id,
+          'invitee_response',
+          `${invite.invitee_email} ${statusText} your invite`,
+          `Response for "${invite.event_title}"`,
+          invite.event_id
+        );
+      }
+    }
+
     return {
       success: true,
       message: status === 'accepted' 
@@ -138,7 +196,7 @@ export async function respondToInvite(
         : status === 'declined'
         ? "No worries, maybe next time!"
         : "Got it, we'll keep you posted.",
-      invite: data as Invite,
+      invite,
     };
   } catch (err) {
     return { success: false, message: 'Failed to respond to invite' };
