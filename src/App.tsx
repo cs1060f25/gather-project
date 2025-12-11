@@ -68,8 +68,9 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     return null; // LoadingScreen handles this
   }
 
-  // If user is logged in and on landing page, redirect to app
-  if (user && location.pathname === '/') {
+  // If user is logged in and on landing page or auth page, redirect to app
+  // This prevents back button from restoring old logged-in state on auth pages
+  if (user && (location.pathname === '/' || location.pathname === '/auth')) {
     return <Navigate to="/app" replace />;
   }
 
