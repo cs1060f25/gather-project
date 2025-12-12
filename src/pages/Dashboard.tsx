@@ -201,7 +201,7 @@ export const Dashboard: React.FC = () => {
     }
     if (lowerTitle.includes('meeting') || lowerTitle.includes('standup') || lowerTitle.includes('sync') || lowerTitle.includes('call')) {
       return 'work';
-          }
+    }
     return 'personal';
   };
 

@@ -53,16 +53,13 @@ export const AuthPage: React.FC = () => {
 
   // Handle back navigation and page restore - reset loading state
   useEffect(() => {
-    // Reset loading state when page is restored from bfcache
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        // Page was restored from back/forward cache
-        setIsLoading(false);
-        setError(null);
-      }
+    // Always reset loading state when page is shown (handles bfcache restore)
+    const handlePageShow = () => {
+      setIsLoading(false);
+      setError(null);
     };
     
-    // Also reset on visibility change
+    // Also reset on visibility change (when tab becomes visible again)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         setIsLoading(false);
@@ -75,9 +72,19 @@ export const AuthPage: React.FC = () => {
       setIsLoading(false);
       setError(null);
     };
+
+    // Handle window focus (user returns to tab/window)
+    const handleFocus = () => {
+      // Small delay to ensure the page is fully focused
+      setTimeout(() => {
+        setIsLoading(false);
+        setError(null);
+      }, 100);
+    };
     
     window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Reset loading state on mount (handles back button)
@@ -86,6 +93,7 @@ export const AuthPage: React.FC = () => {
     return () => {
       window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -205,14 +213,13 @@ export const AuthPage: React.FC = () => {
       <div className="auth-decor d2" />
       <div className="auth-decor d3" />
 
-      {/* Back button positioned absolutely */}
-      <button className="back-btn-floating" onClick={() => navigate('/')}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
-      </button>
-
       <div className="auth-container">
+        {/* Back button above the card */}
+        <button className="back-btn-floating" onClick={() => navigate('/')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
 
         <div className="auth-card">
           <div className="auth-header">

@@ -26,27 +26,32 @@ export const ResetPasswordPage: React.FC = () => {
 
   // Check if we have a valid recovery session from the password reset link
   useEffect(() => {
+    const handleInvalidLink = async () => {
+      // Sign out to prevent automatic login after clicking "Back to Sign In"
+      sessionStorage.removeItem('gatherly_recovery_mode');
+      await supabase.auth.signOut();
+      setError('Invalid or expired reset link. Please request a new password reset.');
+    };
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       // Check if this is a recovery session (from password reset link)
-      // OR if user is already logged in (which means the link is being clicked while signed in)
       if (session) {
-        // Check if it's a recovery type session by looking at aal (authenticator assurance level)
-        // Recovery sessions have specific characteristics
-        const isRecoverySession = session.user?.aud === 'authenticated' && 
-          (window.location.hash.includes('type=recovery') || 
-           sessionStorage.getItem('gatherly_recovery_mode') === 'true');
+        // Check if it's a recovery type session
+        const isRecoverySession = sessionStorage.getItem('gatherly_recovery_mode') === 'true';
         
         if (isRecoverySession) {
           setHasSession(true);
         } else {
           // User is logged in but this is NOT a recovery session
           // They clicked an old/invalid reset link while already signed in
-          setError('This reset link is expired or invalid. If you need to change your password, please sign out first and request a new reset link.');
+          // Sign them out to prevent confusion
+          await supabase.auth.signOut();
+          setError('This reset link is expired or invalid. Please request a new password reset.');
         }
       } else {
-        // No valid session - redirect to auth page
+        // No valid session
         setError('Invalid or expired reset link. Please request a new password reset.');
       }
     };
@@ -65,10 +70,10 @@ export const ResetPasswordPage: React.FC = () => {
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
-      }).then(({ error }) => {
-        if (error) {
-          sessionStorage.removeItem('gatherly_recovery_mode');
-          setError('Invalid or expired reset link. Please request a new password reset.');
+      }).then(({ data, error: setSessionError }) => {
+        if (setSessionError || !data.session) {
+          // Token is expired or invalid - sign out and show error
+          handleInvalidLink();
         } else {
           setHasSession(true);
           // Clean the URL
@@ -166,6 +171,13 @@ export const ResetPasswordPage: React.FC = () => {
   }
 
   if (!hasSession && error) {
+    const handleBackToSignIn = async () => {
+      // Extra safety: ensure user is fully signed out before navigating
+      sessionStorage.removeItem('gatherly_recovery_mode');
+      await supabase.auth.signOut();
+      navigate('/auth?mode=signin');
+    };
+
     return (
       <div className="auth-page">
         <div className="auth-container">
@@ -183,7 +195,7 @@ export const ResetPasswordPage: React.FC = () => {
             <p>{error}</p>
             <button 
               className="auth-btn primary"
-              onClick={() => navigate('/auth?mode=signin')}
+              onClick={handleBackToSignIn}
             >
               Back to Sign In
             </button>

@@ -56,13 +56,12 @@
   z-index: 1;
   width: 100%;
   max-width: 440px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Floating Back Button */
+/* Back Button - positioned above card */
 .back-btn-floating {
-  position: fixed;
-  top: 1.5rem;
-  left: 1.5rem;
   width: 44px;
   height: 44px;
   display: flex;
@@ -72,8 +71,12 @@
   border: 3px solid #1A1A1A;
   box-shadow: 4px 4px 0 #1A1A1A;
   cursor: pointer;
-  z-index: 10;
   transition: all 0.15s ease;
+  margin-bottom: 1rem;
+  align-self: flex-start;
+  /* Reset any stuck states from bfcache */
+  transform: none;
+  opacity: 1;
 }
 
 .back-btn-floating:hover {
@@ -84,6 +87,10 @@
 .back-btn-floating:active {
   transform: translate(1px, 1px);
   box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.back-btn-floating:focus {
+  outline: none;
 }
 
 /* Card */
@@ -176,6 +183,10 @@
 .google-btn:active:not(:disabled) {
   transform: translate(1px, 1px);
   box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.google-btn:focus {
+  outline: none;
 }
 
 .google-btn:disabled {
@@ -347,12 +358,95 @@
   }
 
   .back-btn-floating {
-    top: 1rem;
-    left: 1rem;
     width: 38px;
     height: 38px;
     border-width: 2px;
     box-shadow: 3px 3px 0 #1A1A1A;
+    margin-bottom: 0.75rem;
+  }
+
+  .back-btn-floating:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1A1A1A;
+  }
+
+  .back-btn-floating:active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+
+  /* Smaller forgot password modal on mobile */
+  .forgot-password-modal {
+    padding: 0.75rem;
+    align-items: flex-start;
+    padding-top: 15vh;
+  }
+
+  .forgot-password-card {
+    padding: 1.25rem;
+    box-shadow: 5px 5px 0 #1A1A1A;
+    border-width: 2px;
+  }
+
+  .forgot-password-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .forgot-password-card .reset-description {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .forgot-password-card .form-group {
+    margin-bottom: 0.75rem;
+  }
+
+  .forgot-password-card .form-group input {
+    padding: 10px 12px;
+  }
+
+  .forgot-password-card .submit-btn {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  .modal-close-btn {
+    width: 28px;
+    height: 28px;
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .back-to-signin {
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+  }
+
+  /* Compact reset success state on mobile */
+  .reset-success {
+    padding: 0.5rem 0;
+  }
+
+  .reset-success svg {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0.75rem;
+  }
+
+  .reset-success h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .reset-success p {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .spam-notice {
+    font-size: 0.8rem;
+    margin-bottom: 1rem !important;
   }
 }
 
@@ -391,7 +485,7 @@
 .dark-mode .back-btn-floating {
   background: #FFF;
   border-color: #1A1A1A;
-  box-shadow: 4px 4px 0 #1A1A1A;
+  box-shadow: 3px 3px 0 #1A1A1A;
   color: #1A1A1A;
 }
 

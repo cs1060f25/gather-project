@@ -171,7 +171,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
           </div>
           <div className="chrome-url">
             <span className="url-icon">🔒</span>
-            <span>gatherly.now/dashboard</span>
+            <span>gatherly.now/app</span>
           </div>
         </div>
 

@@ -11,11 +11,11 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.3s ease;
   padding: 1rem;
+  animation: overlayFadeIn 0.2s ease-out forwards;
 }
 
-@keyframes fadeIn {
+@keyframes overlayFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
@@ -32,18 +32,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  animation: modalAppear 0.25s ease-out forwards;
 }
 
-@keyframes slideUp {
+@keyframes modalAppear {
   from {
     opacity: 0;
-    transform: translateY(30px) scale(0.97);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 }
 
@@ -602,6 +602,7 @@
     left: 12px;
     transform: none;
     max-width: none;
+    bottom: 8px;
   }
   
   .mini-event {
@@ -611,5 +612,48 @@
   
   .day-num {
     font-size: 8px;
+  }
+
+  /* Move controls to browser chrome area on mobile */
+  .demo-bottom-controls {
+    position: absolute;
+    bottom: auto;
+    top: 0;
+    right: 0;
+    left: 0;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #F0F0F0;
+    border-bottom: 2px solid #1A1A1A;
+    z-index: 500;
+  }
+
+  .demo-control-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  /* Hide the browser chrome on mobile - controls take its place */
+  .demo-chrome {
+    display: none;
+  }
+
+  /* Smaller success toast on mobile, positioned to not block content */
+  .success-toast {
+    top: 4px;
+    padding: 4px 8px;
+    font-size: 9px;
+    max-width: calc(100% - 24px);
+  }
+  
+  .success-toast .toast-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .success-toast .toast-icon svg {
+    width: 12px;
+    height: 12px;
   }
 }

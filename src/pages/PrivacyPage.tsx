@@ -8,7 +8,7 @@ export const PrivacyPage: React.FC = () => {
       <header className="legal-header">
         <div className="legal-header-inner">
           <Link to="/" className="legal-logo">
-            <svg width="32" height="32" viewBox="-2 -2 28 28" fill="none">
+            <svg width="28" height="28" viewBox="-2 -2 28 28" fill="none">
               <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" 
                     stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
               <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
