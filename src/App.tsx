@@ -92,9 +92,18 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event, session) => {
         console.log('Auth event:', event, session?.user?.email);
         
+        // Don't process auth state on reset-password page - let ResetPasswordPage handle it
+        const isResetPasswordPage = window.location.pathname === '/reset-password';
+        
+        if (isResetPasswordPage) {
+          // Don't set user or clean URL - ResetPasswordPage handles recovery flow
+          setLoading(false);
+          return;
+        }
+        
         setUser(session?.user || null);
         
-        // Clean up URL hash if it contains tokens
+        // Clean up URL hash if it contains tokens (but not on reset-password page)
         if (window.location.hash.includes('access_token')) {
           const cleanUrl = window.location.pathname;
           window.history.replaceState(null, '', cleanUrl);
@@ -106,6 +115,14 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Check for existing session
     const checkSession = async () => {
+      // Don't auto-set user on reset-password page - let ResetPasswordPage handle it
+      const isResetPasswordPage = window.location.pathname === '/reset-password';
+      
+      if (isResetPasswordPage) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         

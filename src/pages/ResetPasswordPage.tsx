@@ -20,16 +20,43 @@ export const ResetPasswordPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(true); // Start with validating
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
   // Check if we have a valid recovery session from the password reset link
   useEffect(() => {
-    const handleInvalidLink = async () => {
-      // Sign out to prevent automatic login after clicking "Back to Sign In"
+    const clearAllAuthState = async () => {
+      // Aggressively clear ALL auth state to prevent auto-login
       sessionStorage.removeItem('gatherly_recovery_mode');
+      
+      // Clear all Gatherly data
+      const keysToRemove = [
+        'gatherly_google_token',
+        'gatherly_calendars_cache',
+        'gatherly_panel_width',
+        'gatherly_recent_people',
+        'gatherly_timezone',
+        'gatherly_detected_timezone',
+        'gatherly_theme'
+      ];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Clear Supabase auth tokens from localStorage
+      const localStorageKeys = Object.keys(localStorage);
+      localStorageKeys.forEach(key => {
+        if (key.startsWith('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Sign out from Supabase
       await supabase.auth.signOut();
+    };
+
+    const handleInvalidLink = async () => {
+      await clearAllAuthState();
       setError('Invalid or expired reset link. Please request a new password reset.');
     };
 
@@ -46,8 +73,7 @@ export const ResetPasswordPage: React.FC = () => {
         } else {
           // User is logged in but this is NOT a recovery session
           // They clicked an old/invalid reset link while already signed in
-          // Sign them out to prevent confusion
-          await supabase.auth.signOut();
+          await clearAllAuthState();
           setError('This reset link is expired or invalid. Please request a new password reset.');
         }
       } else {
@@ -62,27 +88,37 @@ export const ResetPasswordPage: React.FC = () => {
     const refreshToken = hashParams.get('refresh_token');
     const type = hashParams.get('type');
 
-    if (accessToken && refreshToken && type === 'recovery') {
-      // Mark this as a recovery mode session
-      sessionStorage.setItem('gatherly_recovery_mode', 'true');
-      
-      // Set the session from the recovery tokens
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      }).then(({ data, error: setSessionError }) => {
+    const processRecoveryFlow = async () => {
+      if (accessToken && refreshToken && type === 'recovery') {
+        // First, sign out any existing session to start fresh
+        await supabase.auth.signOut();
+        
+        // Mark this as a recovery mode session
+        sessionStorage.setItem('gatherly_recovery_mode', 'true');
+        
+        // Clean the URL immediately to prevent token reuse
+        window.history.replaceState(null, '', window.location.pathname);
+        
+        // Set the session from the recovery tokens
+        const { data, error: setSessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        
         if (setSessionError || !data.session) {
-          // Token is expired or invalid - sign out and show error
-          handleInvalidLink();
+          // Token is expired or invalid - clear all auth and show error
+          await handleInvalidLink();
         } else {
           setHasSession(true);
-          // Clean the URL
-          window.history.replaceState(null, '', window.location.pathname);
         }
-      });
-    } else {
-      checkSession();
-    }
+      } else {
+        // No recovery tokens in URL - check if user has existing recovery session
+        await checkSession();
+      }
+      setIsValidating(false);
+    };
+
+    processRecoveryFlow();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,6 +183,24 @@ export const ResetPasswordPage: React.FC = () => {
     }
   };
 
+  // Show loading while validating the recovery token
+  if (isValidating) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <div className="auth-logo">
+            <GatherlyLogo size={40} />
+            <span className="auth-logo-text">Gatherly</span>
+          </div>
+          <div className="auth-card" style={{ textAlign: 'center', padding: '3rem' }}>
+            <div className="btn-spinner" style={{ width: 32, height: 32, margin: '0 auto 1rem', borderColor: 'rgba(34, 197, 94, 0.3)', borderTopColor: '#22c55e' }} />
+            <p style={{ color: '#666', margin: 0 }}>Validating reset link...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="auth-page">
@@ -170,12 +224,64 @@ export const ResetPasswordPage: React.FC = () => {
     );
   }
 
+  // If no valid session and no error yet, show error (safety fallback)
+  if (!hasSession && !error) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <div className="auth-logo">
+            <GatherlyLogo size={40} />
+            <span className="auth-logo-text">Gatherly</span>
+          </div>
+          
+          <div className="auth-error-card">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M15 9l-6 6M9 9l6 6"/>
+            </svg>
+            <h2>Invalid Link</h2>
+            <p>This password reset link is invalid. Please request a new one.</p>
+            <button 
+              className="auth-btn primary"
+              onClick={() => window.location.href = '/auth?mode=signin'}
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasSession && error) {
     const handleBackToSignIn = async () => {
-      // Extra safety: ensure user is fully signed out before navigating
+      // Extra safety: aggressively clear ALL auth state before navigating
       sessionStorage.removeItem('gatherly_recovery_mode');
+      
+      // Clear all Gatherly data
+      const keysToRemove = [
+        'gatherly_google_token',
+        'gatherly_calendars_cache',
+        'gatherly_panel_width',
+        'gatherly_recent_people',
+        'gatherly_timezone',
+        'gatherly_detected_timezone',
+        'gatherly_theme'
+      ];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Clear Supabase auth tokens
+      const localStorageKeys = Object.keys(localStorage);
+      localStorageKeys.forEach(key => {
+        if (key.startsWith('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       await supabase.auth.signOut();
-      navigate('/auth?mode=signin');
+      
+      // Use window.location to force a full page reload and clear any cached state
+      window.location.href = '/auth?mode=signin';
     };
 
     return (

@@ -43,12 +43,18 @@ const parseOAuthTokens = () => {
 };
 
 // Check if this is an OAuth callback with tokens
+// BUT: Don't process tokens on /reset-password - let ResetPasswordPage handle recovery tokens
+const isRecoveryPage = window.location.pathname === '/reset-password';
+const hashParams = new URLSearchParams(window.location.hash.substring(1));
+const isRecoveryFlow = hashParams.get('type') === 'recovery';
+
 const oauthTokens = parseOAuthTokens();
 const storageKey = finalSupabaseUrl && finalSupabaseUrl !== 'https://placeholder.supabase.co' 
     ? `sb-${new URL(finalSupabaseUrl).hostname.split('.')[0]}-auth-token` 
     : '';
 
-if (oauthTokens && storageKey) {
+// Only process OAuth tokens if NOT a recovery flow (password reset)
+if (oauthTokens && storageKey && !isRecoveryFlow && !isRecoveryPage) {
     console.log('OAuth callback detected, storing tokens...');
     
     // Clear any stale session data and store new tokens
