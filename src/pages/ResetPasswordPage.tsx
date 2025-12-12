@@ -94,20 +94,20 @@ export const ResetPasswordPage: React.FC = () => {
     const type = hashParams.get('type');
 
     const processRecoveryFlow = async () => {
-      if (accessToken && refreshToken && type === 'recovery') {
+    if (accessToken && refreshToken && type === 'recovery') {
         // First, sign out any existing session to start fresh
         await supabase.auth.signOut();
         
-        // Mark this as a recovery mode session
-        sessionStorage.setItem('gatherly_recovery_mode', 'true');
+      // Mark this as a recovery mode session
+      sessionStorage.setItem('gatherly_recovery_mode', 'true');
         
         // Clean the URL immediately to prevent token reuse
         window.history.replaceState(null, '', window.location.pathname);
-        
-        // Set the session from the recovery tokens
+      
+      // Set the session from the recovery tokens
         const { data, error: setSessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
+        access_token: accessToken,
+        refresh_token: refreshToken
         });
         
         if (setSessionError || !data.session) {
@@ -118,11 +118,11 @@ export const ResetPasswordPage: React.FC = () => {
           setHasSession(true);
           setIsValidating(false);
         }
-      } else {
+    } else {
         // No recovery tokens in URL - check if user has existing recovery session
         await checkSession();
         setIsValidating(false);
-      }
+    }
     };
 
     processRecoveryFlow();

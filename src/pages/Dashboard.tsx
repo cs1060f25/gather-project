@@ -838,16 +838,46 @@ export const Dashboard: React.FC = () => {
     setIsReminding(true);
     try {
       const eventId = extractEventId(selectedEvent.id);
-      const response = await fetch('/api/send-reminder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId }),
-      });
-      if (!response.ok) throw new Error('Failed to send reminder');
+      
+      // Get event details from database
+      const { data: eventData } = await supabase
+        .from('gatherly_events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (!eventData) throw new Error('Event not found');
+      
+      const hostName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'The organizer';
+      const hostEmail = user?.email || '';
+      const participants = Array.isArray(eventData.participants) ? eventData.participants : [];
+      
+      // Send reminder to each participant
+      await Promise.all(participants.map(async (email: string) => {
+        try {
+          await fetch('/api/send-reminder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: email,
+              eventTitle: selectedEvent.title,
+              hostName,
+              hostEmail,
+              reminderType: eventData.status === 'confirmed' ? 'confirmed' : 'pending',
+              scheduledDate: eventData.confirmed_option?.day,
+              scheduledTime: eventData.confirmed_option?.time,
+              location: eventData.location
+            }),
+          });
+        } catch (err) {
+          console.error(`Error sending reminder to ${email}:`, err);
+        }
+      }));
+      
       setAlertModal({
         show: true,
         title: 'Reminder Sent',
-        message: 'All invitees have been reminded to respond.',
+        message: 'All invitees have been reminded.',
         type: 'success'
       });
     } catch (error) {
@@ -878,13 +908,36 @@ export const Dashboard: React.FC = () => {
         setConfirmModal(null);
         setIsCancelling(true);
         try {
-          // Send cancel notifications
-          const response = await fetch('/api/send-cancel-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ eventId }),
-          });
-          if (!response.ok) throw new Error('Failed to send cancel notification');
+          // Get event details from database for sending notifications
+          const { data: eventData } = await supabase
+            .from('gatherly_events')
+            .select('*')
+            .eq('id', eventId)
+            .single();
+          
+          if (eventData && eventData.participants) {
+            const hostName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'The organizer';
+            const hostEmail = user?.email || '';
+            
+            // Send cancellation notifications to each participant
+            const participants = Array.isArray(eventData.participants) ? eventData.participants : [];
+            await Promise.all(participants.map(async (email: string) => {
+              try {
+                await fetch('/api/send-cancel-notification', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: email,
+                    eventTitle: selectedEvent.title,
+                    hostName,
+                    hostEmail,
+                  }),
+                });
+              } catch (err) {
+                console.error(`Error sending cancellation to ${email}:`, err);
+              }
+            }));
+          }
           
           // Update event status in database
           const { error } = await supabase
@@ -894,8 +947,14 @@ export const Dashboard: React.FC = () => {
           if (error) throw error;
           
           setSelectedEvent(null);
+          setAlertModal({
+            show: true,
+            title: 'Event Cancelled',
+            message: 'The event has been cancelled and all invitees have been notified.',
+            type: 'success'
+          });
           // Refresh events
-          window.location.reload();
+          loadEvents();
         } catch (error) {
           console.error('Cancel error:', error);
           setAlertModal({

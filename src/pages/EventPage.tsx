@@ -657,8 +657,12 @@ export const EventPage: React.FC = () => {
         {isGatherlyEvent && event ? (
           // Gatherly Event View
           <div className="event-content">
-            <div className={`event-status-banner ${event.status}`}>
-              {event.status === 'pending' && 'Waiting for responses'}
+            <div className={`event-status-banner ${event.status}${event.status === 'pending' && invites.filter(i => i.status !== 'pending').length === event.participants.length ? ' ready' : ''}`}>
+              {event.status === 'pending' && (
+                invites.filter(i => i.status !== 'pending').length === event.participants.length
+                  ? 'All responses in - Ready to confirm!'
+                  : `Waiting for responses (${invites.filter(i => i.status !== 'pending').length}/${event.participants.length})`
+              )}
               {event.status === 'confirmed' && 'Event confirmed'}
               {event.status === 'cancelled' && 'Event cancelled'}
             </div>

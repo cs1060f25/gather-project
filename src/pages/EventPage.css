@@ -241,6 +241,11 @@
   color: #92400E;
 }
 
+.event-status-banner.pending.ready {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
 .event-status-banner.confirmed {
   background: #D1FAE5;
   color: #065F46;

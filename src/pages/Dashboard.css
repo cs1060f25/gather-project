@@ -1067,15 +1067,22 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 4px;
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .attendee-chip {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 3px 8px;
   background: #f5f5f5;
-  font-size: 0.7rem;
-  color: #666;
-  border-radius: 3px;
+  font-size: 0.75rem;
+  color: #555;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .attendee-chip.more {
