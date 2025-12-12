@@ -133,6 +133,75 @@
   margin: 0;
 }
 
+/* Section Header with Navigation */
+.section-header-with-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem 0.75rem;
+}
+
+.section-header-with-nav .section-title {
+  padding: 0;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #1A1A1A;
+  background: #FFF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 #1A1A1A;
+  transition: all 0.12s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.pagination-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #1A1A1A;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  min-width: 80px;
+  text-align: center;
+}
+
+.dark-mode .pagination-btn {
+  background: #2A2A2A;
+  border-color: #444;
+  box-shadow: 2px 2px 0 #444;
+  color: #F0F0F0;
+}
+
+.dark-mode .pagination-btn:hover:not(:disabled) {
+  box-shadow: 3px 3px 0 #444;
+}
+
+.dark-mode .pagination-info {
+  color: #AAA;
+}
+
 /* Today's Events Section */
 .today-section {
   background: #FFF;
@@ -255,7 +324,7 @@
 }
 
 .upcoming-section .section-title {
-  padding: 0 1.5rem 0.75rem;
+  padding: 0;
 }
 
 .upcoming-events-scroll {

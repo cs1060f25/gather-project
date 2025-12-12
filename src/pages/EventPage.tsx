@@ -74,6 +74,13 @@ export const EventPage: React.FC = () => {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [reminderSuccess, setReminderSuccess] = useState<string | null>(null);
+  
+  // Edit event state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -229,6 +236,74 @@ export const EventPage: React.FC = () => {
     }
 
     setLoading(false);
+  };
+
+  // Handle opening edit modal
+  const openEditModal = () => {
+    if (!event) return;
+    setEditTitle(event.title);
+    setEditLocation(event.location || '');
+    setEditDescription(event.description || '');
+    setShowEditModal(true);
+  };
+
+  // Handle saving event edits
+  const handleSaveEdit = async () => {
+    if (!event || !authUser) return;
+    
+    setIsSaving(true);
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('gatherly_events')
+        .update({
+          title: editTitle.trim(),
+          location: editLocation.trim() || null,
+          description: editDescription.trim() || null,
+        })
+        .eq('id', event.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setEvent({
+        ...event,
+        title: editTitle.trim(),
+        location: editLocation.trim() || undefined,
+        description: editDescription.trim() || undefined,
+      });
+      
+      // Send update notification to all participants
+      const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
+      for (const email of event.participants) {
+        try {
+          // Get invitee's user profile for notification
+          const { data: inviteeProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email.toLowerCase())
+            .single();
+          
+          if (inviteeProfile) {
+            await createNotification(
+              inviteeProfile.id,
+              'event_scheduled',
+              `${editTitle.trim()} has been updated`,
+              `${hostName} updated the event details`,
+              event.id
+            );
+          }
+        } catch (err) {
+          console.error(`Error notifying ${email}:`, err);
+        }
+      }
+      
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('Failed to save event:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = async () => {
@@ -677,7 +752,21 @@ export const EventPage: React.FC = () => {
             </div>
 
             <div className="event-title-section">
-              <h2>{event.title}</h2>
+              <div className="title-row">
+                <h2>{event.title}</h2>
+                {event.status !== 'cancelled' && (
+                  <button 
+                    className="edit-event-btn" 
+                    onClick={openEditModal}
+                    title="Edit event details"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
               <span className="gatherly-tag">Gatherly Event</span>
             </div>
 
@@ -991,8 +1080,90 @@ export const EventPage: React.FC = () => {
         </div>
       )}
 
+      {/* Edit Event Modal */}
+      {showEditModal && event && (
+        <div className="modal-overlay" onClick={() => !isSaving && setShowEditModal(false)}>
+          <div className="edit-event-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Event</h3>
+              <button 
+                className="modal-close" 
+                onClick={() => !isSaving && setShowEditModal(false)}
+                disabled={isSaving}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="edit-form">
+              <div className="form-group">
+                <label htmlFor="edit-title">Event Title</label>
+                <input
+                  id="edit-title"
+                  type="text"
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  placeholder="Enter event title"
+                  disabled={isSaving}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="edit-location">Location</label>
+                <input
+                  id="edit-location"
+                  type="text"
+                  value={editLocation}
+                  onChange={e => setEditLocation(e.target.value)}
+                  placeholder="Enter location (optional)"
+                  disabled={isSaving}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="edit-description">Description</label>
+                <textarea
+                  id="edit-description"
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  placeholder="Add a description (optional)"
+                  rows={3}
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setShowEditModal(false)}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save" 
+                onClick={handleSaveEdit}
+                disabled={isSaving || !editTitle.trim()}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="spinner"></span>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Profile Sidebar */}
-      <ProfileSidebar 
+      <ProfileSidebar
         isOpen={showProfile}
         user={user}
         contacts={contacts}

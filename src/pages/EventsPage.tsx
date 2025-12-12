@@ -5,6 +5,8 @@ import { supabase, getGoogleTokenSync as getGoogleToken } from '../lib/supabase'
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import './EventsPage.css';
 
+const EVENTS_PER_PAGE = 7;
+
 // Gatherly Logo SVG Component
 const GatherlyLogo = ({ size = 28 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="-2 -2 28 28" fill="none">
@@ -101,6 +103,9 @@ export const EventsPage: React.FC = () => {
   const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
   const [remindingEventId, setRemindingEventId] = useState<string | null>(null);
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+  
+  // Pagination state for upcoming events
+  const [upcomingPage, setUpcomingPage] = useState(0);
   
   // Custom confirm modal state
   const [confirmModal, setConfirmModal] = useState<{
@@ -372,9 +377,8 @@ export const EventsPage: React.FC = () => {
 
     const allEvents = [...filteredGoogleEvents, ...gatherlyCalEvents];
 
-    // Get next 7 upcoming events chronologically (excluding today, not cancelled, not pending)
-    const MAX_UPCOMING = 7;
-    const upcomingFiltered = allEvents
+    // Get ALL upcoming events chronologically (excluding today, not cancelled, not pending)
+    const allUpcoming = allEvents
       .filter(e => {
         if (e.status === 'cancelled' || e.status === 'pending') return false;
         // Must be after today, OR if today then after current time
@@ -387,12 +391,11 @@ export const EventsPage: React.FC = () => {
         const dateCompare = a.date.localeCompare(b.date);
         if (dateCompare !== 0) return dateCompare;
         return (a.time || '').localeCompare(b.time || '');
-      })
-      .slice(0, MAX_UPCOMING);
+      });
 
     return {
       today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled' && e.status !== 'pending'),
-      upcoming: upcomingFiltered,
+      allUpcoming,
       pending: gatherlyEvents.filter(ge => ge.status === 'pending')
     };
   }, [googleEvents, gatherlyEvents]);
@@ -592,12 +595,41 @@ export const EventsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Upcoming Events - Horizontal scroll */}
-        {categorizedEvents.upcoming.length > 0 && (
+        {/* Upcoming Events - Horizontal scroll with pagination */}
+        {categorizedEvents.allUpcoming.length > 0 && (
           <section className="events-section upcoming-section">
-            <h2 className="section-title">Upcoming</h2>
+            <div className="section-header-with-nav">
+              <h2 className="section-title">Upcoming</h2>
+              <div className="pagination-controls">
+                <button 
+                  className="pagination-btn"
+                  onClick={() => setUpcomingPage(p => Math.max(0, p - 1))}
+                  disabled={upcomingPage === 0}
+                  aria-label="Previous events"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                </button>
+                <span className="pagination-info">
+                  {Math.min(upcomingPage * EVENTS_PER_PAGE + 1, categorizedEvents.allUpcoming.length)}-{Math.min((upcomingPage + 1) * EVENTS_PER_PAGE, categorizedEvents.allUpcoming.length)} of {categorizedEvents.allUpcoming.length}
+                </span>
+                <button 
+                  className="pagination-btn"
+                  onClick={() => setUpcomingPage(p => p + 1)}
+                  disabled={(upcomingPage + 1) * EVENTS_PER_PAGE >= categorizedEvents.allUpcoming.length}
+                  aria-label="Next events"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
             <div className="upcoming-events-scroll">
-              {categorizedEvents.upcoming.map(event => {
+              {categorizedEvents.allUpcoming
+                .slice(upcomingPage * EVENTS_PER_PAGE, (upcomingPage + 1) * EVENTS_PER_PAGE)
+                .map(event => {
                 let calendarName = event.calendarName || 'Calendar';
                 if (user?.email && (calendarName === user.email || calendarName.toLowerCase() === user.email.toLowerCase())) {
                   calendarName = 'Personal';

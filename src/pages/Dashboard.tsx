@@ -848,7 +848,7 @@ export const Dashboard: React.FC = () => {
       
       if (!eventData) throw new Error('Event not found');
       
-      const hostName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'The organizer';
+      const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
       const hostEmail = user?.email || '';
       const participants = Array.isArray(eventData.participants) ? eventData.participants : [];
       
@@ -916,7 +916,7 @@ export const Dashboard: React.FC = () => {
             .single();
           
           if (eventData && eventData.participants) {
-            const hostName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'The organizer';
+            const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
             const hostEmail = user?.email || '';
             
             // Send cancellation notifications to each participant
@@ -954,7 +954,7 @@ export const Dashboard: React.FC = () => {
             type: 'success'
           });
           // Refresh events
-          loadEvents();
+          loadGatherlyEvents();
         } catch (error) {
           console.error('Cancel error:', error);
           setAlertModal({
