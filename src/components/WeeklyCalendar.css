@@ -466,9 +466,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  align-items: stretch;
-  /* Ensure bottom content is fully visible when scrolling */
-  padding-bottom: calc(var(--wc-slot-height) / 2);
+  align-items: flex-start;
 }
 
 /* ===== TIME COLUMN ===== */
@@ -480,8 +478,6 @@
   flex-direction: column;
   background: var(--wc-time-bg, #FAFAFA);
   border-right: 1px solid var(--wc-grid, #E5E5E5);
-  /* Ensure time column extends to match day columns */
-  min-height: calc(var(--wc-header-height) + var(--wc-hours-count) * var(--wc-slot-height));
 }
 
 .wc-day-header-spacer {
@@ -493,10 +489,9 @@
 .wc-time-slots-container {
   display: flex;
   flex-direction: column;
-  flex: 1;
   position: relative;
-  /* Use calc for scalable min-height */
-  min-height: calc(var(--wc-hours-count) * var(--wc-slot-height));
+  /* Fixed height based on hours count */
+  height: calc(var(--wc-hours-count) * var(--wc-slot-height));
 }
 
 .wc-time-slot {

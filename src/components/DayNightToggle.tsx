@@ -7,14 +7,22 @@ interface DayNightToggleProps {
 
 export const DayNightToggle: React.FC<DayNightToggleProps> = ({ onChange }) => {
   const [isNight, setIsNight] = useState(() => {
+    // Check localStorage first, then fall back to current class
+    const saved = localStorage.getItem('gatherly_dark_mode');
+    if (saved !== null) {
+      return saved === 'true';
+    }
     return document.documentElement.classList.contains('dark-mode');
   });
 
   useEffect(() => {
+    // Apply dark mode class and save to localStorage
     if (isNight) {
       document.documentElement.classList.add('dark-mode');
+      localStorage.setItem('gatherly_dark_mode', 'true');
     } else {
       document.documentElement.classList.remove('dark-mode');
+      localStorage.setItem('gatherly_dark_mode', 'false');
     }
     onChange?.(isNight);
   }, [isNight, onChange]);

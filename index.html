@@ -41,6 +41,15 @@
 </head>
 
 <body>
+  <!-- Apply dark mode immediately to prevent flash -->
+  <script>
+    (function() {
+      const darkMode = localStorage.getItem('gatherly_dark_mode');
+      if (darkMode === 'true') {
+        document.documentElement.classList.add('dark-mode');
+      }
+    })();
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
