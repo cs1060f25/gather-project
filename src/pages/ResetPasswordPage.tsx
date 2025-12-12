@@ -56,8 +56,11 @@ export const ResetPasswordPage: React.FC = () => {
     };
 
     const handleInvalidLink = async () => {
-      await clearAllAuthState();
+      // Set error FIRST to ensure UI shows before any redirects
       setError('Invalid or expired reset link. Please request a new password reset.');
+      setIsValidating(false);
+      // Then clear auth state in background
+      clearAllAuthState();
     };
 
     const checkSession = async () => {
@@ -72,12 +75,14 @@ export const ResetPasswordPage: React.FC = () => {
           setHasSession(true);
         } else {
           // User is logged in but this is NOT a recovery session
-          // They clicked an old/invalid reset link while already signed in
-          await clearAllAuthState();
+          // Set error FIRST, then clear auth
           setError('This reset link is expired or invalid. Please request a new password reset.');
+          setIsValidating(false);
+          clearAllAuthState();
+          return; // Exit early
         }
       } else {
-        // No valid session
+        // No valid session - just show error, don't touch auth
         setError('Invalid or expired reset link. Please request a new password reset.');
       }
     };
@@ -106,16 +111,18 @@ export const ResetPasswordPage: React.FC = () => {
         });
         
         if (setSessionError || !data.session) {
-          // Token is expired or invalid - clear all auth and show error
-          await handleInvalidLink();
+          // Token is expired or invalid - show error immediately
+          handleInvalidLink(); // Don't await, let it set error first
+          return; // Exit early, handleInvalidLink sets isValidating
         } else {
           setHasSession(true);
+          setIsValidating(false);
         }
       } else {
         // No recovery tokens in URL - check if user has existing recovery session
         await checkSession();
+        setIsValidating(false);
       }
-      setIsValidating(false);
     };
 
     processRecoveryFlow();
