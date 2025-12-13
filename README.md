@@ -465,7 +465,7 @@ Built at Harvard by students who were tired of scheduling group project meetings
 </p>
 
 <p align="center">
-  <strong>Milan Naropanth</strong> · <strong>Ikenna Nwobodo</strong> · <strong>Talha Minhas</strong>
+  <strong>Milan Naropanth</strong> · <strong>Ikenna Ogbogu</strong> · <strong>Talha Minhas</strong>
 </p>
 
 ---
