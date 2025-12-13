@@ -11,7 +11,13 @@
   overflow: hidden;
   position: relative;
   min-width: 280px;
-  max-width: 600px;
+  max-width: min(600px, 100vw);
+  box-sizing: border-box;
+}
+
+.create-event-panel *,
+.create-event-panel *::before,
+.create-event-panel *::after {
   box-sizing: border-box;
 }
 
@@ -133,10 +139,13 @@
 .cep-form {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.25rem;
+  padding-right: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  box-sizing: border-box;
 }
 
 /* Fields */
@@ -165,6 +174,8 @@
   box-shadow: 4px 4px 0 #1A1A1A;
   transition: all 0.15s ease;
   outline: none;
+  width: 100%;
+  min-width: 0;
 }
 
 .cep-description {
@@ -268,10 +279,13 @@
 .cep-people-input-row {
   display: flex;
   gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cep-people-input-row input {
   flex: 1;
+  min-width: 0;
 }
 
 .cep-add-btn {
@@ -589,7 +603,7 @@
 
 .cep-option {
   display: grid;
-  grid-template-columns: auto 2fr 1.2fr 1fr;
+  grid-template-columns: auto 1fr 1fr 1fr;
   gap: 0.4rem;
   align-items: center;
   padding: 0.5rem 0.6rem;
@@ -740,16 +754,20 @@
   padding: 1rem 1.25rem;
   background: #F8F8F8;
   border-top: 3px solid #1A1A1A;
+  box-sizing: border-box;
 }
 
 .cep-chat-form {
   display: flex;
   align-items: stretch;
   gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cep-chat-input {
   flex: 1;
+  min-width: 0;
   padding: 0 1rem;
   height: 48px;
   font-size: 0.9rem;
@@ -758,6 +776,7 @@
   border: 3px solid #1A1A1A;
   box-shadow: 3px 3px 0 #1A1A1A;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .cep-chat-input:focus {
@@ -1089,7 +1108,7 @@
 /* Responsive */
 @media (max-width: 1200px) {
   .cep-option {
-    grid-template-columns: auto 2fr 1.2fr 1fr;
+    grid-template-columns: auto 1fr 1fr 1fr;
     gap: 0.35rem;
   }
 

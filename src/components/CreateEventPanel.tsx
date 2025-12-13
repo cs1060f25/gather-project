@@ -176,6 +176,9 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     return saved ? parseInt(saved) : 380;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => 
+    typeof window !== 'undefined' ? window.innerWidth > 1024 : true
+  );
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(380);
   
@@ -397,13 +400,15 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
   const handleResizeMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
-    
+
     // Panel is on the right side, handle is on left edge
     // Dragging left (negative delta) = expand width
     // Dragging right (positive delta) = shrink width
     const deltaX = e.clientX - resizeStartX.current;
-    const newWidth = Math.max(320, Math.min(600, resizeStartWidth.current - deltaX));
-    
+    // Limit max width to 600px OR viewport width minus some padding for the calendar
+    const maxWidth = Math.min(600, window.innerWidth - 50);
+    const newWidth = Math.max(280, Math.min(maxWidth, resizeStartWidth.current - deltaX));
+
     setPanelWidth(newWidth);
     localStorage.setItem('gatherly_panel_width', String(newWidth));
   }, [isResizing]);
@@ -423,7 +428,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     }
-    
+
     return () => {
       document.removeEventListener('mousemove', handleResizeMove);
       document.removeEventListener('mouseup', handleResizeEnd);
@@ -431,6 +436,28 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       document.body.style.cursor = '';
     };
   }, [isResizing, handleResizeMove, handleResizeEnd]);
+
+  // Adjust panel width when window resizes and track desktop state
+  useEffect(() => {
+    const handleWindowResize = () => {
+      const isNowDesktop = window.innerWidth > 1024;
+      setIsDesktop(isNowDesktop);
+      
+      if (isNowDesktop) {
+        const maxWidth = Math.min(600, window.innerWidth - 50);
+        if (panelWidth > maxWidth) {
+          setPanelWidth(maxWidth);
+          localStorage.setItem('gatherly_panel_width', String(maxWidth));
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleWindowResize);
+    // Also check on mount
+    handleWindowResize();
+
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, [panelWidth]);
 
   // Cycle through placeholder suggestions
   useEffect(() => {
@@ -981,10 +1008,10 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     }
   };
 
-  // Panel style with width
-  const panelStyle: React.CSSProperties = {
-    width: `${panelWidth}px`,
-  };
+  // Panel style with width - only apply fixed width on desktop (> 1024px)
+  const panelStyle: React.CSSProperties = isDesktop
+    ? { width: `${panelWidth}px` }
+    : {};
 
   return (
     <div 
@@ -1062,7 +1089,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
         {/* Location */}
         <div className="cep-field cep-location-field">
-          <label>Location/Link</label>
+          <label>Location</label>
           <input
             type="text"
             value={location}
