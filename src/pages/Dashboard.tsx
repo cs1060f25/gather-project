@@ -1299,10 +1299,17 @@ export const Dashboard: React.FC = () => {
                               onClick={() => {
                                 // Populate the create event form with suggested data
                                 setSuggestedEventData({
-                                  title: event.title,
-                                  date: event.suggestedDate,
-                                  time: event.suggestedTime,
-                                  duration: event.duration || 60
+                                  eventName: event.title,
+                                  description: event.reason || '',
+                                  location: '',
+                                  participants: [],
+                                  availabilityOptions: event.suggestedDate && event.suggestedTime ? [{
+                                    id: crypto.randomUUID(),
+                                    day: event.suggestedDate,
+                                    time: event.suggestedTime,
+                                    duration: event.duration || 60,
+                                    color: '#22c55e'
+                                  }] : []
                                 });
                                 setShowNotifications(false);
                               }}

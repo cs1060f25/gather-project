@@ -80,6 +80,9 @@ export const EventPage: React.FC = () => {
   const [editTitle, setEditTitle] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editOptions, setEditOptions] = useState<{ day: string; time: string; duration: number }[]>([]);
+  const [editParticipants, setEditParticipants] = useState<string[]>([]);
+  const [newParticipant, setNewParticipant] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const user: UserProfile | null = authUser ? {
@@ -244,6 +247,9 @@ export const EventPage: React.FC = () => {
     setEditTitle(event.title);
     setEditLocation(event.location || '');
     setEditDescription(event.description || '');
+    setEditOptions(event.options.map(o => ({ day: o.day, time: o.time, duration: o.duration })));
+    setEditParticipants([...event.participants]);
+    setNewParticipant('');
     setShowEditModal(true);
   };
 
@@ -253,13 +259,24 @@ export const EventPage: React.FC = () => {
     
     setIsSaving(true);
     try {
-      // Update gatherly_events table
+      // Check for new participants
+      const newParticipants = editParticipants.filter(p => !event.participants.includes(p));
+      
+      // Build updated options with colors
+      const updatedOptions = editOptions.map((opt, idx) => ({
+        ...opt,
+        color: event.options[idx]?.color || ['#22c55e', '#3b82f6', '#f59e0b'][idx] || '#22c55e'
+      }));
+      
+      // Update gatherly_events table with all fields
       const { error } = await supabase
         .from('gatherly_events')
         .update({
           title: editTitle.trim(),
           location: editLocation.trim() || null,
           description: editDescription.trim() || null,
+          options: updatedOptions,
+          participants: editParticipants,
         })
         .eq('id', event.id);
       
@@ -278,19 +295,45 @@ export const EventPage: React.FC = () => {
         console.error('Error updating invites:', inviteError);
       }
       
+      // Send invites to new participants
+      if (newParticipants.length > 0) {
+        const { createInvites, sendInviteEmails } = await import('../lib/invites');
+        const hostName = user?.full_name || user?.email?.split('@')[0] || 'Anonymous';
+        const hostEmail = user?.email || '';
+        
+        const { invites } = await createInvites(
+          event.id,
+          { title: editTitle.trim(), date: editOptions[0]?.day || '', time: editOptions[0]?.time, location: editLocation.trim() },
+          hostName,
+          hostEmail,
+          newParticipants
+        );
+        
+        if (invites.length > 0) {
+          await sendInviteEmails(invites, updatedOptions);
+        }
+      }
+      
       // Update local state
       setEvent({
         ...event,
         title: editTitle.trim(),
         location: editLocation.trim() || undefined,
         description: editDescription.trim() || undefined,
+        options: updatedOptions,
+        participants: editParticipants,
       });
       
-      // Send update notification to all participants
+      // Update invites list if new invites were created
+      if (newParticipants.length > 0) {
+        const updatedInvites = await getEventInvites(event.id);
+        setInvites(updatedInvites);
+      }
+      
+      // Send update notification to existing participants
       const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
       for (const email of event.participants) {
         try {
-          // Get invitee's user profile for notification
           const { data: inviteeProfile } = await supabase
             .from('profiles')
             .select('id')
@@ -1188,6 +1231,107 @@ export const EventPage: React.FC = () => {
                   disabled={isSaving}
                 />
               </div>
+              
+              {/* Time Options (for pending events) */}
+              {event.status === 'pending' && (
+                <div className="form-group">
+                  <label>Time Options</label>
+                  <div className="edit-time-options">
+                    {editOptions.map((opt, idx) => (
+                      <div key={idx} className="edit-time-option">
+                        <span className="option-number">{idx + 1}</span>
+                        <input
+                          type="date"
+                          value={opt.day}
+                          onChange={e => {
+                            const updated = [...editOptions];
+                            updated[idx] = { ...updated[idx], day: e.target.value };
+                            setEditOptions(updated);
+                          }}
+                          disabled={isSaving}
+                        />
+                        <input
+                          type="time"
+                          value={opt.time}
+                          onChange={e => {
+                            const updated = [...editOptions];
+                            updated[idx] = { ...updated[idx], time: e.target.value };
+                            setEditOptions(updated);
+                          }}
+                          disabled={isSaving}
+                        />
+                        <select
+                          value={opt.duration}
+                          onChange={e => {
+                            const updated = [...editOptions];
+                            updated[idx] = { ...updated[idx], duration: parseInt(e.target.value) };
+                            setEditOptions(updated);
+                          }}
+                          disabled={isSaving}
+                        >
+                          <option value={15}>15 min</option>
+                          <option value={30}>30 min</option>
+                          <option value={45}>45 min</option>
+                          <option value={60}>1 hr</option>
+                          <option value={90}>1.5 hr</option>
+                          <option value={120}>2 hr</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Participants */}
+              {event.status === 'pending' && (
+                <div className="form-group">
+                  <label>Participants</label>
+                  <div className="edit-participants">
+                    {editParticipants.map((email, idx) => (
+                      <div key={idx} className="participant-chip">
+                        <span>{email}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditParticipants(editParticipants.filter((_, i) => i !== idx))}
+                          disabled={isSaving}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="add-participant">
+                    <input
+                      type="email"
+                      value={newParticipant}
+                      onChange={e => setNewParticipant(e.target.value)}
+                      placeholder="Add email..."
+                      disabled={isSaving}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && newParticipant.trim()) {
+                          e.preventDefault();
+                          if (!editParticipants.includes(newParticipant.trim().toLowerCase())) {
+                            setEditParticipants([...editParticipants, newParticipant.trim().toLowerCase()]);
+                          }
+                          setNewParticipant('');
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newParticipant.trim() && !editParticipants.includes(newParticipant.trim().toLowerCase())) {
+                          setEditParticipants([...editParticipants, newParticipant.trim().toLowerCase()]);
+                          setNewParticipant('');
+                        }
+                      }}
+                      disabled={isSaving || !newParticipant.trim()}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="modal-actions">

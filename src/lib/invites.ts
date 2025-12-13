@@ -147,9 +147,6 @@ export async function respondToInvite(
   optionResponses?: Record<string, 'yes' | 'maybe' | 'no'>
 ): Promise<InviteResponse> {
   try {
-    // First get the current invite to have the host info
-    const currentInvite = await getInviteByToken(token);
-    
     const { data, error } = await supabase
       .from('invites')
       .update({

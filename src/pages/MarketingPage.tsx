@@ -67,13 +67,13 @@ const IconSparkles = () => (
 const features = [
   {
     icon: IconBolt,
-    title: 'Instant Scheduling',
+    title: 'Easy Scheduling',
     description: 'Type what you need and watch Gatherly work its magic. No more back-and-forth emails.',
     accent: 'mint'
   },
   {
     icon: IconBrain,
-    title: 'AI That Gets It',
+    title: 'Gatherly Gets It',
     description: 'Our smart agent understands context, reaches out to people, and finds the perfect time.',
     accent: 'peach'
   },
@@ -85,7 +85,7 @@ const features = [
   },
   {
     icon: IconSparkles,
-    title: 'Zero Friction',
+    title: 'Invite Anyone',
     description: 'Participants don\'t need an account. They just click a link and share their times.',
     accent: 'butter'
   }

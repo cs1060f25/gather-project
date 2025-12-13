@@ -296,13 +296,13 @@ export const StoryPage: React.FC = () => {
       {/* Scene 0: Intro */}
       <section className="story-scene scene-intro">
         <div className="scene-content">
-          <div className="intro-badge animate-on-scroll">The Origin Story</div>
+          <div className="intro-badge animate-on-scroll">How It All Started</div>
           <h1 className="intro-title animate-on-scroll">
             Three students.<br/>
-            <span className="highlight-text">One shared frustration.</span>
+            <span className="highlight-text">One shared question.</span>
           </h1>
           <p className="intro-subtitle animate-on-scroll">
-            Scroll to experience how Gatherly was born.
+            Why do we waste so many hours scheduling?
           </p>
           <div className="scroll-hint animate-on-scroll">
             <div className="mouse-icon">
@@ -337,14 +337,14 @@ export const StoryPage: React.FC = () => {
                 </div>
               </div>
               <h2 className="scene-title animate-on-scroll">
-                "Another When2Meet grid. Another hour wasted."
+                Another When2Meet link to fill. Another hour wasted.
               </h2>
               <div className="narrative-text">
                 <p className="animate-on-scroll">
                   <TypewriterText text="Create the poll. Send the link. Wait. Send reminders. Manually count overlaps. Send another message." delay={500} />
                 </p>
                 <p className="animate-on-scroll highlight-paragraph">
-                  <strong>Hours of life, gone.</strong> All for a one-hour meeting.
+                  <strong>Hours of life waiting, gone.</strong> All for a one-hour meeting.
                 </p>
                 <p className="animate-on-scroll">
                   There had to be a better way.
@@ -371,17 +371,17 @@ export const StoryPage: React.FC = () => {
                 </div>
               </div>
               <h2 className="scene-title animate-on-scroll">
-                "3:15 PM. The meeting room was empty."
+                3:15 PM, and the meeting room was empty.
               </h2>
               <div className="narrative-text">
                 <p className="animate-on-scroll">
-                  The calendar invite said 3 PM. Everyone clicked "accept."
+                  The calendar invite said 3 PM. Everyone clicked accept.
                 </p>
                 <p className="animate-on-scroll">
                   <TypewriterText text="But accepting an invite isn't the same as checking your calendar. People commit on autopilot." delay={800} />
                 </p>
                 <p className="animate-on-scroll highlight-paragraph">
-                  <strong>The problem wasn't scheduling—it was commitment.</strong>
+                  <strong>The problem wasn't scheduling; it was commitment.</strong>
                 </p>
               </div>
             </div>
@@ -411,11 +411,11 @@ export const StoryPage: React.FC = () => {
                 </div>
               </div>
               <h2 className="scene-title animate-on-scroll">
-                "8 AM to 7 PM. Eleven hours of meetings."
+                8 AM to 7 PM. Eleven hours of meetings.
               </h2>
               <div className="narrative-text">
                 <p className="animate-on-scroll">
-                  <TypewriterText text="In the business world, calendars became weapons. 'Quick 30 minutes' here, 'short sync' there—entire days disappeared." delay={500} />
+                  <TypewriterText text="In the business world, calendars became time-suckers. Quick 30 minutes here, short sync there; entire days disappeared." delay={500} />
                 </p>
                 <p className="animate-on-scroll highlight-paragraph">
                   <strong>The calendar was supposed to help. It became the problem.</strong>
@@ -453,7 +453,7 @@ export const StoryPage: React.FC = () => {
           
           <div className="solution-narrative animate-on-scroll">
             <p className="big-quote">
-              "What if we built something that actually understood how people schedule?"
+              What if we built something that actually understood how people schedule?
             </p>
             <div className="solution-features">
               <div className="feature-item">
@@ -475,7 +475,7 @@ export const StoryPage: React.FC = () => {
                     <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="3"/>
                   </svg>
                 </div>
-                <p>AI handles the coordination</p>
+                <p>Our web agent handles the coordination</p>
               </div>
               <div className="feature-arrow">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -509,7 +509,7 @@ export const StoryPage: React.FC = () => {
             <GatherlyLogo size={24} color="#1A1A1A" />
             <span>Gatherly</span>
           </div>
-          <p>Built with ❤️ at Harvard</p>
+          <p>Submitted as a course project to Harvard's CS 1060</p>
         </div>
       </footer>
     </div>
