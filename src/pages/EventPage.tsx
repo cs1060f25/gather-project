@@ -1545,7 +1545,7 @@ export const EventPage: React.FC = () => {
                 />
               </div>
               
-              {/* Time Options (for pending events) - Uses shared AvailabilityPicker */}
+              {/* Availability Options (for pending events) - Uses shared AvailabilityPicker */}
               {event.status === 'pending' && (
                 <div className="form-group">
                   <AvailabilityPicker
@@ -1553,7 +1553,7 @@ export const EventPage: React.FC = () => {
                     onChange={setEditOptions}
                     disabled={isSaving}
                     showLabel={true}
-                    labelText="Time Options (3)"
+                    labelText="Availability"
                   />
                 </div>
               )}

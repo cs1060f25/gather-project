@@ -253,7 +253,7 @@ export const AvailabilityPicker: React.FC<AvailabilityPickerProps> = ({
       {showLabel && (
         <label className="availability-picker-label">
           <span>{labelText}</span>
-          <span className="availability-picker-hint">Select dates and times</span>
+          <span className="availability-picker-hint">Select dates and times that work for you</span>
         </label>
       )}
       

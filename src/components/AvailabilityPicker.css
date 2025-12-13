@@ -1,11 +1,10 @@
-/* ===== Availability Picker Component - matches CreateEventPanel exactly ===== */
+/* ===== Availability Picker Component ===== */
 
 .availability-picker {
   background: #F8F8F8;
   padding: 1rem;
   border-top: 2px solid #E5E5E5;
   border-bottom: 2px solid #E5E5E5;
-  margin: 0 -1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -38,20 +37,17 @@
 
 .availability-picker-option {
   display: grid;
-  grid-template-columns: auto 1fr 1fr 1fr;
+  grid-template-columns: auto 1fr 1fr auto;
   gap: 0.4rem;
   align-items: center;
   padding: 0.5rem 0.6rem;
   background: #FFF;
-  border: 2px solid #1A1A1A;
-  box-shadow: 2px 2px 0 #1A1A1A;
+  border: 2px solid #E5E5E5;
   transition: all 0.15s ease;
 }
 
 .availability-picker-option.filled {
-  background: #FFF;
   border-color: #22c55e;
-  box-shadow: 2px 2px 0 #22c55e;
 }
 
 .availability-picker-badge {
@@ -72,11 +68,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.5rem 0.65rem;
+  padding: 0.5rem 0.75rem;
   border: 2px solid #22c55e;
   background: #22c55e;
   color: #FFF;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -95,19 +91,14 @@
   cursor: not-allowed;
 }
 
-.availability-picker-btn.has-value {
-  background: #22c55e;
-  border-color: #22c55e;
-  color: #FFF;
-}
-
 .availability-picker-btn svg {
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
 }
 
 .availability-picker-duration {
-  max-width: 70px;
-  flex: 0 0 auto;
+  min-width: 60px;
 }
 
 /* ===== Picker Overlay ===== */
@@ -149,9 +140,9 @@
 .availability-calendar-picker {
   position: relative;
   background: white;
-  border-radius: 12px;
+  border: 3px solid #1A1A1A;
   padding: 1rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 6px 6px 0 #1A1A1A;
   min-width: 280px;
   animation: pickerSlideIn 0.2s ease-out;
 }
@@ -184,12 +175,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
   transition: all 0.15s ease;
 }
 
 .availability-calendar-header button:hover {
-  background: #f5f5f5;
   color: #22c55e;
 }
 
@@ -231,7 +220,6 @@
   font-weight: 500;
   color: #333;
   cursor: pointer;
-  border-radius: 8px;
   transition: all 0.15s ease;
 }
 
@@ -266,9 +254,9 @@
 .availability-time-picker {
   position: relative;
   background: white;
-  border-radius: 12px;
+  border: 3px solid #1A1A1A;
   padding: 1.25rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 6px 6px 0 #1A1A1A;
   min-width: 240px;
   animation: pickerSlideIn 0.2s ease-out;
 }
@@ -284,7 +272,6 @@
 .availability-time-value-btn {
   background: #f5f5f5;
   border: 2px solid transparent;
-  border-radius: 8px;
   font-size: 1.75rem;
   font-weight: 700;
   color: #333;
@@ -330,7 +317,6 @@
   margin-bottom: 0.75rem;
   padding: 0.5rem;
   background: #fef2f2;
-  border-radius: 6px;
 }
 
 .availability-time-actions {
@@ -342,26 +328,24 @@
 .availability-time-confirm {
   flex: 1;
   padding: 0.65rem 1rem;
-  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  border: 2px solid #1A1A1A;
 }
 
 .availability-time-cancel {
-  background: #f5f5f5;
-  border: none;
-  color: #666;
+  background: #FFF;
+  color: #1A1A1A;
 }
 
 .availability-time-cancel:hover {
-  background: #e8e8e8;
+  background: #f5f5f5;
 }
 
 .availability-time-confirm {
   background: #22c55e;
-  border: none;
   color: white;
 }
 
@@ -374,9 +358,9 @@
 .availability-duration-picker {
   position: relative;
   background: white;
-  border-radius: 12px;
+  border: 3px solid #1A1A1A;
   padding: 1rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 6px 6px 0 #1A1A1A;
   min-width: 200px;
   animation: pickerSlideIn 0.2s ease-out;
 }
@@ -397,8 +381,7 @@
 
 .availability-duration-option {
   padding: 0.6rem 0.75rem;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 8px;
+  border: 2px solid #E5E5E5;
   background: white;
   font-size: 0.8rem;
   font-weight: 600;
@@ -431,19 +414,13 @@
     color: #DDD;
   }
   
-  .availability-picker-hint {
-    color: #888;
-  }
-  
   .availability-picker-option {
     background: #2A2A2A;
-    border-color: #555;
-    box-shadow: 2px 2px 0 #333;
+    border-color: #444;
   }
   
   .availability-picker-option.filled {
     border-color: #22c55e;
-    box-shadow: 2px 2px 0 #22c55e;
   }
   
   .availability-picker-badge {
@@ -451,28 +428,12 @@
     color: #F0F0F0;
   }
   
-  .availability-picker-btn {
-    background: #22c55e;
-    border-color: #22c55e;
-    color: #FFF;
-  }
-  
-  .availability-picker-btn:hover:not(:disabled) {
-    background: #16a34a;
-    border-color: #16a34a;
-  }
-  
-  .availability-picker-btn.has-value {
-    background: #22c55e;
-    border-color: #22c55e;
-    color: #FFF;
-  }
-  
   .availability-calendar-picker,
   .availability-time-picker,
   .availability-duration-picker {
     background: #252525;
-    border: 1px solid #404040;
+    border-color: #444;
+    box-shadow: 4px 4px 0 #000;
   }
   
   .availability-picker-close {
@@ -493,7 +454,6 @@
   }
   
   .availability-calendar-header button:hover {
-    background: #333;
     color: #22c55e;
   }
   
@@ -537,10 +497,15 @@
   .availability-time-cancel {
     background: #333;
     color: #ccc;
+    border-color: #555;
   }
   
   .availability-time-cancel:hover {
     background: #404040;
+  }
+  
+  .availability-time-confirm {
+    border-color: #22c55e;
   }
   
   .availability-duration-title {
@@ -570,27 +535,20 @@
 
 @media (max-width: 480px) {
   .availability-picker-option {
-    flex-wrap: wrap;
-    padding: 0.75rem;
+    grid-template-columns: auto 1fr 1fr auto;
+    gap: 0.3rem;
+    padding: 0.4rem;
   }
   
   .availability-picker-badge {
-    position: absolute;
-    top: -6px;
-    left: -6px;
-    width: 18px;
-    height: 18px;
-    font-size: 0.6rem;
-  }
-  
-  .availability-picker-option {
-    position: relative;
-    padding-left: 0.5rem;
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
   }
   
   .availability-picker-btn {
     font-size: 0.7rem;
-    padding: 0.45rem 0.5rem;
+    padding: 0.4rem 0.5rem;
   }
   
   .availability-calendar-picker {
@@ -606,4 +564,3 @@
     margin: 0 1rem;
   }
 }
-
