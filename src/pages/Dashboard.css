@@ -245,6 +245,164 @@
   color: #999;
 }
 
+/* Daily Summary Section */
+.daily-summary-section {
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-bottom: 2px solid #22c55e;
+}
+
+.summary-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.summary-loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e5e5;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.summary-greeting {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin-bottom: 0.25rem;
+}
+
+.summary-focus {
+  font-size: 0.8rem;
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.summary-highlights {
+  margin-bottom: 0.5rem;
+}
+
+.highlights-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.highlight-item {
+  font-size: 0.75rem;
+  color: #333;
+  padding: 0.2rem 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid #22c55e;
+  margin-top: 0.25rem;
+}
+
+.summary-lookahead {
+  font-size: 0.75rem;
+  color: #666;
+  font-style: italic;
+}
+
+.suggested-events {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #22c55e;
+}
+
+.suggested-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.suggested-event-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  margin-top: 0.25rem;
+  background: #fff;
+  border: 2px solid #22c55e;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.suggested-event-btn:hover {
+  background: #22c55e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.suggested-event-btn:hover svg,
+.suggested-event-btn:hover .suggested-title,
+.suggested-event-btn:hover .suggested-reason {
+  color: #fff;
+  stroke: #fff;
+}
+
+.suggested-event-btn svg {
+  flex-shrink: 0;
+  stroke: #22c55e;
+}
+
+.suggested-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.suggested-reason {
+  font-size: 0.65rem;
+  color: #666;
+  margin-left: auto;
+}
+
+.summary-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+/* Gatherly notification styling */
+.notification-item.gatherly-notification {
+  border-left: 3px solid #22c55e;
+}
+
+.gatherly-notif-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0fdf4;
+  border-radius: 50%;
+  border: 2px solid #22c55e;
+}
+
+.gatherly-notif-icon.confirmed {
+  background: #22c55e;
+}
+
 /* Dark mode for notifications */
 .dark-mode .notification-bell svg {
   color: #FFF;
@@ -282,6 +440,54 @@
 
 .dark-mode .notification-message {
   color: #aaa;
+}
+
+/* Dark mode daily summary */
+.dark-mode .daily-summary-section {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+  border-bottom-color: #22c55e;
+}
+
+.dark-mode .summary-greeting {
+  color: #FFF;
+}
+
+.dark-mode .summary-focus {
+  color: #ddd;
+}
+
+.dark-mode .highlights-label,
+.dark-mode .suggested-label {
+  color: #aaa;
+}
+
+.dark-mode .highlight-item {
+  color: #ddd;
+}
+
+.dark-mode .summary-lookahead {
+  color: #aaa;
+}
+
+.dark-mode .suggested-event-btn {
+  background: #333;
+  border-color: #22c55e;
+}
+
+.dark-mode .suggested-title {
+  color: #FFF;
+}
+
+.dark-mode .suggested-reason {
+  color: #aaa;
+}
+
+.dark-mode .summary-placeholder {
+  color: #aaa;
+}
+
+.dark-mode .gatherly-notif-icon {
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .dashboard-logo {

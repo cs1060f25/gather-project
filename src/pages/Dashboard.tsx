@@ -192,6 +192,24 @@ export const Dashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Daily summary state
+  interface SuggestedEvent {
+    title: string;
+    reason: string;
+    suggestedDate: string;
+    suggestedTime: string;
+    duration: number;
+  }
+  interface DailySummary {
+    greeting: string;
+    focusSummary: string;
+    todayHighlights: string[];
+    lookAhead: string;
+    suggestedEvents: SuggestedEvent[];
+  }
+  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   // Helper to categorize events
   const categorizeEvent = (title: string): 'work' | 'personal' | 'travel' => {
@@ -507,6 +525,54 @@ export const Dashboard: React.FC = () => {
       supabase.removeChannel(channel);
     };
   }, [authUser]);
+
+  // Fetch daily summary when events are loaded
+  useEffect(() => {
+    const fetchDailySummary = async () => {
+      if (!authUser || calendarLoading || events.length === 0) return;
+      
+      // Only fetch once per session or when showNotifications opens
+      const lastFetch = sessionStorage.getItem('gatherly_summary_fetched');
+      const today = new Date().toDateString();
+      if (lastFetch === today && dailySummary) return;
+      
+      setSummaryLoading(true);
+      try {
+        const response = await fetch('/api/daily-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            events: events.map(e => ({
+              title: e.title,
+              date: e.date,
+              time: e.time,
+              endTime: e.endTime,
+              location: e.location,
+              isGatherly: e.isGatherlyEvent,
+              status: e.status,
+              attendees: e.attendees
+            })),
+            userName: user?.full_name || user?.email?.split('@')[0] || '',
+            contacts: contacts.map(c => c.name)
+          })
+        });
+        
+        if (response.ok) {
+          const summary = await response.json();
+          setDailySummary(summary);
+          sessionStorage.setItem('gatherly_summary_fetched', today);
+        }
+      } catch (err) {
+        console.log('Could not fetch daily summary:', err);
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+    
+    if (showNotifications && !dailySummary && !summaryLoading) {
+      fetchDailySummary();
+    }
+  }, [showNotifications, authUser, events, calendarLoading, contacts, user, dailySummary, summaryLoading]);
 
   // Mark notification as read
   const markNotificationAsRead = async (id: string) => {
@@ -1198,6 +1264,70 @@ export const Dashboard: React.FC = () => {
                     </button>
                   )}
                 </div>
+                
+                {/* Daily Summary Section */}
+                <div className="daily-summary-section">
+                  {summaryLoading ? (
+                    <div className="summary-loading">
+                      <div className="summary-loading-spinner"></div>
+                      <span>Getting your day ready...</span>
+                    </div>
+                  ) : dailySummary ? (
+                    <>
+                      <div className="summary-greeting">{dailySummary.greeting}</div>
+                      <div className="summary-focus">{dailySummary.focusSummary}</div>
+                      
+                      {dailySummary.todayHighlights.length > 0 && (
+                        <div className="summary-highlights">
+                          <span className="highlights-label">Today:</span>
+                          {dailySummary.todayHighlights.map((h, i) => (
+                            <div key={i} className="highlight-item">{h}</div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {dailySummary.lookAhead && (
+                        <div className="summary-lookahead">{dailySummary.lookAhead}</div>
+                      )}
+                      
+                      {dailySummary.suggestedEvents.length > 0 && (
+                        <div className="suggested-events">
+                          <span className="suggested-label">Quick add:</span>
+                          {dailySummary.suggestedEvents.map((event, i) => (
+                            <button
+                              key={i}
+                              className="suggested-event-btn"
+                              onClick={() => {
+                                // Pre-fill the chat with this event
+                                const chatInput = document.querySelector('.chat-input') as HTMLInputElement;
+                                if (chatInput) {
+                                  chatInput.value = `Schedule "${event.title}" for ${event.suggestedDate} at ${event.suggestedTime}`;
+                                  chatInput.focus();
+                                }
+                                setShowNotifications(false);
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M12 5v14M5 12h14"/>
+                              </svg>
+                              <span className="suggested-title">{event.title}</span>
+                              <span className="suggested-reason">{event.reason}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="summary-placeholder">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                      </svg>
+                      <span>Your daily focus will appear here</span>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="notification-list">
                   {notifications.length === 0 ? (
                     <div className="no-notifications">
@@ -1211,23 +1341,25 @@ export const Dashboard: React.FC = () => {
                     notifications.map(notification => (
                       <button
                         key={notification.id}
-                        className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                        className={`notification-item ${!notification.read ? 'unread' : ''} ${notification.type.includes('gatherly') || notification.type === 'invite_received' || notification.type === 'event_scheduled' ? 'gatherly-notification' : ''}`}
                         onClick={() => {
                           markNotificationAsRead(notification.id);
                           if (notification.event_id) {
-                            navigate(`/events/${notification.event_id}`);
+                            navigate(`/event/${notification.event_id}`);
                           }
                           setShowNotifications(false);
                         }}
                       >
                         <div className="notification-icon">
                           {notification.type === 'invite_received' && (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                              <line x1="16" y1="2" x2="16" y2="6"/>
-                              <line x1="8" y1="2" x2="8" y2="6"/>
-                              <line x1="3" y1="10" x2="21" y2="10"/>
-                            </svg>
+                            <div className="gatherly-notif-icon">
+                              <svg width="16" height="16" viewBox="-2 -2 28 28" fill="none">
+                                <path d="M 8.5 21.0 A 10 10 0 1 0 3.0 11.5" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                                <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                                <circle cx="6" cy="16" r="5" fill="none" stroke="#22c55e" strokeWidth="2"/>
+                                <path d="M6 14V18M4 16H8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"/>
+                              </svg>
+                            </div>
                           )}
                           {notification.type === 'response_received' && (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
@@ -1236,14 +1368,36 @@ export const Dashboard: React.FC = () => {
                             </svg>
                           )}
                           {notification.type === 'event_scheduled' && (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                              <path d="M20 6L9 17l-5-5"/>
-                            </svg>
+                            <div className="gatherly-notif-icon confirmed">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                                <path d="M20 6L9 17l-5-5"/>
+                              </svg>
+                            </div>
                           )}
                           {notification.type === 'event_cancelled' && (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
                               <circle cx="12" cy="12" r="10"/>
                               <path d="M15 9l-6 6M9 9l6 6"/>
+                            </svg>
+                          )}
+                          {notification.type === 'reminder' && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                          )}
+                          {notification.type === 'event_updated' && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          )}
+                          {notification.type === 'invitee_response' && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2">
+                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                              <circle cx="9" cy="7" r="4"/>
+                              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                             </svg>
                           )}
                         </div>

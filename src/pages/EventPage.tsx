@@ -253,7 +253,7 @@ export const EventPage: React.FC = () => {
     
     setIsSaving(true);
     try {
-      // Update in database
+      // Update gatherly_events table
       const { error } = await supabase
         .from('gatherly_events')
         .update({
@@ -264,6 +264,19 @@ export const EventPage: React.FC = () => {
         .eq('id', event.id);
       
       if (error) throw error;
+      
+      // Also update invites table so invitees see updated details
+      const { error: inviteError } = await supabase
+        .from('invites')
+        .update({
+          event_title: editTitle.trim(),
+          event_location: editLocation.trim() || null,
+        })
+        .eq('event_id', event.id);
+      
+      if (inviteError) {
+        console.error('Error updating invites:', inviteError);
+      }
       
       // Update local state
       setEvent({
@@ -287,7 +300,7 @@ export const EventPage: React.FC = () => {
           if (inviteeProfile) {
             await createNotification(
               inviteeProfile.id,
-              'event_scheduled',
+              'event_updated',
               `${editTitle.trim()} has been updated`,
               `${hostName} updated the event details`,
               event.id
