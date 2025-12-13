@@ -78,14 +78,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, message: 'No pending invites to remind' });
       }
 
-      // Get host info
+      // Get host info - use user_id which is the actual column in gatherly_events
       const { data: hostProfile } = await supabase
         .from('profiles')
         .select('full_name, email')
-        .eq('id', event.organizer_id)
+        .eq('id', event.user_id)
         .single();
       
-      const hostName = hostProfile?.full_name || event.host_name || 'Event organizer';
+      const hostName = hostProfile?.full_name || event.host_name || event.title;
       const hostEmail = hostProfile?.email || event.host_email || '';
       
       const baseUrl = process.env.SITE_URL || 'https://gatherly.now';

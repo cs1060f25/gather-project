@@ -158,17 +158,37 @@
   font-weight: 700;
 }
 
-.mark-all-read {
+.notification-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mark-all-read,
+.clear-all-notifications {
   background: none;
   border: none;
-  color: #22c55e;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.mark-all-read {
+  color: #22c55e;
 }
 
 .mark-all-read:hover {
-  text-decoration: underline;
+  background: #dcfce7;
+}
+
+.clear-all-notifications {
+  color: #dc2626;
+}
+
+.clear-all-notifications:hover {
+  background: #fee2e2;
 }
 
 .notification-list {
@@ -181,13 +201,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  gap: 0.5rem;
+  padding: 1rem;
+  gap: 0.35rem;
+  border-top: 1px dashed #e5e5e5;
+}
+
+.no-notifications svg {
+  width: 24px;
+  height: 24px;
+  opacity: 0.4;
 }
 
 .no-notifications p {
-  color: #999;
-  font-size: 0.9rem;
+  color: #aaa;
+  font-size: 0.8rem;
   margin: 0;
 }
 

@@ -599,6 +599,17 @@ export const Dashboard: React.FC = () => {
     setUnreadCount(0);
   };
 
+  // Clear all notifications
+  const clearAllNotifications = async () => {
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', authUser?.id);
+
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
   // Fetch Google Contacts using People API
   const fetchGoogleContacts = async () => {
     const googleToken = getGoogleToken();
@@ -1254,14 +1265,24 @@ export const Dashboard: React.FC = () => {
                 <div className="notification-dropdown">
                 <div className="notification-header">
                   <h3>Notifications</h3>
-                  {unreadCount > 0 && (
-                    <button 
-                      className="mark-all-read"
-                      onClick={markAllNotificationsAsRead}
-                    >
-                      Mark all read
-                    </button>
-                  )}
+                  <div className="notification-actions">
+                    {unreadCount > 0 && (
+                      <button 
+                        className="mark-all-read"
+                        onClick={markAllNotificationsAsRead}
+                      >
+                        Mark read
+                      </button>
+                    )}
+                    {notifications.length > 0 && (
+                      <button 
+                        className="clear-all-notifications"
+                        onClick={clearAllNotifications}
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Daily Summary Section */}
@@ -1297,20 +1318,31 @@ export const Dashboard: React.FC = () => {
                               key={i}
                               className="suggested-event-btn"
                               onClick={() => {
-                                // Populate the create event form with suggested data
+                                // Populate the create event form with suggested data and enter edit mode
+                                const suggestedOptions = event.suggestedDate && event.suggestedTime ? [{
+                                  id: crypto.randomUUID(),
+                                  day: event.suggestedDate,
+                                  time: event.suggestedTime,
+                                  duration: event.duration || 60,
+                                  color: '#22c55e'
+                                }] : [];
                                 setSuggestedEventData({
                                   eventName: event.title,
                                   description: event.reason || '',
                                   location: '',
                                   participants: [],
-                                  availabilityOptions: event.suggestedDate && event.suggestedTime ? [{
-                                    id: crypto.randomUUID(),
-                                    day: event.suggestedDate,
-                                    time: event.suggestedTime,
-                                    duration: event.duration || 60,
-                                    color: '#22c55e'
-                                  }] : []
+                                  availabilityOptions: suggestedOptions
                                 });
+                                // Enter edit mode to show the calendar with the time option
+                                if (suggestedOptions.length > 0) {
+                                  setEditingMode(true);
+                                  setSelectedTimeOptions(suggestedOptions.map(opt => ({
+                                    date: opt.day,
+                                    time: opt.time,
+                                    duration: opt.duration,
+                                    color: opt.color
+                                  })));
+                                }
                                 setShowNotifications(false);
                               }}
                             >

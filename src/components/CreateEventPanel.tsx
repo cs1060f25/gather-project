@@ -558,17 +558,20 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     setShowLocationSuggestions(false);
   };
 
-  // Filter contact suggestions
+  // Filter contact suggestions - exclude current user's email
   const filteredContacts = useMemo(() => {
-    if (!participantInput.trim()) return contacts.slice(0, 6);
+    const baseContacts = contacts.filter(c => 
+      c.email.toLowerCase() !== currentUserEmail?.toLowerCase() // Exclude current user
+    );
+    if (!participantInput.trim()) return baseContacts.slice(0, 6);
     const query = participantInput.toLowerCase();
-    return contacts
+    return baseContacts
       .filter(c => 
         (c.name.toLowerCase().includes(query) || c.email.toLowerCase().includes(query)) &&
         !participants.includes(c.email)
       )
       .slice(0, 6);
-  }, [contacts, participantInput, participants]);
+  }, [contacts, participantInput, participants, currentUserEmail]);
 
   const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
@@ -576,6 +579,11 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
   // Save recent people when participants change on successful submit
   const saveRecentPeople = (emails: string[]) => {
     try {
+      // Filter out the current user's email - never show yourself in recent
+      const filteredEmails = emails.filter(e => 
+        e.toLowerCase() !== currentUserEmail?.toLowerCase()
+      );
+      
       const stored = localStorage.getItem('gatherly_recent_people');
       let existing: {email: string; name?: string}[] = [];
       if (stored) {
@@ -583,13 +591,13 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       }
       
       // Add new emails to the front, removing duplicates
-      const newRecent = emails.map(email => {
+      const newRecent = filteredEmails.map(email => {
         // Try to find name from contacts
         const contact = contacts.find(c => c.email === email);
         return { email, name: contact?.name };
       });
       
-      const merged = [...newRecent, ...existing.filter(e => !emails.includes(e.email))];
+      const merged = [...newRecent, ...existing.filter(e => !filteredEmails.includes(e.email))];
       const trimmed = merged.slice(0, 10); // Keep 10 max
       
       localStorage.setItem('gatherly_recent_people', JSON.stringify(trimmed));

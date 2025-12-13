@@ -253,14 +253,44 @@ export const EventPage: React.FC = () => {
     setShowEditModal(true);
   };
 
+  // Handle removing a participant - also removes their invite
+  const handleRemoveParticipant = async (email: string) => {
+    // Remove from edit state
+    setEditParticipants(prev => prev.filter(p => p.toLowerCase() !== email.toLowerCase()));
+    
+    // Note: The actual invite deletion happens in handleSaveEdit when changes are saved
+    // This tracks removed participants for proper cleanup
+  };
+
   // Handle saving event edits
   const handleSaveEdit = async () => {
     if (!event || !authUser) return;
     
     setIsSaving(true);
     try {
-      // Check for new participants
+      // Check for new and removed participants
       const newParticipants = editParticipants.filter(p => !event.participants.includes(p));
+      const removedParticipants = event.participants.filter(p => !editParticipants.includes(p));
+      
+      // Delete invites for removed participants
+      if (removedParticipants.length > 0) {
+        for (const email of removedParticipants) {
+          await supabase
+            .from('invites')
+            .delete()
+            .eq('event_id', event.id)
+            .eq('invitee_email', email.toLowerCase());
+        }
+        
+        // Also update the responses in the event to remove the removed participants
+        const updatedResponses = (event.responses || []).filter(
+          r => !removedParticipants.includes(r.email.toLowerCase())
+        );
+        await supabase
+          .from('gatherly_events')
+          .update({ responses: updatedResponses })
+          .eq('id', event.id);
+      }
       
       // Build updated options with colors
       const updatedOptions = editOptions.map((opt, idx) => ({
@@ -499,19 +529,25 @@ export const EventPage: React.FC = () => {
             ? event.description + gatherlyMarker 
             : gatherlyMarker.trim();
           
+          // Get organizer email for proper attribution
+          const organizerEmail = user?.email || authUser?.email || '';
+          const organizerName = user?.full_name || authUser?.user_metadata?.full_name || '';
+          
           const calendarEvent: {
             summary: string;
             description: string;
             location?: string;
             start: { dateTime: string; timeZone: string };
             end: { dateTime: string; timeZone: string };
-            attendees: { email: string }[];
+            attendees: { email: string; organizer?: boolean; displayName?: string; responseStatus?: string }[];
             conferenceData?: {
               createRequest: {
                 requestId: string;
                 conferenceSolutionKey: { type: string };
               };
             };
+            guestsCanModify?: boolean;
+            guestsCanInviteOthers?: boolean;
           } = {
             summary: event.title,
             description: descriptionWithMarker,
@@ -523,7 +559,21 @@ export const EventPage: React.FC = () => {
               dateTime: endDate.toISOString(),
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
             },
-            attendees: event.participants.map(email => ({ email }))
+            // Include organizer in attendees list with proper flags
+            attendees: [
+              // Add organizer first (they're already the organizer via the API, but this helps with display)
+              ...(organizerEmail ? [{ 
+                email: organizerEmail, 
+                displayName: organizerName,
+                responseStatus: 'accepted' // Organizer auto-accepts
+              }] : []),
+              // Then add participants
+              ...event.participants
+                .filter(email => email.toLowerCase() !== organizerEmail.toLowerCase()) // Don't duplicate organizer
+                .map(email => ({ email }))
+            ],
+            guestsCanModify: false,
+            guestsCanInviteOthers: false
           };
           
           // Add location if it exists
@@ -761,8 +811,8 @@ export const EventPage: React.FC = () => {
         <div className="header-left">
           <button 
             className="event-back-btn"
-            onClick={() => navigate('/events')}
-            aria-label="Back to Events"
+            onClick={() => navigate('/app')}
+            aria-label="Back to Calendar"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M15 18l-6-6 6-6"/>
@@ -1235,7 +1285,7 @@ export const EventPage: React.FC = () => {
               {/* Time Options (for pending events) */}
               {event.status === 'pending' && (
                 <div className="form-group">
-                  <label>Time Options</label>
+                  <label>Time Options ({editOptions.length}/3)</label>
                   <div className="edit-time-options">
                     {editOptions.map((opt, idx) => (
                       <div key={idx} className="edit-time-option">
@@ -1243,6 +1293,7 @@ export const EventPage: React.FC = () => {
                         <input
                           type="date"
                           value={opt.day}
+                          min={new Date().toISOString().split('T')[0]}
                           onChange={e => {
                             const updated = [...editOptions];
                             updated[idx] = { ...updated[idx], day: e.target.value };
@@ -1276,8 +1327,35 @@ export const EventPage: React.FC = () => {
                           <option value={90}>1.5 hr</option>
                           <option value={120}>2 hr</option>
                         </select>
+                        {editOptions.length > 1 && (
+                          <button
+                            type="button"
+                            className="remove-time-btn"
+                            onClick={() => setEditOptions(editOptions.filter((_, i) => i !== idx))}
+                            disabled={isSaving}
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     ))}
+                    {editOptions.length < 3 && (
+                      <button
+                        type="button"
+                        className="add-time-btn"
+                        onClick={() => setEditOptions([...editOptions, { 
+                          day: '', 
+                          time: '', 
+                          duration: editOptions[0]?.duration || 60 
+                        }])}
+                        disabled={isSaving}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Add Time Option
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1287,31 +1365,41 @@ export const EventPage: React.FC = () => {
                 <div className="form-group">
                   <label>Participants</label>
                   <div className="edit-participants">
-                    {editParticipants.map((email, idx) => (
-                      <div key={idx} className="participant-chip">
-                        <span>{email}</span>
-                        <button
-                          type="button"
-                          onClick={() => setEditParticipants(editParticipants.filter((_, i) => i !== idx))}
-                          disabled={isSaving}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                    {editParticipants.map((email, idx) => {
+                      const contact = contacts.find(c => c.email.toLowerCase() === email.toLowerCase());
+                      return (
+                        <div key={idx} className="participant-chip">
+                          <span>{contact?.name || email}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveParticipant(email)}
+                            disabled={isSaving}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="add-participant">
-                    <input
-                      type="email"
-                      value={newParticipant}
-                      onChange={e => setNewParticipant(e.target.value)}
-                      placeholder="Add email..."
-                      disabled={isSaving}
+                  <div className="add-participant-container">
+                    <div className="add-participant">
+                      <input
+                        type="text"
+                        value={newParticipant}
+                        onChange={e => setNewParticipant(e.target.value)}
+                        placeholder="Search contacts or enter email..."
+                        disabled={isSaving}
                       onKeyDown={e => {
                         if (e.key === 'Enter' && newParticipant.trim()) {
                           e.preventDefault();
-                          if (!editParticipants.includes(newParticipant.trim().toLowerCase())) {
-                            setEditParticipants([...editParticipants, newParticipant.trim().toLowerCase()]);
+                          const email = newParticipant.trim().toLowerCase();
+                          // Check if it matches a contact
+                          const matchingContact = contacts.find(c => 
+                            c.name.toLowerCase() === email || c.email.toLowerCase() === email
+                          );
+                          const emailToAdd = matchingContact?.email.toLowerCase() || email;
+                          if (!editParticipants.includes(emailToAdd)) {
+                            setEditParticipants([...editParticipants, emailToAdd]);
                           }
                           setNewParticipant('');
                         }
@@ -1320,15 +1408,53 @@ export const EventPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        if (newParticipant.trim() && !editParticipants.includes(newParticipant.trim().toLowerCase())) {
-                          setEditParticipants([...editParticipants, newParticipant.trim().toLowerCase()]);
-                          setNewParticipant('');
+                        if (newParticipant.trim()) {
+                          const email = newParticipant.trim().toLowerCase();
+                          const matchingContact = contacts.find(c => 
+                            c.name.toLowerCase() === email || c.email.toLowerCase() === email
+                          );
+                          const emailToAdd = matchingContact?.email.toLowerCase() || email;
+                          if (!editParticipants.includes(emailToAdd)) {
+                            setEditParticipants([...editParticipants, emailToAdd]);
+                            setNewParticipant('');
+                          }
                         }
                       }}
                       disabled={isSaving || !newParticipant.trim()}
                     >
                       Add
                     </button>
+                    </div>
+                    {/* Contact suggestions dropdown */}
+                    {newParticipant.length >= 1 && (
+                      <div className="contact-suggestions">
+                        {contacts
+                          .filter(c => 
+                            (c.name.toLowerCase().includes(newParticipant.toLowerCase()) ||
+                             c.email.toLowerCase().includes(newParticipant.toLowerCase())) &&
+                            !editParticipants.includes(c.email.toLowerCase()) &&
+                            c.email.toLowerCase() !== user?.email?.toLowerCase()
+                          )
+                          .slice(0, 5)
+                          .map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              className="contact-suggestion"
+                              onClick={() => {
+                                if (!editParticipants.includes(c.email.toLowerCase())) {
+                                  setEditParticipants([...editParticipants, c.email.toLowerCase()]);
+                                }
+                                setNewParticipant('');
+                              }}
+                            >
+                              <span className="contact-name">{c.name}</span>
+                              <span className="contact-email">{c.email}</span>
+                            </button>
+                          ))
+                        }
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
