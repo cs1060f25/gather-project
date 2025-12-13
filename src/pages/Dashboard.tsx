@@ -856,8 +856,8 @@ export const Dashboard: React.FC = () => {
       await Promise.all(participants.map(async (email: string) => {
         try {
           await fetch('/api/send-reminder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               to: email,
               eventTitle: selectedEvent.title,
@@ -868,7 +868,7 @@ export const Dashboard: React.FC = () => {
               scheduledTime: eventData.confirmed_option?.time,
               location: eventData.location
             }),
-          });
+      });
         } catch (err) {
           console.error(`Error sending reminder to ${email}:`, err);
         }
@@ -924,15 +924,15 @@ export const Dashboard: React.FC = () => {
             await Promise.all(participants.map(async (email: string) => {
               try {
                 await fetch('/api/send-cancel-notification', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     to: email,
                     eventTitle: selectedEvent.title,
                     hostName,
                     hostEmail,
                   }),
-                });
+          });
               } catch (err) {
                 console.error(`Error sending cancellation to ${email}:`, err);
               }
@@ -1270,16 +1270,23 @@ export const Dashboard: React.FC = () => {
             onClick={() => setShowProfile(!showProfile)}
           >
             {user?.avatar_url ? (
-              <img 
-                src={user.avatar_url} 
-                alt={user.full_name || 'Profile'} 
+              <img
+                src={user.avatar_url}
+                alt={user.full_name || 'Profile'}
                 className="profile-avatar"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="profile-avatar-placeholder">
-                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-              </div>
-            )}
+            ) : null}
+            <div 
+              className="profile-avatar-placeholder"
+              style={{ display: user?.avatar_url ? 'none' : 'flex' }}
+            >
+              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+            </div>
           </button>
         </div>
       </header>
@@ -1422,18 +1429,18 @@ export const Dashboard: React.FC = () => {
                 <div className="event-detail-attendees-section">
                   <div className="attendees-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                    </svg>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                  </svg>
                     <span>{selectedEvent.attendees.length} attendee{selectedEvent.attendees.length > 1 ? 's' : ''}</span>
                   </div>
                   <div className="attendees-chips">
-                    {selectedEvent.attendees.slice(0, 3).map((email, idx) => (
-                      <span key={idx} className="attendee-chip">{email}</span>
-                    ))}
-                    {selectedEvent.attendees.length > 3 && (
-                      <span className="attendee-chip more">+{selectedEvent.attendees.length - 3}</span>
-                    )}
+                      {selectedEvent.attendees.slice(0, 3).map((email, idx) => (
+                        <span key={idx} className="attendee-chip">{email}</span>
+                      ))}
+                      {selectedEvent.attendees.length > 3 && (
+                        <span className="attendee-chip more">+{selectedEvent.attendees.length - 3}</span>
+                      )}
                   </div>
                 </div>
               )}

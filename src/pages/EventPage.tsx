@@ -74,7 +74,7 @@ export const EventPage: React.FC = () => {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [reminderSuccess, setReminderSuccess] = useState<string | null>(null);
-  
+
   // Edit event state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState('');
@@ -717,12 +717,19 @@ export const EventPage: React.FC = () => {
                 src={user.avatar_url} 
                 alt="Profile" 
                 className="profile-avatar"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="profile-avatar-placeholder">
-                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-              </div>
-            )}
+            ) : null}
+            <div 
+              className="profile-avatar-placeholder"
+              style={{ display: user?.avatar_url ? 'none' : 'flex' }}
+            >
+              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+            </div>
           </button>
         </div>
       </header>
@@ -753,7 +760,7 @@ export const EventPage: React.FC = () => {
 
             <div className="event-title-section">
               <div className="title-row">
-                <h2>{event.title}</h2>
+              <h2>{event.title}</h2>
                 {event.status !== 'cancelled' && (
                   <button 
                     className="edit-event-btn" 
@@ -1163,7 +1170,7 @@ export const EventPage: React.FC = () => {
       )}
 
       {/* Profile Sidebar */}
-      <ProfileSidebar
+      <ProfileSidebar 
         isOpen={showProfile}
         user={user}
         contacts={contacts}

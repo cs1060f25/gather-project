@@ -419,20 +419,20 @@ export const EventsPage: React.FC = () => {
         }
         
         return {
-          id: ge.id,
-          title: ge.title,
-          date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
-          time: ge.confirmedOption?.time || ge.options[0]?.time,
-          location: ge.location || ge.options?.[0]?.location || 'TBD',
-          attendees: ge.participants,
-          source: 'gatherly' as const,
-          status: ge.status,
-          isGatherly: true,
+      id: ge.id,
+      title: ge.title,
+      date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
+      time: ge.confirmedOption?.time || ge.options[0]?.time,
+      location: ge.location || ge.options?.[0]?.location || 'TBD',
+      attendees: ge.participants,
+      source: 'gatherly' as const,
+      status: ge.status,
+      isGatherly: true,
           calendarId: ge.status === 'pending' ? 'gatherly-pending' : 'gatherly',
-          calendarName: 'Gatherly',
-          calendarColor: '#22c55e',
-          responses: ge.responses?.length || 0,
-          totalInvites: ge.participants.length
+      calendarName: 'Gatherly',
+      calendarColor: '#22c55e',
+      responses: ge.responses?.length || 0,
+      totalInvites: ge.participants.length
         };
       });
 
@@ -569,16 +569,24 @@ export const EventsPage: React.FC = () => {
             title="Profile"
           >
             {user?.avatar_url ? (
-              <img 
-                src={user.avatar_url} 
-                alt="Profile" 
+              <img
+                src={user.avatar_url}
+                alt="Profile"
                 className="profile-avatar"
+                onError={(e) => {
+                  // Hide broken image and show placeholder
+                  e.currentTarget.style.display = 'none';
+                  const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="profile-avatar-placeholder">
-                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-              </div>
-            )}
+            ) : null}
+            <div 
+              className="profile-avatar-placeholder"
+              style={{ display: user?.avatar_url ? 'none' : 'flex' }}
+            >
+              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+            </div>
           </button>
         </div>
       </header>
@@ -670,7 +678,7 @@ export const EventsPage: React.FC = () => {
         {categorizedEvents.allUpcoming.length > 0 && (
           <section className="events-section upcoming-section">
             <div className="section-header-with-nav">
-              <h2 className="section-title">Upcoming</h2>
+            <h2 className="section-title">Upcoming</h2>
               <div className="pagination-controls">
                 <button 
                   className="pagination-btn"
