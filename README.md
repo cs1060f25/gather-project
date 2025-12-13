@@ -30,7 +30,7 @@
 
 Scheduling is broken. Every week, millions of hours are wasted on the same tedious dance: "When works for you?" followed by endless email chains, When2Meet polls that nobody fills out, and calendar tabs open side-by-side trying to find a sliver of overlapping free time.
 
-This is administrative work that adds zero value to your life. You don't enjoy scheduling a study session for your group project. You enjoy the study session itself. You don't enjoy coordinating a coffee catch-up with an old friend. You enjoy the conversation.
+This is administrative work that adds zero value to your life. You dont enjoy scheduling a study session for your group project. You enjoy the study session itself. You dont enjoy coordinating a coffee catch-up with an old friend. You enjoy the conversation.
 
 We built Gatherly because we believe AI should handle the tedious coordination so humans can focus on the face time that actually matters.
 
@@ -46,7 +46,25 @@ Our thesis is that natural language AI can collapse the entire scheduling workfl
 
 We chose to start by replacing When2Meet because thats where the pain is most acute. Group scheduling is exponentially harder than one-on-one meetings. Coordinating five peoples calendars manually is a nightmare. But for AI, its just a constraint satisfaction problem.
 
+### The Philosophy: Limit User Choice
+
+Traditional scheduling tools give invitees too many options. When2Meet asks everyone to paint their entire week. Doodle presents a grid of possibilities. The result is decision paralysis and low response rates.
+
+Gatherly flips this model. The event organizer proposes specific times. Invitees simply accept or decline each option. This constraint is a feature, not a limitation. By limiting choice, we increase response rates. By centralizing control with the organizer, we reduce coordination overhead.
+
+We are not currently supporting natural language back-and-forth via something like iMessage to survey participants. That comes later. For now, we survey people simply through structured response pages. The organizers perspective shapes the options. Everyone else just reacts.
+
+This achieves the same goal as a fully conversational AI agent, just with simpler technology. All new fails. We start with what works, prove the value, then add sophistication.
+
+### The Strategy: Vertical Expansion
+
+Our roadmap is intentional. Replace When2Meet first. Prove that AI-powered scheduling is better than manual grid-painting. Capture the group scheduling use case.
+
+Then expand vertically. Add more integrations. Replace not just When2Meet but Calendly. Then Doodle. Then the ad-hoc email chains and Slack threads. Eventually, replace the entire scheduling stack.
+
 Rather than building from scratch, we integrated with the tools people already use and trust. Google Calendar holds your data securely. Gmail delivers your invitations. We add the intelligence layer on top, respecting the infrastructure you already have rather than asking you to migrate to yet another platform.
+
+The goal is not to be another calendar app. The goal is to be the intelligence layer that sits on top of all calendar apps, all communication channels, all scheduling contexts. Start narrow, expand wide.
 
 ---
 
@@ -98,7 +116,7 @@ We never show your own email in the recent contacts list. That would be redundan
 
 Gatherly integrates with the Google Places API for location autocomplete. Start typing an address or venue name and suggestions appear instantly. Select one and the full address, plus a link to Google Maps, gets attached to your event. Invitees see the location in their invitation email with a clickable map link.
 
-This matters because location is often the forgotten detail. How many times have you shown up to a meeting only to realize you don't know which conference room, which coffee shop, or which building entrance? Gatherly makes location a first-class citizen in the scheduling flow.
+This matters because location is often the forgotten detail. How many times have you shown up to a meeting only to realize you dont know which conference room, which coffee shop, or which building entrance? Gatherly makes location a first-class citizen in the scheduling flow.
 
 ### Timezone Detection
 
@@ -282,6 +300,18 @@ Most users sign in with Google. One click, no password to remember. When you aut
 
 For users who prefer not to use Google SSO, Gatherly supports traditional email/password authentication. Create an account with any email address and set a password.
 
+Before you can access your account, you must confirm your email. Gatherly sends a verification link to the address you signed up with. Click the link to activate your account. This prevents fake accounts and ensures we can reach you with important notifications about your events.
+
+### Required Google Calendar Integration
+
+Heres an important design decision: Gatherly requires Google Calendar integration to access scheduling features. This is intentional.
+
+Without calendar access, Gatherly would just be another form. The intelligence comes from seeing your existing commitments, detecting conflicts, and suggesting times that actually work. We cannot provide smart scheduling without knowing when youre busy.
+
+This requirement also ensures data quality. When we send invites, we know the organizers availability is accurate. When we compute group availability, we have real calendar data rather than self-reported guesses.
+
+We recognize this creates friction at signup. Some users will bounce rather than grant calendar access. We accept this trade-off because the alternative is a worse product for users who do complete signup. Better to serve fewer users well than many users poorly.
+
 ### Forgot Password
 
 If you forget your password, Gatherly sends a reset link to your email. Click the link, set a new password, and youre back in. The reset tokens are time-limited and single-use for security.
@@ -435,7 +465,7 @@ Built at Harvard by students who were tired of scheduling group project meetings
 </p>
 
 <p align="center">
-  <strong>Milan Naropanth</strong> · <strong>Ikenna Ogbogu</strong> · <strong>Talha Minhas</strong>
+  <strong>Milan Naropanth</strong> · <strong>Ikenna Nwobodo</strong> · <strong>Talha Minhas</strong>
 </p>
 
 ---

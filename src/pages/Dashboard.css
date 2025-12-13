@@ -891,6 +891,11 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     left: 0.5rem;
     width: auto;
     max-width: none;
+    z-index: 999999 !important;
+  }
+  
+  .notification-overlay {
+    z-index: 999998 !important;
   }
 }
 
@@ -1572,6 +1577,11 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     left: 0.5rem;
     width: auto;
     max-height: 60vh;
+    z-index: 999999 !important;
+  }
+  
+  .notification-overlay {
+    z-index: 999998 !important;
   }
   
   .daily-summary-section {

@@ -601,28 +601,51 @@ export const Dashboard: React.FC = () => {
 
   // Clear all notifications
   const clearAllNotifications = async () => {
-    await supabase
-      .from('notifications')
-      .delete()
-      .eq('user_id', authUser?.id);
+    if (!authUser?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', authUser.id);
+      
+      if (error) {
+        console.error('Error clearing notifications:', error);
+        return;
+      }
 
-    setNotifications([]);
-    setUnreadCount(0);
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Error clearing notifications:', err);
+    }
   };
 
   // Dismiss a single notification
   const dismissNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the notification click
     
-    await supabase
-      .from('notifications')
-      .delete()
-      .eq('id', id);
+    if (!authUser?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', authUser.id); // Also filter by user_id for security
 
-    const notification = notifications.find(n => n.id === id);
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    if (notification && !notification.read) {
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (error) {
+        console.error('Error dismissing notification:', error);
+        return;
+      }
+
+      const notification = notifications.find(n => n.id === id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      if (notification && !notification.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('Error dismissing notification:', err);
     }
   };
 
