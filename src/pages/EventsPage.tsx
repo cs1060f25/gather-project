@@ -5,7 +5,7 @@ import { supabase, getGoogleTokenSync as getGoogleToken } from '../lib/supabase'
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import './EventsPage.css';
 
-const EVENTS_PER_PAGE = 7;
+const EVENTS_PER_PAGE = 12;
 
 // Gatherly Logo SVG Component
 const GatherlyLogo = ({ size = 28 }: { size?: number }) => (
@@ -71,6 +71,7 @@ interface GoogleCalendar {
   id: string;
   name: string;
   color: string;
+  selected?: boolean;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -104,6 +105,17 @@ export const EventsPage: React.FC = () => {
   const [remindingEventId, setRemindingEventId] = useState<string | null>(null);
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   
+  // Calendar selections state - load from localStorage to match Dashboard views
+  const [calendarSelections, setCalendarSelections] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('gatherly_calendar_selections');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading calendar selections:', e);
+    }
+    return {};
+  });
+  
   // Pagination state for upcoming events
   const [upcomingPage, setUpcomingPage] = useState(0);
   
@@ -130,6 +142,39 @@ export const EventsPage: React.FC = () => {
   useEffect(() => {
     const googleToken = getGoogleToken();
     setIsCalendarConnected(!!googleToken);
+  }, []);
+
+  // Listen for storage changes to update calendar selections
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'gatherly_calendar_selections' && e.newValue) {
+        try {
+          setCalendarSelections(JSON.parse(e.newValue));
+        } catch (err) {
+          console.error('Error parsing calendar selections:', err);
+        }
+      }
+    };
+    
+    // Also check on focus in case user changed in another tab
+    const handleFocus = () => {
+      try {
+        const saved = localStorage.getItem('gatherly_calendar_selections');
+        if (saved) {
+          setCalendarSelections(JSON.parse(saved));
+        }
+      } catch (err) {
+        console.error('Error loading calendar selections:', err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const user: UserProfile | null = authUser ? {
@@ -331,6 +376,27 @@ export const EventsPage: React.FC = () => {
     setLoading(false);
   };
 
+  // Helper to check if a calendar is visible based on selections
+  const isCalendarVisible = (calendarId?: string, isGatherly?: boolean, status?: string): boolean => {
+    // If no selections saved, show everything
+    if (Object.keys(calendarSelections).length === 0) return true;
+    
+    // Handle Gatherly events
+    if (isGatherly) {
+      if (status === 'pending') {
+        return calendarSelections['gatherly-pending'] !== false;
+      }
+      return calendarSelections['gatherly'] !== false;
+    }
+    
+    // Handle Google Calendar events
+    if (calendarId) {
+      return calendarSelections[calendarId] !== false;
+    }
+    
+    return true;
+  };
+
   // Categorize events
   const categorizedEvents = useMemo(() => {
     const today = new Date();
@@ -344,6 +410,7 @@ export const EventsPage: React.FC = () => {
     
     const gatherlyCalEvents: CalendarEvent[] = gatherlyEvents
       .filter(ge => ge.status !== 'cancelled') // Don't show cancelled events
+      .filter(ge => isCalendarVisible(undefined, true, ge.status)) // Apply calendar filter
       .map(ge => {
         // Track confirmed events for duplicate detection
         if (ge.status === 'confirmed' && ge.confirmedOption) {
@@ -352,24 +419,28 @@ export const EventsPage: React.FC = () => {
         }
         
         return {
-      id: ge.id,
-      title: ge.title,
-      date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
-      time: ge.confirmedOption?.time || ge.options[0]?.time,
-      location: ge.location || ge.options?.[0]?.location || 'TBD',
-      attendees: ge.participants,
-      source: 'gatherly' as const,
-      status: ge.status,
-      isGatherly: true,
-      calendarName: 'Gatherly',
-      calendarColor: '#22c55e',
-      responses: ge.responses?.length || 0,
-      totalInvites: ge.participants.length
+          id: ge.id,
+          title: ge.title,
+          date: ge.confirmedOption?.day || ge.options[0]?.day || todayISO,
+          time: ge.confirmedOption?.time || ge.options[0]?.time,
+          location: ge.location || ge.options?.[0]?.location || 'TBD',
+          attendees: ge.participants,
+          source: 'gatherly' as const,
+          status: ge.status,
+          isGatherly: true,
+          calendarId: ge.status === 'pending' ? 'gatherly-pending' : 'gatherly',
+          calendarName: 'Gatherly',
+          calendarColor: '#22c55e',
+          responses: ge.responses?.length || 0,
+          totalInvites: ge.participants.length
         };
       });
 
-    // Filter Google events to remove duplicates of confirmed Gatherly events
+    // Filter Google events to remove duplicates and apply calendar filter
     const filteredGoogleEvents = googleEvents.filter(e => {
+      // Apply calendar visibility filter
+      if (!isCalendarVisible(e.calendarId, false, undefined)) return false;
+      // Remove duplicates of confirmed Gatherly events
       if (!e.date || !e.time || !e.title) return true;
       const key = `${e.date}|${e.time}|${e.title.toLowerCase().trim()}`;
       return !confirmedGatherlyKeys.has(key);
@@ -396,9 +467,9 @@ export const EventsPage: React.FC = () => {
     return {
       today: allEvents.filter(e => e.date === todayISO && e.status !== 'cancelled' && e.status !== 'pending'),
       allUpcoming,
-      pending: gatherlyEvents.filter(ge => ge.status === 'pending')
+      pending: gatherlyEvents.filter(ge => ge.status === 'pending' && isCalendarVisible(undefined, true, 'pending'))
     };
-  }, [googleEvents, gatherlyEvents]);
+  }, [googleEvents, gatherlyEvents, calendarSelections]);
 
   // Handle sending reminders
   const handleRemind = async (event: GatherlyEvent) => {

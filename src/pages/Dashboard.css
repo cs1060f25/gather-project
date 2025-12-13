@@ -1062,26 +1062,44 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   color: #991b1b;
 }
 
-.event-detail-attendees {
+/* Attendees Section */
+.event-detail-attendees-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attendees-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: #1A1A1A;
+  font-size: 0.85rem;
+}
+
+.attendees-header svg {
+  width: 16px;
+  height: 16px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.attendees-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-  justify-content: flex-start;
-  width: 100%;
+  gap: 6px;
+  padding-left: 26px;
 }
 
 .attendee-chip {
-  display: inline-block;
-  padding: 3px 8px;
+  display: inline-flex;
+  padding: 4px 10px;
   background: #f5f5f5;
   font-size: 0.75rem;
   color: #555;
   border-radius: 4px;
   border: 1px solid #e0e0e0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1206,9 +1224,18 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   color: #666;
 }
 
+.dark-mode .attendees-header {
+  color: #F0F0F0;
+}
+
+.dark-mode .attendees-header svg {
+  color: #888;
+}
+
 .dark-mode .attendee-chip {
   background: #333;
   color: #ccc;
+  border-color: #444;
 }
 
 .dark-mode .event-detail-description {

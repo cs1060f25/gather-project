@@ -1419,21 +1419,21 @@ export const Dashboard: React.FC = () => {
               
               {/* Attendees */}
               {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
-                <div className="event-detail-row" style={{ alignItems: 'flex-start' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginTop: '2px' }}>
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                  </svg>
-                  <div className="event-detail-info">
-                    <span className="event-detail-label">{selectedEvent.attendees.length} attendee{selectedEvent.attendees.length > 1 ? 's' : ''}</span>
-                    <div className="event-detail-attendees">
-                      {selectedEvent.attendees.slice(0, 3).map((email, idx) => (
-                        <span key={idx} className="attendee-chip">{email}</span>
-                      ))}
-                      {selectedEvent.attendees.length > 3 && (
-                        <span className="attendee-chip more">+{selectedEvent.attendees.length - 3}</span>
-                      )}
-                    </div>
+                <div className="event-detail-attendees-section">
+                  <div className="attendees-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                    </svg>
+                    <span>{selectedEvent.attendees.length} attendee{selectedEvent.attendees.length > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="attendees-chips">
+                    {selectedEvent.attendees.slice(0, 3).map((email, idx) => (
+                      <span key={idx} className="attendee-chip">{email}</span>
+                    ))}
+                    {selectedEvent.attendees.length > 3 && (
+                      <span className="attendee-chip more">+{selectedEvent.attendees.length - 3}</span>
+                    )}
                   </div>
                 </div>
               )}
