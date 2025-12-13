@@ -1107,7 +1107,7 @@ export const EventPage: React.FC = () => {
             <div className="event-title-section">
               <div className="title-row">
               <h2>{event.title}</h2>
-                {event.status !== 'cancelled' && (
+                {event.status === 'pending' && (
                   <button 
                     className="edit-event-btn" 
                     onClick={openEditModal}

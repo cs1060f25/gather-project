@@ -447,18 +447,46 @@
 .edit-form .availability-picker-option,
 .edit-event-modal .availability-picker-option {
   background: #FFFFFF !important;
-  border-color: #E5E5E5 !important;
+  border: 2px solid #1A1A1A !important;
+  box-shadow: 2px 2px 0 #1A1A1A !important;
 }
 
 .edit-form .availability-picker-option.filled,
 .edit-event-modal .availability-picker-option.filled {
   border-color: #22c55e !important;
+  box-shadow: 2px 2px 0 #22c55e !important;
 }
 
 .edit-form .availability-picker-badge,
 .edit-event-modal .availability-picker-badge {
   background: #1A1A1A !important;
   color: #FFFFFF !important;
+}
+
+.edit-form .availability-picker-option.filled .availability-picker-badge,
+.edit-event-modal .availability-picker-option.filled .availability-picker-badge {
+  background: #22c55e !important;
+}
+
+/* Buttons: white bg, gray border when empty; light gray bg, black border when filled */
+.edit-form .availability-picker-btn,
+.edit-event-modal .availability-picker-btn {
+  background: #FFFFFF !important;
+  border: 2px solid #DDDDDD !important;
+  color: #888888 !important;
+}
+
+.edit-form .availability-picker-btn:hover,
+.edit-event-modal .availability-picker-btn:hover {
+  border-color: #22c55e !important;
+  color: #22c55e !important;
+}
+
+.edit-form .availability-picker-btn.has-value,
+.edit-event-modal .availability-picker-btn.has-value {
+  background: #F8F8F8 !important;
+  border-color: #1A1A1A !important;
+  color: #1A1A1A !important;
 }
 
 .edit-form label {

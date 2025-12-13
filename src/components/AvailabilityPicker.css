@@ -1,7 +1,7 @@
 /* ===== Availability Picker Component - matches CreateEventPanel exactly ===== */
 
 .availability-picker {
-  background: #F8F8F8 !important;
+  background: #F8F8F8;
   padding: 1rem;
   border-top: 2px solid #E5E5E5;
   border-bottom: 2px solid #E5E5E5;
@@ -18,13 +18,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #1A1A1A !important;
+  color: #1A1A1A;
 }
 
 .availability-picker-hint {
   font-size: 0.65rem;
   font-weight: 500;
-  color: #888 !important;
+  color: #888;
   text-transform: none;
   letter-spacing: 0;
 }
@@ -42,7 +42,7 @@
   gap: 0.4rem;
   align-items: center;
   padding: 0.5rem 0.6rem;
-  background: #FFF !important;
+  background: #FFF;
   border: 2px solid #1A1A1A;
   box-shadow: 2px 2px 0 #1A1A1A;
   transition: all 0.15s ease;
@@ -60,8 +60,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1A1A1A !important;
-  color: #FFF !important;
+  background: #1A1A1A;
+  color: #FFF;
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 50%;
@@ -69,21 +69,22 @@
 }
 
 .availability-picker-option.filled .availability-picker-badge {
-  background: #22c55e !important;
+  background: #22c55e;
 }
 
 /* Picker buttons - matches cep-picker-btn exactly */
+/* Empty state: white bg, gray border, gray text */
 .availability-picker-btn {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 8px 10px;
-  background: #FFF !important;
-  border: 2px solid #DDD !important;
+  background-color: #FFFFFF;
+  border: 2px solid #DDDDDD;
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #888 !important;
+  color: #888888;
   cursor: pointer;
   transition: all 0.15s ease;
   min-width: 0;
@@ -92,8 +93,8 @@
 }
 
 .availability-picker-btn:hover:not(:disabled) {
-  border-color: #22c55e !important;
-  color: #22c55e !important;
+  border-color: #22c55e;
+  color: #22c55e;
 }
 
 .availability-picker-btn:disabled {
@@ -101,11 +102,16 @@
   cursor: not-allowed;
 }
 
-/* When button has a value - matches cep-picker-btn.has-value */
+/* Filled state: black border, black text, light gray bg - NOT GREEN */
 .availability-picker-btn.has-value {
-  border-color: #1A1A1A !important;
-  color: #1A1A1A !important;
-  background: #F8F8F8 !important;
+  background-color: #F8F8F8;
+  border-color: #1A1A1A;
+  color: #1A1A1A;
+}
+
+.availability-picker-btn.has-value:hover:not(:disabled) {
+  border-color: #22c55e;
+  color: #22c55e;
 }
 
 .availability-picker-btn svg {
@@ -428,7 +434,7 @@
 
 @media (max-width: 480px) {
   .availability-picker-option {
-    grid-template-columns: auto 1fr 1fr auto;
+    grid-template-columns: auto 1fr 1fr 1fr;
     gap: 0.3rem;
     padding: 0.4rem;
   }
@@ -444,12 +450,7 @@
     padding: 6px 8px;
   }
   
-  .availability-calendar-picker {
-    min-width: calc(100vw - 2rem);
-    max-width: calc(100vw - 2rem);
-    margin: 0 1rem;
-  }
-  
+  .availability-calendar-picker,
   .availability-time-picker,
   .availability-duration-picker {
     min-width: calc(100vw - 2rem);
