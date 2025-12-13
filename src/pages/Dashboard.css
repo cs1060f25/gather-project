@@ -80,6 +80,7 @@
 /* Notification Bell */
 .notification-bell-container {
   position: relative;
+  z-index: 10000; /* Above everything including green overlay */
 }
 
 .notification-bell {
@@ -254,6 +255,37 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+/* Dismiss individual notification button */
+.notification-dismiss {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  border-radius: 4px;
+  color: #888;
+  margin-left: auto;
+}
+
+.notification-item:hover .notification-dismiss {
+  opacity: 1;
+}
+
+.notification-dismiss:hover {
+  background: rgba(0,0,0,0.1);
+  color: #dc2626;
+}
+
+.dark-mode .notification-dismiss:hover {
+  background: rgba(255,255,255,0.1);
 }
 
 .notification-title {

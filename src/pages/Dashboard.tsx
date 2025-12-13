@@ -610,6 +610,22 @@ export const Dashboard: React.FC = () => {
     setUnreadCount(0);
   };
 
+  // Dismiss a single notification
+  const dismissNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the notification click
+    
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+
+    const notification = notifications.find(n => n.id === id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (notification && !notification.read) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
   // Fetch Google Contacts using People API
   const fetchGoogleContacts = async () => {
     const googleToken = getGoogleToken();
@@ -1318,14 +1334,44 @@ export const Dashboard: React.FC = () => {
                               key={i}
                               className="suggested-event-btn"
                               onClick={() => {
-                                // Populate the create event form with suggested data and enter edit mode
-                                const suggestedOptions = event.suggestedDate && event.suggestedTime ? [{
-                                  id: crypto.randomUUID(),
-                                  day: event.suggestedDate,
-                                  time: event.suggestedTime,
-                                  duration: event.duration || 60,
-                                  color: '#22c55e'
-                                }] : [];
+                                // Populate the create event form with 3 suggested time options
+                                const duration = event.duration || 60;
+                                const suggestedOptions: { id: string; day: string; time: string; duration: number; color: string }[] = [];
+                                
+                                if (event.suggestedDate && event.suggestedTime) {
+                                  // Generate 3 time options: suggested time, +2 hours, and next day same time
+                                  const baseDate = new Date(`${event.suggestedDate}T${event.suggestedTime}`);
+                                  
+                                  // Option 1: Original suggested time
+                                  suggestedOptions.push({
+                                    id: crypto.randomUUID(),
+                                    day: event.suggestedDate,
+                                    time: event.suggestedTime,
+                                    duration,
+                                    color: '#22c55e'
+                                  });
+                                  
+                                  // Option 2: 2 hours later same day (or next reasonable slot)
+                                  const option2Date = new Date(baseDate.getTime() + 2 * 60 * 60 * 1000);
+                                  suggestedOptions.push({
+                                    id: crypto.randomUUID(),
+                                    day: option2Date.toISOString().split('T')[0],
+                                    time: option2Date.toTimeString().slice(0, 5),
+                                    duration,
+                                    color: '#3b82f6'
+                                  });
+                                  
+                                  // Option 3: Next day same time
+                                  const option3Date = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+                                  suggestedOptions.push({
+                                    id: crypto.randomUUID(),
+                                    day: option3Date.toISOString().split('T')[0],
+                                    time: event.suggestedTime,
+                                    duration,
+                                    color: '#f59e0b'
+                                  });
+                                }
+                                
                                 setSuggestedEventData({
                                   eventName: event.title,
                                   description: event.reason || '',
@@ -1333,7 +1379,7 @@ export const Dashboard: React.FC = () => {
                                   participants: [],
                                   availabilityOptions: suggestedOptions
                                 });
-                                // Enter edit mode to show the calendar with the time option
+                                // Enter edit mode to show the calendar with the time options
                                 if (suggestedOptions.length > 0) {
                                   setEditingMode(true);
                                   setSelectedTimeOptions(suggestedOptions.map(opt => ({
@@ -1449,6 +1495,15 @@ export const Dashboard: React.FC = () => {
                             {new Date(notification.created_at).toLocaleDateString()}
                           </span>
                         </div>
+                        <button 
+                          className="notification-dismiss"
+                          onClick={(e) => dismissNotification(notification.id, e)}
+                          title="Dismiss notification"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                          </svg>
+                        </button>
                       </button>
                     ))
                   )}

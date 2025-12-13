@@ -644,6 +644,27 @@ export const EventPage: React.FC = () => {
                   event.id
                 );
               }
+              
+              // Send Gatherly scheduled email notification to this participant
+              try {
+                await fetch('/api/send-scheduled-notification', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: participantEmail,
+                    eventTitle: event.title,
+                    hostName: organizerName || organizerEmail,
+                    hostEmail: organizerEmail,
+                    scheduledDate: confirmedOption.day,
+                    scheduledTime: confirmedOption.time,
+                    duration: confirmedOption.duration || 60,
+                    location: event.location,
+                    meetLink: createdEvent.hangoutLink || null
+                  })
+                });
+              } catch (emailErr) {
+                console.error(`Error sending scheduled email to ${participantEmail}:`, emailErr);
+              }
             }
             
             // Update the Gatherly event status to 'confirmed' and save Google Calendar event ID
