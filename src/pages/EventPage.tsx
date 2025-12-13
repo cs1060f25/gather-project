@@ -4,6 +4,8 @@ import { useAuth } from '../App';
 import { supabase, getGoogleToken } from '../lib/supabase';
 import { ProfileSidebar } from '../components/ProfileSidebar';
 import { getEventInvites, createNotification, type Invite } from '../lib/invites';
+import { AvailabilityPicker, type AvailabilityOption } from '../components/AvailabilityPicker';
+import '../components/AvailabilityPicker.css';
 import './EventPage.css';
 
 interface Contact {
@@ -80,10 +82,19 @@ export const EventPage: React.FC = () => {
   const [editTitle, setEditTitle] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editOptions, setEditOptions] = useState<{ day: string; time: string; duration: number }[]>([]);
+  const [editOptions, setEditOptions] = useState<AvailabilityOption[]>([
+    { id: '1', day: '', time: '', duration: 0, color: '#1A1A1A' },
+    { id: '2', day: '', time: '', duration: 0, color: '#1A1A1A' },
+    { id: '3', day: '', time: '', duration: 0, color: '#1A1A1A' }
+  ]);
   const [editParticipants, setEditParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Location autocomplete state (same as CreateEventPanel)
+  const [locationSuggestions, setLocationSuggestions] = useState<{mainText: string; secondaryText?: string; fullAddress: string}[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   const user: UserProfile | null = authUser ? {
     id: authUser.id,
@@ -96,6 +107,82 @@ export const EventPage: React.FC = () => {
     loadEvent();
     loadContacts();
   }, [eventId, authUser]);
+
+  // Load user's location from IP on mount (for better location suggestions)
+  useEffect(() => {
+    const loadUserLocation = async () => {
+      try {
+        const response = await fetch('/api/get-location');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.lat && data.lon) {
+            setUserCoords({ lat: data.lat, lon: data.lon });
+          }
+        }
+      } catch (err) {
+        console.log('Could not load user location from IP');
+      }
+    };
+    loadUserLocation();
+  }, []);
+
+  // Location autocomplete - same as CreateEventPanel
+  const handleLocationChange = async (value: string) => {
+    setEditLocation(value);
+
+    if (value.length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    // Virtual meeting suggestions
+    const virtualPlatforms = ['Google Meet', 'Zoom', 'Microsoft Teams', 'Discord', 'Slack Huddle'];
+    const lowercaseValue = value.toLowerCase();
+    const matchedPlatforms = virtualPlatforms.filter(p => 
+      p.toLowerCase().includes(lowercaseValue)
+    );
+
+    if (matchedPlatforms.length > 0) {
+      setLocationSuggestions(matchedPlatforms.map(p => ({ mainText: p, fullAddress: p })));
+      setShowLocationSuggestions(true);
+      return;
+    }
+
+    // Google Places API
+    try {
+      let apiUrl = `/api/places-autocomplete?input=${encodeURIComponent(value)}`;
+      if (userCoords) {
+        apiUrl += `&lat=${userCoords.lat}&lon=${userCoords.lon}`;
+      }
+      
+      const response = await fetch(apiUrl);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.predictions && data.predictions.length > 0) {
+          const placeSuggestions = data.predictions.slice(0, 5).map((p: any) => ({
+            mainText: p.mainText || p.description.split(',')[0],
+            secondaryText: p.secondaryText || p.description.split(',').slice(1).join(',').trim(),
+            fullAddress: p.description
+          }));
+          setLocationSuggestions(placeSuggestions);
+          setShowLocationSuggestions(true);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('Places API call failed');
+    }
+
+    setLocationSuggestions([]);
+    setShowLocationSuggestions(false);
+  };
+
+  const selectLocation = (loc: { mainText: string; secondaryText?: string; fullAddress: string }) => {
+    setEditLocation(loc.fullAddress);
+    setShowLocationSuggestions(false);
+  };
 
   const loadContacts = async () => {
     if (!authUser) return;
@@ -247,12 +334,20 @@ export const EventPage: React.FC = () => {
     setEditTitle(event.title);
     setEditLocation(event.location || '');
     setEditDescription(event.description || '');
-    // Always ensure exactly 3 time options (like CreateEventPanel)
-    const existingOptions = event.options.map(o => ({ day: o.day, time: o.time, duration: o.duration }));
+    // Always ensure exactly 3 time options with id and color (like CreateEventPanel - all black)
+    const OPTION_COLORS = ['#1A1A1A', '#1A1A1A', '#1A1A1A'];
+    const existingOptions: AvailabilityOption[] = event.options.slice(0, 3).map((o, idx) => ({ 
+      id: String(idx + 1), 
+      day: o.day, 
+      time: o.time, 
+      duration: o.duration,
+      color: OPTION_COLORS[idx]
+    }));
     while (existingOptions.length < 3) {
-      existingOptions.push({ day: '', time: '', duration: 60 });
+      const idx = existingOptions.length;
+      existingOptions.push({ id: String(idx + 1), day: '', time: '', duration: 60, color: OPTION_COLORS[idx] });
     }
-    setEditOptions(existingOptions.slice(0, 3)); // Max 3
+    setEditOptions(existingOptions);
     setEditParticipants([...event.participants]);
     setNewParticipant('');
     setShowEditModal(true);
@@ -1312,16 +1407,36 @@ export const EventPage: React.FC = () => {
                 />
               </div>
               
-              <div className="form-group">
+              <div className="form-group location-field">
                 <label htmlFor="edit-location">Location</label>
-                <input
-                  id="edit-location"
-                  type="text"
-                  value={editLocation}
-                  onChange={e => setEditLocation(e.target.value)}
-                  placeholder="Enter location (optional)"
-                  disabled={isSaving}
-                />
+                <div className="location-autocomplete-wrapper">
+                  <input
+                    id="edit-location"
+                    type="text"
+                    value={editLocation}
+                    onChange={e => handleLocationChange(e.target.value)}
+                    onFocus={() => editLocation.length >= 2 && setShowLocationSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
+                    placeholder="Enter location or virtual meeting"
+                    disabled={isSaving}
+                    autoComplete="off"
+                  />
+                  {showLocationSuggestions && locationSuggestions.length > 0 && (
+                    <div className="location-suggestions">
+                      {locationSuggestions.map((loc, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="location-suggestion"
+                          onMouseDown={() => selectLocation(loc)}
+                        >
+                          <span className="location-main">{loc.mainText}</span>
+                          {loc.secondaryText && <span className="location-secondary">{loc.secondaryText}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="form-group">
@@ -1336,54 +1451,16 @@ export const EventPage: React.FC = () => {
                 />
               </div>
               
-              {/* Time Options (for pending events) - Always 3 options like CreateEventPanel */}
+              {/* Time Options (for pending events) - Uses shared AvailabilityPicker */}
               {event.status === 'pending' && (
                 <div className="form-group">
-                  <label>Time Options (3)</label>
-                  <div className="edit-time-options">
-                    {editOptions.map((opt, idx) => (
-                      <div key={idx} className="edit-time-option">
-                        <span className="option-number">{idx + 1}</span>
-                        <input
-                          type="date"
-                          value={opt.day}
-                          min={new Date().toISOString().split('T')[0]}
-                          onChange={e => {
-                            const updated = [...editOptions];
-                            updated[idx] = { ...updated[idx], day: e.target.value };
-                            setEditOptions(updated);
-                          }}
-                          disabled={isSaving}
-                        />
-                        <input
-                          type="time"
-                          value={opt.time}
-                          onChange={e => {
-                            const updated = [...editOptions];
-                            updated[idx] = { ...updated[idx], time: e.target.value };
-                            setEditOptions(updated);
-                          }}
-                          disabled={isSaving}
-                        />
-                        <select
-                          value={opt.duration}
-                          onChange={e => {
-                            const updated = [...editOptions];
-                            updated[idx] = { ...updated[idx], duration: parseInt(e.target.value) };
-                            setEditOptions(updated);
-                          }}
-                          disabled={isSaving}
-                        >
-                          <option value={15}>15 min</option>
-                          <option value={30}>30 min</option>
-                          <option value={45}>45 min</option>
-                          <option value={60}>1 hr</option>
-                          <option value={90}>1.5 hr</option>
-                          <option value={120}>2 hr</option>
-                        </select>
-                      </div>
-                    ))}
-                  </div>
+                  <AvailabilityPicker
+                    options={editOptions}
+                    onChange={setEditOptions}
+                    disabled={isSaving}
+                    showLabel={true}
+                    labelText="Time Options (3)"
+                  />
                 </div>
               )}
               
