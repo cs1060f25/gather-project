@@ -1547,20 +1547,7 @@ export const EventPage: React.FC = () => {
                 />
               </div>
               
-              {/* Availability Options (for pending events) - Uses shared AvailabilityPicker */}
-              {event.status === 'pending' && (
-                <div className="form-group">
-                  <AvailabilityPicker
-                    options={editOptions}
-                    onChange={setEditOptions}
-                    disabled={isSaving}
-                    showLabel={true}
-                    labelText="Availability"
-                  />
-                </div>
-              )}
-              
-              {/* Participants - styled exactly like CreateEventPanel */}
+              {/* Participants - styled exactly like CreateEventPanel - BEFORE availability */}
               {event.status === 'pending' && (
                 <div className="form-group edit-people-field">
                   <label>Who Do You Want to Invite?</label>
@@ -1678,6 +1665,19 @@ export const EventPage: React.FC = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+              
+              {/* Availability Options (for pending events) - Uses shared AvailabilityPicker - AFTER participants */}
+              {event.status === 'pending' && (
+                <div className="form-group">
+                  <AvailabilityPicker
+                    options={editOptions}
+                    onChange={setEditOptions}
+                    disabled={isSaving}
+                    showLabel={true}
+                    labelText="Availability"
+                  />
                 </div>
               )}
             </div>

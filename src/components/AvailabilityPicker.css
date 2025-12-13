@@ -49,8 +49,8 @@
 }
 
 .availability-picker-option.filled {
-  border-color: #22c55e;
-  box-shadow: 2px 2px 0 #22c55e;
+  border-color: #1A1A1A;
+  box-shadow: 2px 2px 0 #1A1A1A;
 }
 
 /* Badge - matches cep-option-badge */

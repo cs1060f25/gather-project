@@ -453,8 +453,8 @@
 
 .edit-form .availability-picker-option.filled,
 .edit-event-modal .availability-picker-option.filled {
-  border-color: #22c55e !important;
-  box-shadow: 2px 2px 0 #22c55e !important;
+  border-color: #1A1A1A !important;
+  box-shadow: 2px 2px 0 #1A1A1A !important;
 }
 
 .edit-form .availability-picker-badge,
@@ -2649,5 +2649,398 @@
 .dark-mode .edit-cancel-email {
   background: #333 !important;
   color: #F0F0F0 !important;
+}
+
+/* ========================================= */
+/* COMPREHENSIVE MOBILE STYLES FOR PHONE VIEW */
+/* ========================================= */
+
+@media (max-width: 480px) {
+  /* Header - more compact */
+  .event-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .event-header .header-left {
+    flex: 0;
+    gap: 0.35rem;
+  }
+  
+  .event-back-btn {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  .event-logo {
+    padding: 0.25rem;
+  }
+  
+  .event-logo svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .event-header .header-center h1 {
+    font-size: 1rem;
+  }
+  
+  .event-header .header-right {
+    gap: 0.5rem;
+  }
+  
+  .remind-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+    gap: 0.3rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  .remind-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .cancel-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  .event-header .profile-button {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  /* Main Content */
+  .event-main {
+    padding: 0.75rem;
+  }
+  
+  .event-content {
+    border-width: 2px;
+    box-shadow: 3px 3px 0 #1A1A1A;
+  }
+  
+  .event-status-banner {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+    border-bottom-width: 2px;
+  }
+  
+  /* Navigation */
+  .event-nav {
+    padding: 0.75rem;
+    border-bottom-width: 2px;
+  }
+  
+  .back-link {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.35rem;
+  }
+  
+  .back-link svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  /* Event Title Section */
+  .event-title-section {
+    padding: 0.75rem !important;
+  }
+  
+  .title-row h2 {
+    font-size: 1.1rem;
+  }
+  
+  .edit-event-btn {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .gatherly-tag {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  /* Event Sections */
+  .event-section {
+    padding: 0.75rem !important;
+  }
+  
+  .event-section h3 {
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Time Options */
+  .time-options {
+    gap: 0.6rem;
+  }
+  
+  .time-option {
+    padding: 0.65rem 0.75rem;
+    gap: 0.5rem;
+    border-width: 2px;
+    box-shadow: 3px 3px 0 var(--option-color, #1A1A1A);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .option-date {
+    font-size: 0.85rem;
+    width: 100%;
+  }
+  
+  .option-time {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  
+  .option-duration {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-width: 2px;
+    margin-left: auto;
+    margin-top: -0.5rem;
+    position: relative;
+    top: -24px;
+    align-self: flex-end;
+  }
+  
+  /* Make time option more horizontal on mobile */
+  .time-option {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .option-date {
+    flex: 1 1 100%;
+    margin-bottom: 0.25rem;
+  }
+  
+  .option-time {
+    flex: 1;
+  }
+  
+  .option-duration {
+    position: static;
+    top: auto;
+    margin-top: 0;
+  }
+  
+  /* Confirm Button */
+  .confirm-btn {
+    padding: 0.65rem;
+    font-size: 0.85rem;
+    border-width: 2px;
+    box-shadow: 3px 3px 0 #1A1A1A;
+  }
+  
+  /* Responses */
+  .responses-list {
+    gap: 0.6rem;
+  }
+  
+  .response-item,
+  .response-item-card {
+    padding: 0.6rem 0.75rem;
+    border-width: 2px;
+  }
+  
+  .avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+  
+  .response-info {
+    gap: 0.15rem;
+  }
+  
+  .response-email {
+    font-size: 0.8rem;
+  }
+  
+  .response-status {
+    font-size: 0.7rem;
+  }
+  
+  .response-date {
+    font-size: 0.65rem;
+  }
+  
+  /* Response Options Grid */
+  .response-options-grid {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    gap: 0.35rem;
+  }
+  
+  .response-option-row {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.5rem;
+  }
+  
+  /* Location Display */
+  .event-location-display {
+    font-size: 0.85rem;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .location-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Description */
+  .event-description p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  
+  /* Modal */
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+  
+  .edit-event-modal {
+    border-width: 2px;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    max-height: 95vh;
+  }
+  
+  .edit-event-modal .modal-header {
+    padding: 0.75rem 1rem;
+    border-bottom-width: 2px;
+  }
+  
+  .edit-event-modal .modal-header h3 {
+    font-size: 1rem;
+  }
+  
+  .edit-form {
+    padding: 0.75rem;
+  }
+  
+  .edit-form .form-group {
+    margin-bottom: 0.75rem;
+  }
+  
+  .edit-form label {
+    font-size: 0.7rem;
+    margin-bottom: 0.35rem;
+  }
+  
+  .edit-form input,
+  .edit-form textarea {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  .modal-actions {
+    padding-top: 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .modal-actions button {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  /* Reminder Modal */
+  .reminder-modal {
+    padding: 1rem;
+    border-width: 2px;
+    box-shadow: 4px 4px 0 #1A1A1A;
+  }
+  
+  .reminder-modal h3 {
+    font-size: 1rem;
+  }
+  
+  .reminder-modal p {
+    font-size: 0.85rem;
+  }
+  
+  .reminder-actions {
+    gap: 0.5rem;
+  }
+  
+  .reminder-actions button {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1A1A1A;
+  }
+  
+  /* Availability Picker in edit modal */
+  .availability-picker {
+    padding: 0.75rem;
+  }
+  
+  .availability-picker-option {
+    padding: 0.4rem;
+    gap: 0.3rem;
+  }
+  
+  .availability-picker-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+  }
+  
+  .availability-picker-btn {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+    gap: 3px;
+  }
+  
+  .availability-picker-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 360px) {
+  .event-header .header-center h1 {
+    display: none;
+  }
+  
+  .remind-btn span {
+    display: none;
+  }
+  
+  .cancel-btn {
+    padding: 0.4rem;
+    font-size: 0;
+  }
+  
+  .cancel-btn::before {
+    content: "Cancel";
+    font-size: 0.65rem;
+  }
+  
+  .option-date {
+    font-size: 0.8rem;
+  }
+  
+  .option-time {
+    font-size: 0.85rem;
+  }
 }
 
