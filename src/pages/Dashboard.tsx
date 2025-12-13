@@ -988,14 +988,25 @@ export const Dashboard: React.FC = () => {
             .eq('id', eventId)
             .single();
           
+          // Check if event is already cancelled - prevent double emails
+          if (eventData?.status === 'cancelled') {
+            console.log('[Dashboard Cancel] Event already cancelled, skipping emails');
+            setSelectedEvent(null);
+            setIsCancelling(false);
+            return;
+          }
+          
           if (eventData && eventData.participants) {
             const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
             const hostEmail = user?.email || '';
             
-            // Send cancellation notifications to each participant
+            // Send cancellation notifications to each participant (deduplicated)
             const participants = Array.isArray(eventData.participants) ? eventData.participants : [];
-            await Promise.all(participants.map(async (email: string) => {
+            const uniqueParticipants = [...new Set(participants)]; // Deduplicate
+            console.log('[Dashboard Cancel] Sending cancellation emails to:', uniqueParticipants);
+            await Promise.all(uniqueParticipants.map(async (email: string) => {
               try {
+                console.log('[Dashboard Cancel] Sending cancellation email to:', email);
                 await fetch('/api/send-cancel-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

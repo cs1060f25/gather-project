@@ -125,18 +125,18 @@
 .notification-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 99999;
 }
 
 .notification-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
+  top: 70px;
+  right: 20px;
   width: 320px;
   background: #fff;
   border: 3px solid #1A1A1A;
   box-shadow: 6px 6px 0 #1A1A1A;
-  z-index: 9999;
+  z-index: 100000;
   max-height: 70vh;
   display: flex;
   flex-direction: column;

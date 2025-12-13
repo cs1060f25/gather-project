@@ -507,10 +507,26 @@ export const EventsPage: React.FC = () => {
   const handleCancel = async (event: GatherlyEvent) => {
     setCancellingEventId(event.id);
     try {
+      // Check if event is already cancelled in DB - prevent double emails
+      const { data: currentStatus } = await supabase
+        .from('gatherly_events')
+        .select('status')
+        .eq('id', event.id)
+        .single();
+      
+      if (currentStatus?.status === 'cancelled') {
+        console.log('[EventsPage Cancel] Event already cancelled, skipping emails');
+        setCancellingEventId(null);
+        return;
+      }
+      
       const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
       
-      // Send cancellation emails
-      for (const email of event.participants) {
+      // Send cancellation emails (deduplicated)
+      const uniqueParticipants = [...new Set(event.participants)];
+      console.log('[EventsPage Cancel] Sending cancellation emails to:', uniqueParticipants);
+      for (const email of uniqueParticipants) {
+        console.log('[EventsPage Cancel] Sending cancellation email to:', email);
         await fetch('/api/send-cancel-notification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
