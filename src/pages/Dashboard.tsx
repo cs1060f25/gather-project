@@ -1270,9 +1270,9 @@ export const Dashboard: React.FC = () => {
             onClick={() => setShowProfile(!showProfile)}
           >
             {user?.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.full_name || 'Profile'}
+              <img 
+                src={user.avatar_url} 
+                alt={user.full_name || 'Profile'} 
                 className="profile-avatar"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -1285,8 +1285,8 @@ export const Dashboard: React.FC = () => {
               className="profile-avatar-placeholder"
               style={{ display: user?.avatar_url ? 'none' : 'flex' }}
             >
-              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-            </div>
+                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+              </div>
           </button>
         </div>
       </header>

@@ -763,8 +763,8 @@ export const EventPage: React.FC = () => {
               className="profile-avatar-placeholder"
               style={{ display: user?.avatar_url ? 'none' : 'flex' }}
             >
-              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-            </div>
+                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+              </div>
           </button>
         </div>
       </header>

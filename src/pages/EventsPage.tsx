@@ -276,7 +276,8 @@ export const EventsPage: React.FC = () => {
 
         const now = new Date();
         const timeMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-        const timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+        // Fetch 6 months of future events for better visibility
+        const timeMax = new Date(now.getFullYear(), now.getMonth() + 6, now.getDate()).toISOString();
 
         // Fetch events from all calendars
         const allEvents: CalendarEvent[] = [];
@@ -288,7 +289,7 @@ export const EventsPage: React.FC = () => {
               new URLSearchParams({
                 timeMin,
                 timeMax,
-                maxResults: '50',
+                maxResults: '250',
                 singleEvents: 'true',
                 orderBy: 'startTime'
               }),
@@ -569,9 +570,9 @@ export const EventsPage: React.FC = () => {
             title="Profile"
           >
             {user?.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt="Profile"
+              <img 
+                src={user.avatar_url} 
+                alt="Profile" 
                 className="profile-avatar"
                 onError={(e) => {
                   // Hide broken image and show placeholder
@@ -585,8 +586,8 @@ export const EventsPage: React.FC = () => {
               className="profile-avatar-placeholder"
               style={{ display: user?.avatar_url ? 'none' : 'flex' }}
             >
-              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-            </div>
+                {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+              </div>
           </button>
         </div>
       </header>
