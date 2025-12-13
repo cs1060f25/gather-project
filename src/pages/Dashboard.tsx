@@ -1001,10 +1001,10 @@ export const Dashboard: React.FC = () => {
             const hostEmail = user?.email || '';
             
             // Send cancellation notifications to each participant (deduplicated)
-            const participants = Array.isArray(eventData.participants) ? eventData.participants : [];
+            const participants: string[] = Array.isArray(eventData.participants) ? eventData.participants : [];
             const uniqueParticipants = [...new Set(participants)]; // Deduplicate
             console.log('[Dashboard Cancel] Sending cancellation emails to:', uniqueParticipants);
-            await Promise.all(uniqueParticipants.map(async (email: string) => {
+            await Promise.all(uniqueParticipants.map(async (email) => {
               try {
                 console.log('[Dashboard Cancel] Sending cancellation email to:', email);
                 await fetch('/api/send-cancel-notification', {
