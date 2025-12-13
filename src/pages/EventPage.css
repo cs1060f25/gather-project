@@ -2188,20 +2188,15 @@
   text-overflow: ellipsis;
 }
 
-/* Google Meet Toggle - same styling as CreateEventPanel */
+/* Google Meet Toggle - matches CreateEventPanel exactly (SQUARE, no border-radius) */
 .edit-meet-toggle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  padding: 0.6rem 0;
   cursor: pointer;
-  font-size: 0.85rem;
-  color: #555;
-  transition: color 0.15s ease;
-}
-
-.edit-meet-toggle:hover {
-  color: #22c55e;
+  user-select: none;
+  margin-top: 0.5rem;
 }
 
 .edit-meet-toggle input[type="checkbox"] {
@@ -2214,21 +2209,36 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #f5f5f5;
-  border-radius: 6px;
-  border: 1.5px solid #e0e0e0;
+  background: #F5F5F5;
+  border: 2px solid #1A1A1A;
   color: #666;
   transition: all 0.15s ease;
 }
 
 .edit-meet-toggle input:checked + .edit-meet-toggle-icon {
   background: #22c55e;
-  border-color: #22c55e;
-  color: white;
+  color: #FFF;
+  box-shadow: 2px 2px 0 #1A1A1A;
 }
 
 .edit-meet-toggle-text {
+  font-size: 0.85rem;
   font-weight: 500;
+  color: #666;
+  transition: color 0.15s ease;
+}
+
+.edit-meet-toggle input:checked ~ .edit-meet-toggle-text {
+  color: #1A1A1A;
+  font-weight: 600;
+}
+
+.edit-meet-toggle:hover .edit-meet-toggle-icon {
+  background: #E5E5E5;
+}
+
+.edit-meet-toggle input:checked:hover + .edit-meet-toggle-icon {
+  background: #16a34a;
 }
 
 /* Dark mode - matches CreateEventPanel */
@@ -2259,24 +2269,28 @@
   color: #888;
 }
 
-.dark-mode .edit-meet-toggle {
-  color: #ccc;
-}
-
-.dark-mode .edit-meet-toggle:hover {
-  color: #22c55e;
-}
-
 .dark-mode .edit-meet-toggle-icon {
-  background: #333;
-  border-color: #555;
-  color: #aaa;
+  background: #2A2A2A;
+  border-color: #444;
+  color: #888;
 }
 
 .dark-mode .edit-meet-toggle input:checked + .edit-meet-toggle-icon {
   background: #22c55e;
-  border-color: #22c55e;
-  color: white;
+  color: #FFF;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.dark-mode .edit-meet-toggle-text {
+  color: #888;
+}
+
+.dark-mode .edit-meet-toggle input:checked ~ .edit-meet-toggle-text {
+  color: #F0F0F0;
+}
+
+.dark-mode .edit-meet-toggle:hover .edit-meet-toggle-icon {
+  background: #333;
 }
 
 /* ===== Participants Section - matches CreateEventPanel exactly ===== */
@@ -2438,6 +2452,74 @@
   flex-shrink: 0;
 }
 
+/* Email prompt modal - same as CreateEventPanel */
+.edit-email-prompt {
+  background: #F5F5F5;
+  border: 2px solid #1A1A1A;
+  padding: 1rem;
+  margin-top: 0.75rem;
+  box-shadow: 4px 4px 0 #1A1A1A;
+}
+
+.edit-email-prompt p {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.edit-email-prompt p strong {
+  color: #22c55e;
+}
+
+.edit-email-prompt-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.edit-email-prompt input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: 'Space Grotesk', monospace;
+  border: 2px solid #1A1A1A;
+  background: #FFF;
+}
+
+.edit-email-prompt input:focus {
+  outline: none;
+  border-color: #22c55e;
+}
+
+.edit-email-prompt button {
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  background: #22c55e;
+  color: #FFF;
+  border: 2px solid #1A1A1A;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #1A1A1A;
+  transition: all 0.12s ease;
+}
+
+.edit-email-prompt button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #1A1A1A;
+}
+
+.edit-cancel-email {
+  background: #FFF !important;
+  color: #1A1A1A !important;
+}
+
+.edit-cancel-email:hover {
+  background: #F5F5F5 !important;
+}
+
 /* Dark mode for participants */
 .dark-mode .edit-add-btn {
   background: #333;
@@ -2476,5 +2558,35 @@
 
 .dark-mode .edit-suggestion-email {
   color: #888;
+}
+
+.dark-mode .edit-email-prompt {
+  background: #2A2A2A;
+  border-color: #555;
+  box-shadow: 3px 3px 0 #333;
+}
+
+.dark-mode .edit-email-prompt p {
+  color: #F0F0F0;
+}
+
+.dark-mode .edit-email-prompt input {
+  background: #1A1A1A;
+  border-color: #555;
+  color: #F0F0F0;
+}
+
+.dark-mode .edit-email-prompt input:focus {
+  border-color: #22c55e;
+}
+
+.dark-mode .edit-email-prompt button {
+  border-color: #555;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.dark-mode .edit-cancel-email {
+  background: #333 !important;
+  color: #F0F0F0 !important;
 }
 

@@ -92,6 +92,10 @@ export const EventPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editAddGoogleMeet, setEditAddGoogleMeet] = useState(false);
   
+  // Email prompt state (same as CreateEventPanel)
+  const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState('');
+  
   // Location autocomplete state (same as CreateEventPanel)
   const [locationSuggestions, setLocationSuggestions] = useState<{mainText: string; secondaryText?: string; fullAddress: string}[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
@@ -359,6 +363,54 @@ export const EventPage: React.FC = () => {
   const handleRemoveParticipant = async (email: string) => {
     // Remove from edit state
     setEditParticipants(prev => prev.filter(p => p.toLowerCase() !== email.toLowerCase()));
+  };
+
+  // Email validation (same as CreateEventPanel)
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Handle adding a participant (same as CreateEventPanel - prompts for email if name without email)
+  const handleAddEditParticipant = (emailOrName: string) => {
+    const trimmed = emailOrName.trim();
+    if (!trimmed || editParticipants.includes(trimmed.toLowerCase())) return;
+
+    // Check if it matches a contact
+    const contact = contacts.find(c => 
+      c.name.toLowerCase() === trimmed.toLowerCase() || 
+      c.email.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (contact) {
+      // Contact exists, use their email
+      const email = contact.email.toLowerCase();
+      if (!editParticipants.includes(email)) {
+        setEditParticipants([...editParticipants, email]);
+      }
+      setNewParticipant('');
+    } else if (isValidEmail(trimmed)) {
+      // It's a valid email, add directly
+      if (!editParticipants.includes(trimmed.toLowerCase())) {
+        setEditParticipants([...editParticipants, trimmed.toLowerCase()]);
+      }
+      setNewParticipant('');
+    } else {
+      // It's a name without email - prompt for email
+      setEmailPromptFor(trimmed);
+      setPendingEmail('');
+    }
+  };
+
+  // Handle email prompt submit (same as CreateEventPanel)
+  const handleEmailPromptSubmit = () => {
+    if (!emailPromptFor || !isValidEmail(pendingEmail)) return;
+    
+    if (!editParticipants.includes(pendingEmail.toLowerCase())) {
+      setEditParticipants([...editParticipants, pendingEmail.toLowerCase()]);
+    }
+    setEmailPromptFor(null);
+    setPendingEmail('');
   };
 
   // Handle saving event edits
@@ -1520,34 +1572,14 @@ export const EventPage: React.FC = () => {
                       onKeyDown={e => {
                         if (e.key === 'Enter' && newParticipant.trim()) {
                           e.preventDefault();
-                          const email = newParticipant.trim().toLowerCase();
-                          const matchingContact = contacts.find(c => 
-                            c.name.toLowerCase() === email || c.email.toLowerCase() === email
-                          );
-                          const emailToAdd = matchingContact?.email.toLowerCase() || email;
-                          if (!editParticipants.includes(emailToAdd)) {
-                            setEditParticipants([...editParticipants, emailToAdd]);
-                          }
-                          setNewParticipant('');
+                          handleAddEditParticipant(newParticipant);
                         }
                       }}
                     />
                     <button
                       type="button"
                       className="edit-add-btn"
-                      onClick={() => {
-                        if (newParticipant.trim()) {
-                          const email = newParticipant.trim().toLowerCase();
-                          const matchingContact = contacts.find(c => 
-                            c.name.toLowerCase() === email || c.email.toLowerCase() === email
-                          );
-                          const emailToAdd = matchingContact?.email.toLowerCase() || email;
-                          if (!editParticipants.includes(emailToAdd)) {
-                            setEditParticipants([...editParticipants, emailToAdd]);
-                            setNewParticipant('');
-                          }
-                        }
-                      }}
+                      onClick={() => handleAddEditParticipant(newParticipant)}
                       disabled={isSaving || !newParticipant.trim()}
                     >
                       Add
@@ -1616,6 +1648,32 @@ export const EventPage: React.FC = () => {
                           </button>
                         ))
                       }
+                    </div>
+                  )}
+                  
+                  {/* Email prompt modal - same as CreateEventPanel */}
+                  {emailPromptFor && (
+                    <div className="edit-email-prompt">
+                      <p>Enter email for <strong>{emailPromptFor}</strong>:</p>
+                      <div className="edit-email-prompt-row">
+                        <input
+                          type="email"
+                          value={pendingEmail}
+                          onChange={e => setPendingEmail(e.target.value)}
+                          placeholder="email@example.com"
+                          autoFocus
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleEmailPromptSubmit();
+                            } else if (e.key === 'Escape') {
+                              setEmailPromptFor(null);
+                            }
+                          }}
+                        />
+                        <button type="button" onClick={handleEmailPromptSubmit}>Add</button>
+                        <button type="button" onClick={() => setEmailPromptFor(null)} className="edit-cancel-email">Cancel</button>
+                      </div>
                     </div>
                   )}
                 </div>
