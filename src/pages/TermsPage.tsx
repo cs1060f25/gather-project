@@ -69,7 +69,7 @@ export const TermsPage: React.FC = () => {
           <ul>
             <li>Read your calendar events to check availability</li>
             <li>Create calendar events on your behalf</li>
-            <li>Access your contacts for participant suggestions</li>
+            <li>Store contacts you add for participant suggestions</li>
           </ul>
           <p>
             You can revoke this access at any time through your Google Account settings.

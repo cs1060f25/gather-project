@@ -123,11 +123,9 @@ export const signUpWithEmail = async (email: string, password: string, fullName?
 // Google OAuth scopes - only request what we need (OAuth 2.0 policy compliance)
 // - calendar.readonly: List user's calendars
 // - calendar.events: Read and create calendar events (includes read access)
-// - contacts.readonly: Auto-suggest contacts when adding participants
 export const GOOGLE_OAUTH_SCOPES = [
     'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/calendar.events',
-    'https://www.googleapis.com/auth/contacts.readonly'
+    'https://www.googleapis.com/auth/calendar.events'
 ].join(' ');
 
 export const signInWithGoogle = async () => {

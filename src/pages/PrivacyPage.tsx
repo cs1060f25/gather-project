@@ -62,8 +62,8 @@ export const PrivacyPage: React.FC = () => {
 
           <h3>Contacts Data</h3>
           <p>
-            With your permission, we access your Google Contacts to suggest participants when 
-            creating events. Contact data is used only for suggestions and is not stored permanently.
+            Gatherly stores contacts you add manually or from recent event participants to suggest 
+            invitees when creating events. Contact data is stored securely in your account.
           </p>
 
           <h3>Event Data</h3>

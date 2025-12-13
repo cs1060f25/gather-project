@@ -456,51 +456,143 @@
   min-height: 80px;
 }
 
-/* Time Options Editor */
+/* Time Options Editor - Styled like CreateEventPanel */
 .edit-time-options {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .edit-time-option {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.75rem;
+  background: #F9F9F9;
+  border: 2px solid #E5E5E5;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.edit-time-option:hover {
+  border-color: #22c55e;
+  background: #F0FDF4;
 }
 
 .edit-time-option .option-number {
-  width: 24px;
-  height: 24px;
-  background: #1A1A1A;
+  width: 28px;
+  height: 28px;
+  background: #22c55e;
   color: #FFF;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .edit-time-option input[type="date"],
 .edit-time-option input[type="time"] {
-  padding: 0.5rem;
-  font-size: 0.85rem;
-  border: 2px solid #1A1A1A;
-  box-shadow: 2px 2px 0 #1A1A1A;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 2px solid #E5E5E5;
+  border-radius: 6px;
+  background: #FFF;
   flex: 1;
   min-width: 0;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.edit-time-option input[type="date"]:hover,
+.edit-time-option input[type="time"]:hover {
+  border-color: #22c55e;
+}
+
+.edit-time-option input[type="date"]:focus,
+.edit-time-option input[type="time"]:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
 .edit-time-option select {
-  padding: 0.5rem;
-  font-size: 0.85rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
   font-family: inherit;
-  border: 2px solid #1A1A1A;
-  box-shadow: 2px 2px 0 #1A1A1A;
+  border: 2px solid #E5E5E5;
+  border-radius: 6px;
   background: #FFF;
   cursor: pointer;
+  min-width: 80px;
+  transition: all 0.15s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 2rem;
+}
+
+.edit-time-option select:hover {
+  border-color: #22c55e;
+}
+
+.edit-time-option select:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.remove-time-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF;
+  border: 2px solid #E5E5E5;
+  border-radius: 6px;
+  color: #999;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.remove-time-btn:hover {
+  background: #FEE2E2;
+  border-color: #EF4444;
+  color: #EF4444;
+}
+
+.add-time-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #FFF;
+  border: 2px dashed #E5E5E5;
+  border-radius: 8px;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-time-btn:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+  background: #F0FDF4;
+}
+
+.add-time-btn svg {
+  stroke: currentColor;
 }
 
 /* Participants Editor */
@@ -508,32 +600,40 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .participant-chip {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.35rem 0.5rem;
-  background: #F5F5F5;
-  border: 2px solid #1A1A1A;
-  font-size: 0.8rem;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  background: #F0FDF4;
+  border: 2px solid #22c55e;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #166534;
 }
 
 .participant-chip button {
   background: none;
   border: none;
   cursor: pointer;
-  color: #666;
-  font-size: 1rem;
+  color: #22c55e;
+  font-size: 1.1rem;
   line-height: 1;
   padding: 0;
-  margin-left: 4px;
+  margin-left: 2px;
+  transition: color 0.15s ease;
 }
 
 .participant-chip button:hover {
   color: #dc2626;
+}
+
+.add-participant-container {
+  position: relative;
 }
 
 .add-participant {
@@ -543,8 +643,88 @@
 
 .add-participant input {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  border: 2px solid #E5E5E5;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.add-participant input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.add-participant button {
+  padding: 0.6rem 1rem;
+  background: #22c55e;
+  color: #FFF;
+  border: 2px solid #22c55e;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-participant button:hover:not(:disabled) {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.add-participant button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Contact suggestions dropdown */
+.contact-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #FFF;
+  border: 2px solid #E5E5E5;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.contact-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.contact-suggestion:hover {
+  background: #F0FDF4;
+}
+
+.contact-suggestion .contact-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1A1A1A;
+}
+
+.contact-suggestion .contact-email {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Legacy: old add-participant input style override */
+.add-participant input[type="text"] {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
   border: 2px solid #1A1A1A;
   box-shadow: 2px 2px 0 #1A1A1A;
 }
@@ -764,7 +944,97 @@
 .dark-mode .edit-form input:focus,
 .dark-mode .edit-form textarea:focus {
   border-color: #22c55e;
-  box-shadow: 3px 3px 0 #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* Dark mode for new edit time options */
+.dark-mode .edit-time-option {
+  background: #2A2A2A;
+  border-color: #444;
+}
+
+.dark-mode .edit-time-option:hover {
+  background: #1F3627;
+  border-color: #22c55e;
+}
+
+.dark-mode .edit-time-option input[type="date"],
+.dark-mode .edit-time-option input[type="time"],
+.dark-mode .edit-time-option select {
+  background: #1A1A1A;
+  border-color: #444;
+  color: #F0F0F0;
+}
+
+.dark-mode .edit-time-option input[type="date"]:hover,
+.dark-mode .edit-time-option input[type="time"]:hover,
+.dark-mode .edit-time-option select:hover {
+  border-color: #22c55e;
+}
+
+.dark-mode .edit-time-option select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.dark-mode .remove-time-btn {
+  background: #2A2A2A;
+  border-color: #444;
+  color: #888;
+}
+
+.dark-mode .remove-time-btn:hover {
+  background: #3D1F1F;
+  border-color: #EF4444;
+  color: #EF4444;
+}
+
+.dark-mode .add-time-btn {
+  background: #2A2A2A;
+  border-color: #444;
+  color: #888;
+}
+
+.dark-mode .add-time-btn:hover {
+  background: #1F3627;
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.dark-mode .participant-chip {
+  background: #1F3627;
+  border-color: #22c55e;
+  color: #86EFAC;
+}
+
+.dark-mode .participant-chip button {
+  color: #86EFAC;
+}
+
+.dark-mode .add-participant input {
+  background: #1A1A1A;
+  border-color: #444;
+  color: #F0F0F0;
+}
+
+.dark-mode .add-participant input:focus {
+  border-color: #22c55e;
+}
+
+.dark-mode .contact-suggestions {
+  background: #2A2A2A;
+  border-color: #444;
+}
+
+.dark-mode .contact-suggestion:hover {
+  background: #1F3627;
+}
+
+.dark-mode .contact-suggestion .contact-name {
+  color: #F0F0F0;
+}
+
+.dark-mode .contact-suggestion .contact-email {
+  color: #888;
 }
 
 .dark-mode .modal-actions {

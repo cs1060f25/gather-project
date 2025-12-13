@@ -651,73 +651,25 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Fetch Google Contacts using People API
-  const fetchGoogleContacts = async () => {
-    const googleToken = getGoogleToken();
-    if (!googleToken) return [];
-    
-    try {
-      const response = await fetch(
-        'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,photos&pageSize=200',
-        {
-          headers: { Authorization: `Bearer ${googleToken}` }
-        }
-      );
-      
-      if (!response.ok) {
-        console.log('Could not fetch Google Contacts');
-        return [];
-      }
-      
-      const data = await response.json();
-      
-      return (data.connections || [])
-        .map((person: { names?: { displayName: string }[]; emailAddresses?: { value: string }[]; photos?: { url: string }[] }) => ({
-          id: `google-${person.emailAddresses?.[0]?.value || Math.random()}`,
-          name: person.names?.[0]?.displayName || '',
-          email: person.emailAddresses?.[0]?.value || '',
-          photo: person.photos?.[0]?.url || null,
-          isGoogle: true
-        }))
-        .filter((c: { email: string }) => c.email);
-    } catch (err) {
-      console.log('Error fetching Google Contacts:', err);
-      return [];
-    }
-  };
-
-  // Load contacts from Supabase and merge with Google Contacts
+  // Load contacts from Supabase
   const loadContacts = async () => {
     if (!authUser) return;
     
     try {
-      // Load from Supabase
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
         .eq('user_id', authUser.id);
       
-      const supabaseContacts = (!error && data) 
-        ? data.map(c => ({
-            id: c.id,
-            name: c.name,
-            email: c.email,
-            phone: c.phone,
-            isGatherly: c.is_gatherly
-          }))
-        : [];
-      
-      // Fetch Google Contacts
-      const googleContacts = await fetchGoogleContacts();
-      
-      // Merge contacts, avoiding duplicates by email
-      const emailSet = new Set(supabaseContacts.map(c => c.email.toLowerCase()));
-      const mergedContacts = [
-        ...supabaseContacts,
-        ...googleContacts.filter((gc: { email: string }) => !emailSet.has(gc.email.toLowerCase()))
-      ];
-      
-      setContacts(mergedContacts);
+      if (!error && data) {
+        setContacts(data.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          isGatherly: c.is_gatherly
+        })));
+      }
     } catch (error) {
       console.error('Error loading contacts:', error);
     }
