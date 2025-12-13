@@ -836,51 +836,34 @@
 
 /* Voice dictation button */
 .cep-voice-btn {
-  width: 48px;
+  width: 36px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: transparent;
   color: #666;
-  border: 2px solid #1A1A1A;
-  border-radius: 8px;
+  border: none;
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
-  margin-right: 8px;
 }
 
 .cep-voice-btn:hover:not(:disabled) {
   color: #22c55e;
-  background: #e8fce8;
-  border-color: #22c55e;
-  transform: translateY(-1px);
 }
 
 .cep-voice-btn:disabled {
   color: #CCC;
-  background: #f0f0f0;
-  border-color: #ddd;
   cursor: not-allowed;
 }
 
 .cep-voice-btn.recording {
-  color: #fff;
-  background: #ef4444;
-  border-color: #dc2626;
-  animation: pulse-recording 1s ease-in-out infinite;
-}
-
-@keyframes pulse-recording {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  color: #ef4444;
 }
 
 .cep-voice-btn.transcribing {
-  color: #fff;
-  background: #22c55e;
-  border-color: #16a34a;
+  color: #22c55e;
 }
 
 /* Voice waves animation */
@@ -1161,20 +1144,14 @@
 
 .dark-mode .cep-voice-btn {
   color: #888;
-  background: #333;
-  border-color: #555;
 }
 
 .dark-mode .cep-voice-btn:hover:not(:disabled) {
   color: #22c55e;
-  background: #2a3a2a;
-  border-color: #22c55e;
 }
 
 .dark-mode .cep-voice-btn:disabled {
   color: #555;
-  background: #2a2a2a;
-  border-color: #444;
 }
 
 .dark-mode .cep-chat-submit {

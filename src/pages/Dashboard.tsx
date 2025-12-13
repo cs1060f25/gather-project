@@ -601,23 +601,40 @@ export const Dashboard: React.FC = () => {
 
   // Clear all notifications
   const clearAllNotifications = async () => {
-    if (!authUser?.id) return;
+    if (!authUser?.id) {
+      console.log('No auth user, cannot clear notifications');
+      return;
+    }
+    
+    console.log('Clearing all notifications for user:', authUser.id);
+    
+    // Save current notifications in case we need to revert
+    const previousNotifications = [...notifications];
+    const previousUnreadCount = unreadCount;
+    
+    // Optimistically update UI
+    setNotifications([]);
+    setUnreadCount(0);
     
     try {
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('user_id', authUser.id);
+        .match({ user_id: authUser.id });
       
       if (error) {
         console.error('Error clearing notifications:', error);
-        return;
+        // Revert on error
+        setNotifications(previousNotifications);
+        setUnreadCount(previousUnreadCount);
+      } else {
+        console.log('All notifications cleared successfully');
       }
-
-      setNotifications([]);
-      setUnreadCount(0);
     } catch (err) {
       console.error('Error clearing notifications:', err);
+      // Revert on error
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnreadCount);
     }
   };
 
@@ -625,24 +642,38 @@ export const Dashboard: React.FC = () => {
   const dismissNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the notification click
     
-    if (!authUser?.id) return;
+    if (!authUser?.id) {
+      console.log('No auth user, cannot dismiss notification');
+      return;
+    }
+    
+    console.log('Dismissing notification:', id, 'for user:', authUser.id);
+    
+    // Optimistically update UI first
+    const notification = notifications.find(n => n.id === id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (notification && !notification.read) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
     
     try {
+      // Delete from database
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('id', id)
-        .eq('user_id', authUser.id); // Also filter by user_id for security
+        .match({ id: id, user_id: authUser.id });
 
       if (error) {
         console.error('Error dismissing notification:', error);
-        return;
-      }
-
-      const notification = notifications.find(n => n.id === id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      if (notification && !notification.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        // Revert optimistic update on error
+        if (notification) {
+          setNotifications(prev => [...prev, notification]);
+          if (!notification.read) {
+            setUnreadCount(prev => prev + 1);
+          }
+        }
+      } else {
+        console.log('Notification deleted successfully');
       }
     } catch (err) {
       console.error('Error dismissing notification:', err);
@@ -1314,6 +1345,15 @@ export const Dashboard: React.FC = () => {
                 />
                 <div className="notification-dropdown">
                 <div className="notification-header">
+                  <button 
+                    className="notification-close-btn"
+                    onClick={() => setShowNotifications(false)}
+                    aria-label="Close notifications"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
                   <h3>Notifications</h3>
                   <div className="notification-actions">
                     {unreadCount > 0 && (

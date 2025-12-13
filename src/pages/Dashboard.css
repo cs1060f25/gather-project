@@ -151,12 +151,32 @@
   justify-content: space-between;
   padding: 0.75rem 1rem;
   border-bottom: 2px solid #e5e5e5;
+  gap: 0.5rem;
+}
+
+.notification-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.notification-close-btn:hover {
+  color: #1A1A1A;
 }
 
 .notification-header h3 {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 700;
+  flex: 1;
 }
 
 .notification-actions {
@@ -479,6 +499,14 @@
 }
 
 .dark-mode .notification-header h3 {
+  color: #FFF;
+}
+
+.dark-mode .notification-close-btn {
+  color: #888;
+}
+
+.dark-mode .notification-close-btn:hover {
   color: #FFF;
 }
 
@@ -883,19 +911,69 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     border-top: 2px solid #1A1A1A;
   }
 
-  /* Notification dropdown mobile */
+  /* Notification dropdown mobile - full screen */
   .notification-dropdown {
     position: fixed;
-    top: 60px;
-    right: 0.5rem;
-    left: 0.5rem;
-    width: auto;
-    max-width: none;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     z-index: 999999 !important;
+    animation: slideUp 0.2s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
   
   .notification-overlay {
     z-index: 999998 !important;
+  }
+  
+  .notification-header {
+    padding: 1rem;
+    border-bottom: 2px solid #1A1A1A;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+  
+  .notification-close-btn {
+    display: flex;
+  }
+  
+  .notification-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+  }
+  
+  .notification-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .dark-mode .notification-header {
+    background: #2A2A2A;
+    border-bottom-color: #444;
+  }
+  
+  .dark-mode .notification-dropdown {
+    background: #2A2A2A;
   }
 }
 
@@ -1569,14 +1647,20 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     margin: 0 1rem;
   }
   
-  /* Mobile notification dropdown */
+  /* Mobile notification dropdown - full screen (smaller screens) */
   .notification-dropdown {
     position: fixed;
-    top: 60px;
-    right: 0.5rem;
-    left: 0.5rem;
-    width: auto;
-    max-height: 60vh;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     z-index: 999999 !important;
   }
   
