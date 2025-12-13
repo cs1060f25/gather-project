@@ -333,9 +333,11 @@ export const EventPage: React.FC = () => {
     setLoading(false);
   };
 
-  // Handle opening edit modal
+  // Handle opening edit modal - only for pending events
   const openEditModal = () => {
     if (!event) return;
+    // Prevent editing if event is not pending (already confirmed or cancelled)
+    if (event.status !== 'pending') return;
     setEditTitle(event.title);
     setEditLocation(event.location || '');
     setEditDescription(event.description || '');
