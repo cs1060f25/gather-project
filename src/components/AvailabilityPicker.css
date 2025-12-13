@@ -1,7 +1,7 @@
 /* ===== Availability Picker Component ===== */
 
 .availability-picker {
-  background: #F8F8F8;
+  background-color: #F8F8F8 !important;
   padding: 1rem;
   border-top: 2px solid #E5E5E5;
   border-bottom: 2px solid #E5E5E5;
@@ -18,13 +18,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #1A1A1A;
+  color: #1A1A1A !important;
 }
 
 .availability-picker-hint {
   font-size: 0.65rem;
   font-weight: 500;
-  color: #888;
+  color: #888 !important;
   text-transform: none;
   letter-spacing: 0;
 }
@@ -41,7 +41,7 @@
   gap: 0.4rem;
   align-items: center;
   padding: 0.5rem 0.6rem;
-  background: #FFF;
+  background-color: #FFFFFF !important;
   border: 2px solid #E5E5E5;
   transition: all 0.15s ease;
 }
@@ -56,10 +56,10 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: #1A1A1A;
+  background-color: #1A1A1A !important;
   font-size: 0.75rem;
   font-weight: 700;
-  color: white;
+  color: white !important;
   flex-shrink: 0;
 }
 
@@ -70,8 +70,8 @@
   gap: 0.35rem;
   padding: 0.5rem 0.75rem;
   border: 2px solid #22c55e;
-  background: #22c55e;
-  color: #FFF;
+  background-color: #22c55e !important;
+  color: #FFFFFF !important;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -82,7 +82,7 @@
 }
 
 .availability-picker-btn:hover:not(:disabled) {
-  background: #16a34a;
+  background-color: #16a34a !important;
   border-color: #16a34a;
 }
 
@@ -400,135 +400,6 @@
   background: #22c55e;
   border-color: #22c55e;
   color: white;
-}
-
-/* ===== Dark Mode ===== */
-
-@media (prefers-color-scheme: dark) {
-  .availability-picker {
-    background: #252525;
-    border-color: #444;
-  }
-  
-  .availability-picker-label {
-    color: #DDD;
-  }
-  
-  .availability-picker-option {
-    background: #2A2A2A;
-    border-color: #444;
-  }
-  
-  .availability-picker-option.filled {
-    border-color: #22c55e;
-  }
-  
-  .availability-picker-badge {
-    background: #444;
-    color: #F0F0F0;
-  }
-  
-  .availability-calendar-picker,
-  .availability-time-picker,
-  .availability-duration-picker {
-    background: #252525;
-    border-color: #444;
-    box-shadow: 4px 4px 0 #000;
-  }
-  
-  .availability-picker-close {
-    color: #aaa;
-  }
-  
-  .availability-picker-close:hover {
-    background: #333;
-    color: #fff;
-  }
-  
-  .availability-calendar-title {
-    color: #eee;
-  }
-  
-  .availability-calendar-header button {
-    color: #aaa;
-  }
-  
-  .availability-calendar-header button:hover {
-    color: #22c55e;
-  }
-  
-  .availability-calendar-weekdays span {
-    color: #777;
-  }
-  
-  .availability-calendar-day {
-    color: #ddd;
-  }
-  
-  .availability-calendar-day:hover:not(:disabled):not(.empty) {
-    background: #1a2f1a;
-    color: #22c55e;
-  }
-  
-  .availability-calendar-day.past,
-  .availability-calendar-day:disabled {
-    color: #555;
-  }
-  
-  .availability-time-value-btn {
-    background: #333;
-    color: #eee;
-  }
-  
-  .availability-time-value-btn:hover {
-    background: #404040;
-    border-color: #22c55e;
-  }
-  
-  .availability-time-colon {
-    color: #888;
-  }
-  
-  .availability-time-error {
-    background: #3f1f1f;
-    color: #f87171;
-  }
-  
-  .availability-time-cancel {
-    background: #333;
-    color: #ccc;
-    border-color: #555;
-  }
-  
-  .availability-time-cancel:hover {
-    background: #404040;
-  }
-  
-  .availability-time-confirm {
-    border-color: #22c55e;
-  }
-  
-  .availability-duration-title {
-    color: #eee;
-  }
-  
-  .availability-duration-option {
-    background: #333;
-    border-color: #555;
-    color: #ccc;
-  }
-  
-  .availability-duration-option:hover {
-    background: #1a2f1a;
-    border-color: #22c55e;
-    color: #22c55e;
-  }
-  
-  .availability-duration-option.selected {
-    background: #22c55e;
-    border-color: #22c55e;
-    color: white;
-  }
 }
 
 /* ===== Mobile Responsive ===== */
