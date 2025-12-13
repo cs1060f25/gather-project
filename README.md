@@ -30,7 +30,7 @@
 
 Scheduling is broken. Every week, millions of hours are wasted on the same tedious dance: "When works for you?" followed by endless email chains, When2Meet polls that nobody fills out, and calendar tabs open side-by-side trying to find a sliver of overlapping free time.
 
-This is administrative work that adds zero value to your life. You dont enjoy scheduling a study session for your group project. You enjoy the study session itself. You dont enjoy coordinating a coffee catch-up with an old friend. You enjoy the conversation.
+This is administrative work that adds zero value to your life. You don't enjoy scheduling a study session for your group project. You enjoy the study session itself. You don't enjoy coordinating a coffee catch-up with an old friend. You enjoy the conversation.
 
 We built Gatherly because we believe AI should handle the tedious coordination so humans can focus on the face time that actually matters.
 
@@ -98,7 +98,7 @@ We never show your own email in the recent contacts list. That would be redundan
 
 Gatherly integrates with the Google Places API for location autocomplete. Start typing an address or venue name and suggestions appear instantly. Select one and the full address, plus a link to Google Maps, gets attached to your event. Invitees see the location in their invitation email with a clickable map link.
 
-This matters because location is often the forgotten detail. How many times have you shown up to a meeting only to realize you dont know which conference room, which coffee shop, or which building entrance? Gatherly makes location a first-class citizen in the scheduling flow.
+This matters because location is often the forgotten detail. How many times have you shown up to a meeting only to realize you don't know which conference room, which coffee shop, or which building entrance? Gatherly makes location a first-class citizen in the scheduling flow.
 
 ### The Invite System
 
