@@ -898,6 +898,15 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           }
         }
         
+        // Set Google Meet if parsed
+        if (parsed.addGoogleMeet !== undefined) {
+          setAddGoogleMeet(parsed.addGoogleMeet);
+          // If adding Google Meet, also set location to Google Meet
+          if (parsed.addGoogleMeet && (!location || location === 'TBD')) {
+            setLocation('Google Meet');
+          }
+        }
+        
         // Add participants if parsed (merge with existing)
         // Only add if they're a known contact OR a valid email
         if (parsed.participants && parsed.participants.length > 0) {

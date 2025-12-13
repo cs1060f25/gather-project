@@ -19,6 +19,7 @@ export interface ParsedSchedulingData {
   suggestedTime3?: string;
   duration?: number;
   location?: string;
+  addGoogleMeet?: boolean;
   priority?: 'must' | 'should' | 'maybe';
   notes?: string;
   isSchedulingRequest: boolean;
@@ -80,6 +81,7 @@ export async function parseSchedulingMessage(
       suggestedTime3: parsed.suggestedTime3,
       duration: parsed.duration || 60,
       location: parsed.location,
+      addGoogleMeet: parsed.addGoogleMeet || false,
       priority: parsed.priority || 'should',
       notes: parsed.notes,
       isSchedulingRequest: parsed.isSchedulingRequest ?? true
@@ -143,12 +145,16 @@ function basicParse(message: string, contactNames: string[]): ParsedSchedulingDa
   let title = message.replace(/@\S+/g, '').trim();
   if (title.length > 60) title = title.slice(0, 60) + '...';
 
+  // Check for Google Meet / virtual meeting
+  const addGoogleMeet = /zoom|meet|video|virtual|online|teams|call/i.test(lowerMessage);
+
   return {
     title: title || 'New Meeting',
     participants,
     suggestedDate,
     suggestedTime,
     duration: 60,
+    addGoogleMeet,
     priority: lowerMessage.includes('urgent') || lowerMessage.includes('important') ? 'must' : 'should',
     isSchedulingRequest
   };
