@@ -428,6 +428,39 @@
   gap: 0.5rem;
 }
 
+/* Force light mode for AvailabilityPicker in edit modal */
+.edit-form .availability-picker,
+.edit-event-modal .availability-picker {
+  background: #F8F8F8 !important;
+}
+
+.edit-form .availability-picker-label,
+.edit-event-modal .availability-picker-label {
+  color: #1A1A1A !important;
+}
+
+.edit-form .availability-picker-hint,
+.edit-event-modal .availability-picker-hint {
+  color: #888 !important;
+}
+
+.edit-form .availability-picker-option,
+.edit-event-modal .availability-picker-option {
+  background: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+}
+
+.edit-form .availability-picker-option.filled,
+.edit-event-modal .availability-picker-option.filled {
+  border-color: #22c55e !important;
+}
+
+.edit-form .availability-picker-badge,
+.edit-event-modal .availability-picker-badge {
+  background: #1A1A1A !important;
+  color: #FFFFFF !important;
+}
+
 .edit-form label {
   font-size: 0.8rem;
   font-weight: 700;
