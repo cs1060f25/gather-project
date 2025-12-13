@@ -228,7 +228,7 @@ export const Dashboard: React.FC = () => {
     setCalendarLoading(true);
     const providerToken = getGoogleToken();
     if (!providerToken) {
-      console.log('No Google token found, skipping calendar sync');
+      // No Google token, skipping calendar sync
       // Only set default calendars if we don't already have any
       setCalendars(prev => prev.length > 0 ? prev : [
         { id: 'gatherly', name: 'Gatherly Events', color: '#22c55e', selected: true },
@@ -325,7 +325,7 @@ export const Dashboard: React.FC = () => {
                 
                 // Debug: Log Gatherly-scheduled events
                 if (isGatherlyScheduled) {
-                  console.log('[Gatherly] Found Gatherly-scheduled event:', item.summary, '| isGatherlyScheduled:', isGatherlyScheduled);
+                  // Found Gatherly-scheduled event
                 }
                 
                 return {
@@ -360,7 +360,7 @@ export const Dashboard: React.FC = () => {
       results.forEach(calEvents => allEvents.push(...calEvents));
 
       setEvents(allEvents);
-      console.log(`Synced ${allEvents.length} events from Google Calendar`);
+      // Calendar sync complete
       setCalendarLoading(false);
     } catch (error) {
       console.error('Error syncing Google Calendar:', error);
@@ -408,7 +408,7 @@ export const Dashboard: React.FC = () => {
     syncGoogleCalendars();
     
     const syncInterval = setInterval(() => {
-      console.log('Periodic calendar sync...');
+      // Periodic calendar sync
       syncGoogleCalendars();
     }, 7 * 60 * 1000); // 7 minutes to limit API usage
     
@@ -441,7 +441,7 @@ export const Dashboard: React.FC = () => {
       // If this is a Google user without a token, they logged in with email/password
       // Log this for debugging
       if (isGoogleUser) {
-        console.log('Google user logged in without OAuth - calendar reconnection needed');
+        // Google user needs calendar reconnection
       }
     }
   }, [authUser, hasCheckedCalendarConnection]);
@@ -496,7 +496,7 @@ export const Dashboard: React.FC = () => {
           setUnreadCount(data.filter(n => !n.read).length);
         }
       } catch (err) {
-        console.log('Notifications table may not exist yet:', err);
+        // Notifications table may not exist yet
       }
     };
 
@@ -563,7 +563,7 @@ export const Dashboard: React.FC = () => {
           sessionStorage.setItem('gatherly_summary_fetched', today);
         }
       } catch (err) {
-        console.log('Could not fetch daily summary:', err);
+        // Could not fetch daily summary
       } finally {
         setSummaryLoading(false);
       }
@@ -602,11 +602,11 @@ export const Dashboard: React.FC = () => {
   // Clear all notifications
   const clearAllNotifications = async () => {
     if (!authUser?.id) {
-      console.log('No auth user, cannot clear notifications');
+      // No auth user
       return;
     }
     
-    console.log('Clearing all notifications for user:', authUser.id);
+    // Clearing all notifications
     
     // Save current notifications in case we need to revert
     const previousNotifications = [...notifications];
@@ -630,7 +630,7 @@ export const Dashboard: React.FC = () => {
   const dismissNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the notification click
     
-    console.log('Dismissing notification:', id);
+    // Dismissing notification
     
     // Optimistically update UI first
     const notification = notifications.find(n => n.id === id);
@@ -867,9 +867,6 @@ export const Dashboard: React.FC = () => {
             }));
           
           await sendInviteEmails(invites, allSuggestedTimes);
-          invites.forEach(invite => {
-            console.log(`Invite for ${invite.invitee_email}: ${window.location.origin}/invite/${invite.token}`);
-          });
         }
       }
 
@@ -967,7 +964,7 @@ export const Dashboard: React.FC = () => {
           
           // Check if event is already cancelled - prevent double emails
           if (eventData?.status === 'cancelled') {
-            console.log('[Dashboard Cancel] Event already cancelled, skipping emails');
+            // Event already cancelled
             setSelectedEvent(null);
             setIsCancelling(false);
             return;
@@ -980,10 +977,10 @@ export const Dashboard: React.FC = () => {
             // Send cancellation notifications to each participant (deduplicated)
             const participants: string[] = Array.isArray(eventData.participants) ? eventData.participants : [];
             const uniqueParticipants = [...new Set(participants)]; // Deduplicate
-            console.log('[Dashboard Cancel] Sending cancellation emails to:', uniqueParticipants);
+            // Sending cancellation emails
             await Promise.all(uniqueParticipants.map(async (email) => {
               try {
-                console.log('[Dashboard Cancel] Sending cancellation email to:', email);
+                // Sending cancellation email
                 await fetch('/api/send-cancel-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1050,8 +1047,8 @@ export const Dashboard: React.FC = () => {
   };
 
   // Handle time slot click
-  const handleTimeSlotClick = (date: string, time: string) => {
-    console.log('Time slot clicked:', date, time);
+  const handleTimeSlotClick = (_date: string, _time: string) => {
+    // Time slot clicked - could be used for future features
   };
 
   const handleSignOut = async () => {
@@ -1062,7 +1059,7 @@ export const Dashboard: React.FC = () => {
   const handleAddContact = async (contact: Contact) => {
     // Check if contact already exists
     if (contacts.find(c => c.email.toLowerCase() === contact.email.toLowerCase())) {
-      console.log('Contact already exists');
+      // Contact already exists
       return;
     }
     
@@ -1179,7 +1176,7 @@ export const Dashboard: React.FC = () => {
           ge.title.toLowerCase().trim() === e.title.toLowerCase().trim()
         );
         if (matchingGatherly) {
-          console.log(`[Gatherly] Filtering Gatherly-scheduled Google event: ${e.title}`);
+          // Filtering Gatherly-scheduled duplicate
           return false;
         }
       }
@@ -1192,7 +1189,7 @@ export const Dashboard: React.FC = () => {
       
       // If this matches a confirmed Gatherly event, filter it out
       if (confirmedGatherlyKeys.has(key)) {
-        console.log(`[Gatherly] Filtering duplicate Google Calendar event: ${e.title} on ${e.date} at ${e.time}`);
+        // Filtering duplicate Google Calendar event
         return false;
       }
       

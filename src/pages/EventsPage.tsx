@@ -525,7 +525,6 @@ export const EventsPage: React.FC = () => {
         .single();
       
       if (currentStatus?.status === 'cancelled') {
-        console.log('[EventsPage Cancel] Event already cancelled, skipping emails');
         setCancellingEventId(null);
         return;
       }
@@ -534,9 +533,7 @@ export const EventsPage: React.FC = () => {
       
       // Send cancellation emails (deduplicated)
       const uniqueParticipants = [...new Set(event.participants)];
-      console.log('[EventsPage Cancel] Sending cancellation emails to:', uniqueParticipants);
       for (const email of uniqueParticipants) {
-        console.log('[EventsPage Cancel] Sending cancellation email to:', email);
         await fetch('/api/send-cancel-notification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

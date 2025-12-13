@@ -85,12 +85,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Auth init - setting up listeners');
-
     // Set up auth state listener - Supabase will automatically handle OAuth callbacks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event, session?.user?.email);
+      async (_event, session) => {
         
         // Don't process auth state on reset-password page - let ResetPasswordPage handle it
         const isResetPasswordPage = window.location.pathname === '/reset-password';
@@ -130,7 +127,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error('Session error:', error);
         }
         
-        console.log('Initial session check:', session?.user?.email);
         setUser(session?.user || null);
         setLoading(false);
       } catch (error) {

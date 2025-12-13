@@ -216,26 +216,6 @@ Color contrast meets WCAG AA standards. Interactive states are visually distinct
 
 ---
 
-## Product Differentiation
-
-### Versus When2Meet
-
-When2Meet requires everyone to manually paint their availability on a grid. Its tedious. Its error-prone. People forget to fill it out. Gatherly flips the model: instead of asking everyone when theyre free, we look at their calendars and compute availability automatically for connected users, while still allowing manual responses for those without calendar integration.
-
-### Versus Calendly
-
-Calendly is optimized for one-on-one booking with external parties. It works well for sales calls and customer meetings but poorly for internal coordination or friend groups. Gatherly handles multi-party scheduling natively. Propose three time options and let the group vote.
-
-### Versus Doodle
-
-Doodle polls are passive. You create a poll, share a link, and wait. Gatherly is active. It sends reminders. It notifies you of responses. It suggests optimal times based on the responses received.
-
-### Versus Manual Coordination
-
-Email threads and Slack messages are how most scheduling actually happens today. Its inefficient but familiar. Gatherly keeps the natural language interface people prefer while automating the tedious follow-up.
-
----
-
 ## Technical Architecture
 
 <p align="center">

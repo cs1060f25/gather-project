@@ -125,7 +125,7 @@ export const EventPage: React.FC = () => {
           }
         }
       } catch (err) {
-        console.log('Could not load user location from IP');
+        // Silently fail - location is optional
       }
     };
     loadUserLocation();
@@ -177,7 +177,7 @@ export const EventPage: React.FC = () => {
         }
       }
     } catch (error) {
-      console.log('Places API call failed');
+      // Places API failed silently
     }
 
     setLocationSuggestions([]);
@@ -450,7 +450,7 @@ export const EventPage: React.FC = () => {
                 hostEmail,
               }),
             });
-            console.log(`Cancellation email sent to removed participant: ${email}`);
+            // Email sent successfully
           } catch (err) {
             console.error(`Error sending cancellation to ${email}:`, err);
           }
@@ -580,7 +580,6 @@ export const EventPage: React.FC = () => {
         .single();
       
       if (currentStatus?.status === 'cancelled') {
-        console.log('[EventPage Cancel] Event already cancelled, skipping emails');
         setShowCancelConfirm(false);
         navigate('/app');
         return;
@@ -592,11 +591,9 @@ export const EventPage: React.FC = () => {
       
       // Send cancellation notification to each participant (deduplicated)
       const uniqueParticipants = [...new Set(event.participants)];
-      console.log('[EventPage Cancel] Sending cancellation emails to:', uniqueParticipants);
       const emailPromises = uniqueParticipants.map(async (email) => {
         try {
-          console.log('[EventPage Cancel] Sending cancellation email to:', email);
-          const response = await fetch('/api/send-cancel-notification', {
+          await fetch('/api/send-cancel-notification', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -608,14 +605,8 @@ export const EventPage: React.FC = () => {
               hostEmail,
             }),
           });
-          
-          if (!response.ok) {
-            console.error(`Failed to send cancellation email to ${email}`);
-          } else {
-            console.log(`Cancellation notification sent to ${email}`);
-          }
         } catch (err) {
-          console.error(`Error sending cancellation to ${email}:`, err);
+          // Email failed silently
         }
       });
       
@@ -636,19 +627,13 @@ export const EventPage: React.FC = () => {
             
             if (eventData?.google_event_id) {
               // Delete from Google Calendar
-              const deleteResponse = await fetch(
+              await fetch(
                 `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventData.google_event_id}?sendUpdates=all`,
                 {
                   method: 'DELETE',
                   headers: { Authorization: `Bearer ${providerToken}` }
                 }
               );
-              
-              if (deleteResponse.ok || deleteResponse.status === 204) {
-                console.log('Google Calendar event deleted successfully');
-              } else {
-                console.error('Failed to delete from Google Calendar:', deleteResponse.status);
-              }
             }
           } catch (gcalErr) {
             console.error('Error deleting from Google Calendar:', gcalErr);
@@ -709,7 +694,6 @@ export const EventPage: React.FC = () => {
       
       // Try to create Google Calendar event for the organizer
       const providerToken = await getGoogleToken();
-      console.log('Google token available:', !!providerToken);
       if (providerToken && confirmedOption) {
         try {
           const startDate = new Date(`${confirmedOption.day}T${confirmedOption.time}`);
@@ -777,7 +761,7 @@ export const EventPage: React.FC = () => {
             };
           }
           
-          console.log('Creating Google Calendar event:', calendarEvent);
+          // Creating Google Calendar event
           
           // Add conferenceDataVersion=1 to enable Google Meet creation
           const apiUrl = event.addGoogleMeet 
@@ -798,7 +782,6 @@ export const EventPage: React.FC = () => {
           
           if (response.ok) {
             const createdEvent = await response.json();
-            console.log('Google Calendar event created successfully:', createdEvent.id);
             
             // Create notifications for all participants
             for (const participantEmail of event.participants) {

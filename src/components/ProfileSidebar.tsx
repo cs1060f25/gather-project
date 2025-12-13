@@ -125,7 +125,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           icon
         });
       } catch (err) {
-        console.log('Could not load weather:', err);
+        // Weather loading failed silently
         setWeather(null);
     } finally {
         setWeatherLoading(false);

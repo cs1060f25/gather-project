@@ -27,7 +27,7 @@ const parseOAuthTokens = () => {
         // Store the Google provider token separately for Calendar API access
         if (providerToken) {
             localStorage.setItem('gatherly_google_token', providerToken);
-            console.log('Stored Google provider token for Calendar access');
+            // Stored Google provider token
         }
         
         return {
@@ -55,7 +55,7 @@ const storageKey = finalSupabaseUrl && finalSupabaseUrl !== 'https://placeholder
 
 // Only process OAuth tokens if NOT a recovery flow (password reset)
 if (oauthTokens && storageKey && !isRecoveryFlow && !isRecoveryPage) {
-    console.log('OAuth callback detected, storing tokens...');
+    // OAuth callback detected
     
     // Clear any stale session data and store new tokens
     localStorage.removeItem(storageKey);

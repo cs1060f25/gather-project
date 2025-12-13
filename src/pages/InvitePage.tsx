@@ -98,7 +98,7 @@ export const InvitePage: React.FC = () => {
             }
           }
         } catch (err) {
-          console.log('Could not load full event data:', err);
+          // Could not load full event data
           // On error, block responses just to be safe
           setEventData({
             options: [],

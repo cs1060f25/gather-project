@@ -151,7 +151,7 @@ export async function deleteNotification(notificationId: string): Promise<boolea
       console.error('Error deleting notification:', error);
       return false;
     }
-    console.log('Notification deleted successfully:', notificationId);
+    // Notification deleted successfully
     return true;
   } catch (err) {
     console.error('Error deleting notification:', err);
@@ -171,7 +171,7 @@ export async function deleteAllNotifications(userId: string): Promise<boolean> {
       console.error('Error deleting all notifications:', error);
       return false;
     }
-    console.log('All notifications deleted for user:', userId);
+    // All notifications deleted
     return true;
   } catch (err) {
     console.error('Error deleting all notifications:', err);
@@ -317,7 +317,6 @@ export async function sendInviteEmails(
 
       if (response.ok) {
         sent++;
-        console.log(`Email sent to ${invite.invitee_email}`);
       } else {
         failed++;
         const error = await response.json().catch(() => ({}));
@@ -327,14 +326,6 @@ export async function sendInviteEmails(
       failed++;
       console.error(`Error sending email to ${invite.invitee_email}:`, err);
     }
-  }
-
-  // Log invite links for debugging (in case email fails)
-  if (failed > 0) {
-    invites.forEach(invite => {
-      const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
-      console.log(`Invite link for ${invite.invitee_email}: ${inviteUrl}`);
-    });
   }
 
   return { sent, failed };

@@ -140,7 +140,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     // This ensures we see the beginning of the selected month
     const weekStartDate = new Date(year, month, 1 - dayOfWeek);
     
-    console.log(`goToMonth: ${year}-${month + 1}, weekStart:`, weekStartDate.toDateString());
+    // Navigate to month
     
     setWeekStart(new Date(weekStartDate));
     // Store the actual month/year the user selected (for display)

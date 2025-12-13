@@ -195,7 +195,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
           }
         }
       } catch (err) {
-        console.log('Could not load user location from IP');
+        // Silently fail - location is optional
       }
     };
     loadUserLocation();
@@ -545,7 +545,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         }
       }
     } catch (error) {
-      console.log('Places API call failed, using fallback');
+      // Places API failed, no suggestions
     }
 
     // Fallback - no suggestions if API fails (don't suggest invalid locations)
@@ -876,11 +876,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
         });
       
       // Log busy slots for debugging - especially pending Gatherly events
-      const pendingGatherlySlots = busySlots.filter(s => s.title.includes('[PENDING GATHERLY]'));
-      console.log('[Gatherly] Sending busy slots to AI:', busySlots.length, 'total,', pendingGatherlySlots.length, 'pending Gatherly');
-      if (pendingGatherlySlots.length > 0) {
-        console.log('[Gatherly] Pending Gatherly slots:', pendingGatherlySlots);
-      }
+      // Busy slots include pending Gatherly events for conflict avoidance
       
       // Include current form state in the message for context preservation
       const contextMessage = `Current form state: Event="${eventName}", Location="${location}", Description="${description}", Participants=${JSON.stringify(participants)}, Options=${JSON.stringify(availabilityOptions.map(o => ({ day: o.day, time: o.time, duration: o.duration })))}. User message: ${message}`;
