@@ -29,11 +29,23 @@
 .events-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
   text-decoration: none;
   color: #1A1A1A;
   font-weight: 700;
   font-size: 1.25rem;
+  padding: 6px 10px;
+  padding-left: 0;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.events-logo:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.events-logo:active {
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .header-right {
@@ -668,6 +680,10 @@
 
 .dark-mode .events-logo {
   color: #F0F0F0;
+}
+
+.dark-mode .events-logo:hover {
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .dark-mode .back-arrow {

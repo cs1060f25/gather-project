@@ -10,8 +10,9 @@
   font-family: 'Space Grotesk', sans-serif;
   overflow: hidden;
   position: relative;
-  min-width: 320px;
+  min-width: 280px;
   max-width: 600px;
+  box-sizing: border-box;
 }
 
 .create-event-panel.editing {
@@ -1162,6 +1163,14 @@
 }
 
 /* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .create-event-panel {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .create-event-panel {
     border-top-width: 2px;

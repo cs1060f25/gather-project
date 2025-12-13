@@ -608,7 +608,7 @@
   font-weight: 700;
   color: var(--g-green);
   min-width: 60px;
-  background: var(--g-bg);
+  background: transparent;
   position: relative;
   z-index: 1;
 }
@@ -949,9 +949,8 @@
 }
 
 .dark-mode .step-num {
-  background: var(--g-green);
-  border-color: #1A1A1A;
-  color: #FFF;
+  background: transparent;
+  color: var(--g-green);
 }
 
 .dark-mode .step-line {

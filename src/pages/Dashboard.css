@@ -522,20 +522,24 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
 @media (max-width: 1024px) {
   .dashboard-main {
     flex-direction: column;
+    overflow-x: hidden;
   }
 
   .calendar-section {
     flex: 1;
     min-height: 50vh;
     width: 100%;
+    box-sizing: border-box;
   }
 
   .create-event-section {
     flex: 0 0 auto;
-    max-width: none;
+    max-width: 100%;
     min-width: 0;
     max-height: 50vh;
     width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 }
 
