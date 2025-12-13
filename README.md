@@ -103,17 +103,6 @@ Located in `tests/integration/`, these test the full system using Playwright:
 - Tests sign up and password reset flows
 - Verifies error handling for 404 pages
 
-### Test Video
-
-A demonstration video of running the test suite is available at:
-**`test-demo.mov`** (upload to project folder)
-
-To record your own test run:
-```bash
-# macOS: Use QuickTime or Loom to record screen while running:
-npm test
-```
-
 ---
 
 ## The Problem We Solve
