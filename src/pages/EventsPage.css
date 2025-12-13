@@ -217,10 +217,20 @@
   display: flex;
   gap: 1rem;
   overflow-x: auto;
-  padding: 0 1.5rem;
+  padding: 0 1.5rem 0.5rem 1.5rem;
   scroll-snap-type: x mandatory;
+  scroll-padding-left: 1.5rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+}
+
+/* Ensure first card has proper spacing */
+.today-events-scroll > *:first-child {
+  margin-left: 0;
+}
+
+.today-events-scroll > *:last-child {
+  margin-right: 0.5rem;
 }
 
 .today-events-scroll::-webkit-scrollbar {
@@ -331,14 +341,24 @@
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
-  padding: 0 1.5rem;
+  padding: 0 1.5rem 0.5rem 1.5rem;
   scroll-snap-type: x mandatory;
+  scroll-padding-left: 1.5rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 
 .upcoming-events-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* Ensure first card has proper spacing */
+.upcoming-events-scroll > *:first-child {
+  margin-left: 0;
+}
+
+.upcoming-events-scroll > *:last-child {
+  margin-right: 0.5rem;
 }
 
 /* Upcoming Event Card - Compact */
@@ -791,12 +811,26 @@
 
   .today-events-scroll,
   .upcoming-events-scroll {
-    padding: 0 1rem;
+    padding: 0 1rem 0.5rem 1rem;
+    scroll-padding-left: 1rem;
   }
 
   .event-card-today {
     width: 200px;
     min-height: 120px;
+  }
+  
+  /* Smaller Gatherly badge on mobile */
+  .gatherly-badge {
+    width: 20px;
+    height: 20px;
+    top: 6px;
+    right: 6px;
+  }
+  
+  .gatherly-badge svg {
+    width: 12px;
+    height: 12px;
   }
 
   .upcoming-section .section-title {
@@ -806,6 +840,13 @@
   .event-card-upcoming {
     width: 160px;
     min-height: 100px;
+  }
+  
+  .event-card-upcoming .gatherly-badge {
+    width: 18px;
+    height: 18px;
+    top: 4px;
+    right: 4px;
   }
 
   .pending-section {
@@ -1042,6 +1083,25 @@
   border-color: #16a34a;
 }
 
+.btn-delete-gcal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #FFF;
+  background: #dc2626;
+  border: 2px solid #dc2626;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-delete-gcal:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
 .btn-close-modal {
   padding: 10px 16px;
   font-size: 0.9rem;
@@ -1109,6 +1169,16 @@
 .dark-mode .btn-edit-gcal:hover {
   background: #16a34a;
   border-color: #16a34a;
+}
+
+.dark-mode .btn-delete-gcal {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.dark-mode .btn-delete-gcal:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 
 .dark-mode .btn-close-modal {

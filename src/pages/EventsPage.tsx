@@ -1008,6 +1008,47 @@ export const EventsPage: React.FC = () => {
                   </a>
                 </>
               )}
+              {/* Show delete option for Gatherly-scheduled events */}
+              {selectedEvent.isGatherlyScheduled && selectedEvent.calendarId && (
+                <button 
+                  className="btn-delete-gcal"
+                  onClick={async () => {
+                    if (!confirm(`Delete "${selectedEvent.title}" from Google Calendar?`)) return;
+                    try {
+                      const token = getGoogleToken();
+                      if (!token) {
+                        alert('Google Calendar not connected');
+                        return;
+                      }
+                      const calId = selectedEvent.calendarId || 'primary';
+                      const response = await fetch(
+                        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${selectedEvent.id}?sendUpdates=all`,
+                        {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` }
+                        }
+                      );
+                      if (response.ok || response.status === 204) {
+                        setSelectedEvent(null);
+                        loadEvents(); // Refresh the list
+                      } else {
+                        alert('Failed to delete event');
+                      }
+                    } catch (err) {
+                      console.error('Delete error:', err);
+                      alert('Failed to delete event');
+                    }
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                  Delete from Calendar
+                </button>
+              )}
               <button className="btn-close-modal" onClick={() => setSelectedEvent(null)}>
                 Close
               </button>
