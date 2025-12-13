@@ -100,6 +100,24 @@ Gatherly integrates with the Google Places API for location autocomplete. Start 
 
 This matters because location is often the forgotten detail. How many times have you shown up to a meeting only to realize you don't know which conference room, which coffee shop, or which building entrance? Gatherly makes location a first-class citizen in the scheduling flow.
 
+### Timezone Detection
+
+Gatherly automatically detects your local timezone using the browser's Intl API. All times display in your local timezone without any configuration. When you schedule with someone in a different timezone, Gatherly handles the conversion automatically. The invitee sees the event in their local time. No more "Is that 3pm your time or mine?" confusion.
+
+This is especially important for distributed teams and remote friendships. A meeting at 2pm Pacific shows as 5pm Eastern for participants on the East Coast. Everyone sees the time that matters to them.
+
+### Local Weather
+
+The dashboard displays your local weather conditions based on your detected location. See the current temperature and conditions at a glance. This context helps with scheduling decisions. Planning an outdoor lunch? Check if rain is expected. Scheduling a morning walk? See if it will be too cold.
+
+Weather data pulls from a weather API using your approximate location from IP geolocation. This is intentional. We never request browser location permissions or precise GPS coordinates. You never see the annoying "Allow location access?" popup. The feature just works, respecting your privacy while still providing relevant local context. This friction-free approach improves user retention because people dont abandon the app at a permissions prompt.
+
+### Smart Location Suggestions
+
+When you start typing a location for your event, Gatherly prioritizes results near you. The Google Places API receives your approximate location from IP geolocation, so suggestions surface local coffee shops, restaurants, and venues first. Type "Blue Bottle" and the one down the street appears before locations in other cities.
+
+Again, no location permissions required. Gatherly feels like its in your backyard without ever asking to track you. This creates a seamless experience where relevant results appear instantly without privacy trade-offs.
+
 ### The Invite System
 
 Once you finalize your event details, Gatherly sends email invitations through Resend. Each invitee receives a beautifully formatted email with the event details, proposed time options, and a unique response link.
@@ -108,11 +126,21 @@ The response page shows each time option as a card. Invitees select which times 
 
 When all invitees have responded, the organizer sees a summary of availability and can confirm the final time with one click. The confirmed event automatically syncs to Google Calendar for everyone involved.
 
-### Reminders
+### Reminders for Pending Events
 
-Life gets busy and people forget to respond to invites. Gatherly lets organizers send reminder nudges to participants who have not yet submitted their availability. One click sends a friendly reminder email with the original invite link. The reminder system is smart enough to skip participants who already responded.
+Life gets busy and people forget to respond to invites. Gatherly lets organizers send reminder nudges to participants who have not yet submitted their availability. One click sends a friendly reminder email with the original invite link. The reminder system is smart enough to skip participants who already responded, so you never accidentally spam someone who already filled out their availability.
+
+The reminder email includes the organizers name, the event title, the proposed time options, and a direct link to respond. Its formatted to feel personal, not automated. The goal is to gently nudge without being annoying.
 
 You can send reminders from the event detail page or directly from the calendar view. The button appears on pending Gatherly events alongside options to view details or cancel.
+
+### Notifications for Scheduled Events
+
+When an event is confirmed, all participants receive notifications. The organizer gets an in-app notification confirming the event is scheduled. Each participant receives both an in-app notification and an email with the final details: date, time, location, and a Google Meet link if applicable.
+
+The email notification ensures participants who dont check Gatherly regularly still know about their upcoming commitment. The event also syncs to Google Calendar, so it appears in their native calendar app with all the details.
+
+If an event is cancelled, everyone gets notified immediately. The cancellation email explains that the organizer cancelled and includes contact information if participants have questions. No one shows up to a meeting that no longer exists.
 
 ### Google Meet Integration
 
@@ -130,9 +158,15 @@ You can dismiss individual notifications or clear all of them at once. The notif
 
 Every Gatherly event has a dedicated page where organizers can edit details, remind participants who havent responded, or cancel the event entirely. Cancellation sends a notification email to all invitees and removes the event from Google Calendar.
 
-Organizers can edit participant lists after creation. Add someone you forgot. Remove someone whose schedule changed. The system handles the invite logistics automatically. Removed participants receive a cancellation notice. Added participants receive a fresh invite.
+### Live Event Editing
 
-You can also edit the proposed time options. Change a date that no longer works. Adjust the duration. Add a third option if the first two arent getting responses. All changes propagate to invitees.
+Gatherly supports full event editing with live propagation to all participants. Change the event title, description, location, or proposed times, and updates sync immediately. Invitees see the new details the next time they open their response link. The organizer sees changes reflected instantly in the dashboard.
+
+Edit the participant list after creation. Add someone you forgot and they receive a fresh invite with the current event details. Remove someone whose schedule changed and they receive a cancellation notice for just their participation while the event continues for others. The response count updates automatically. If you had 2/3 responses and remove one participant, it becomes 2/2.
+
+Edit the proposed time options even after invitees have started responding. Change a date that no longer works. Adjust the duration. Add a third option if the first two arent getting traction. Existing responses remain valid for unchanged options. New options appear for invitees who havent responded yet.
+
+This flexibility matters because plans change. Someone realizes they have a conflict. A new stakeholder needs to join. The venue falls through. Rather than cancelling and starting over, edit the existing event and keep the momentum going.
 
 ---
 
@@ -236,6 +270,26 @@ gatherly/
 
 ---
 
+## Authentication
+
+Gatherly supports two authentication methods: Google SSO and email/password.
+
+### Google Single Sign-On
+
+Most users sign in with Google. One click, no password to remember. When you authenticate with Google, we request Calendar API scopes so Gatherly can read your events and create new ones on your behalf. The OAuth flow is handled by Supabase Auth, which stores tokens securely and refreshes them automatically.
+
+### Email and Password
+
+For users who prefer not to use Google SSO, Gatherly supports traditional email/password authentication. Create an account with any email address and set a password.
+
+### Forgot Password
+
+If you forget your password, Gatherly sends a reset link to your email. Click the link, set a new password, and youre back in. The reset tokens are time-limited and single-use for security.
+
+Heres where it gets interesting: if you originally signed up with Google SSO but later want to set a password, the forgot password flow handles this gracefully. Request a password reset for your Google account email, and Gatherly lets you set a password. Now you can sign in either way. This flexibility means youre never locked into a single authentication method.
+
+---
+
 ## Security Model
 
 Security was a design priority from day one.
@@ -279,6 +333,28 @@ These serendipitous suggestions transform scheduling from a chore into a discove
 Beyond scheduling, Gatherly could become your calendar copilot. Flag meetings that could be emails. Suggest which recurring meetings to cancel based on attendance patterns. Block focus time automatically when your calendar gets too fragmented. Remind you to follow up with people you havent seen in a while.
 
 The calendar contains rich signal about how you spend your time. Today that signal is mostly ignored. We want to surface insights that help you be more intentional.
+
+### Learning Your Preferences
+
+The next evolution of Gatherly learns from your behavior to make smarter suggestions. The AI observes patterns: you never take meetings before 10am, you protect Friday afternoons for deep work, you prefer coffee meetings over lunch meetings, you like walking meetings when the weather is nice.
+
+Over time, Gatherly stops suggesting times that violate your preferences. When someone asks to schedule with you, the AI automatically filters out slots you would reject. No more manually declining 8am meeting requests. The system knows.
+
+This extends to event types too. Gatherly learns that you prefer video calls for quick syncs but in-person meetings for brainstorms. It suggests Google Meet for a 15-minute check-in but proposes a coffee shop for a strategy session.
+
+The preferences are inferred, not configured. You dont fill out a form listing your meeting preferences. Gatherly watches what you accept, what you decline, what you reschedule, and builds a model. The more you use it, the smarter it gets.
+
+### Accountability Buddy
+
+Our ultimate vision is for Gatherly to be a proactive agent that keeps you accountable to your commitments and relationships.
+
+For group projects, the agent tracks deadlines and nudges the team when milestones approach. It notices when someone hasnt contributed in a while and suggests a check-in. It schedules standups automatically based on everyones availability rather than waiting for someone to take initiative. It knows the project timeline and proactively blocks time for deliverables before crunch time hits.
+
+For social life, the agent remembers that you wanted to have dinner with your college roommate "sometime soon" and actually makes it happen. It notices youve been heads-down on work for three weeks and suggests scheduling something fun. It reminds you about a friends birthday next week and proposes a celebration. It tracks how long since youve seen certain people and gently nudges you to reconnect.
+
+The agent becomes the friend who always remembers, always follows up, and never lets important relationships fall through the cracks. Humans are bad at maintaining relationships at scale. We forget. We procrastinate. We let months slip by. An AI agent can handle the logistics so you can focus on being present when you actually meet.
+
+This is not about replacing human connection. Its about enabling more of it by removing the friction that prevents it from happening.
 
 ---
 
@@ -359,7 +435,7 @@ Built at Harvard by students who were tired of scheduling group project meetings
 </p>
 
 <p align="center">
-  <strong>Milan Naropanth</strong> · <strong>Ikenna Nwobodo</strong> · <strong>Talha Bakht</strong>
+  <strong>Milan Naropanth</strong> · <strong>Ikenna Ogbogu</strong> · <strong>Talha Minhas</strong>
 </p>
 
 ---
