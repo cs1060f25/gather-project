@@ -103,11 +103,11 @@ const VideoIcon = () => (
 );
 
 const PLACEHOLDER_SUGGESTIONS = [
-  "Lunch with team Thursday...",
-  "Coffee tomorrow at 2pm...",
+  "Lunch with team Tue...",
+  "Coffee tmr at 2pm...",
   "Standup Monday 9am...",
   "Dinner Saturday 7pm...",
-  "Sync with @John Friday...",
+  "Sync with @John Fri...",
   "Meeting at Dunster 3pm..."
 ];
 

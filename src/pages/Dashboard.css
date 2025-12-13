@@ -124,7 +124,7 @@
 .notification-overlay {
   position: fixed;
   inset: 0;
-  z-index: 199;
+  z-index: 9998;
 }
 
 .notification-dropdown {
@@ -135,12 +135,13 @@
   background: #fff;
   border: 3px solid #1A1A1A;
   box-shadow: 6px 6px 0 #1A1A1A;
-  z-index: 200;
-  max-height: 400px;
+  z-index: 9999;
+  max-height: 70vh;
   display: flex;
   flex-direction: column;
   animation: dropdownSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: top right;
+  overflow: hidden;
 }
 
 .notification-header {
@@ -1337,59 +1338,75 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
 /* Event detail actions */
 .event-detail-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px solid #E5E5E5;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid #E5E5E5;
 }
 
 .event-action-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
   border: 2px solid #1A1A1A;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-shadow: 2px 2px 0 #1A1A1A;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.event-action-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #1A1A1A;
+}
+
+.event-action-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #1A1A1A;
 }
 
 .event-action-btn.view {
   background: #22c55e;
   color: #FFF;
-  border-color: #22c55e;
+  border-color: #1A1A1A;
 }
 
-.event-action-btn.view:hover {
+.event-action-btn.view:hover:not(:disabled) {
   background: #16a34a;
-  border-color: #16a34a;
 }
 
 .event-action-btn.remind {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #FFF;
+  background: #fbbf24;
   color: #1A1A1A;
   border-color: #1A1A1A;
 }
 
-.event-action-btn.remind:hover {
-  background: #F5F5F5;
+.event-action-btn.remind:hover:not(:disabled) {
+  background: #f59e0b;
 }
 
 .event-action-btn.cancel {
   background: #FFF;
   color: #dc2626;
   border-color: #dc2626;
+  box-shadow: 2px 2px 0 #dc2626;
 }
 
-.event-action-btn.cancel:hover {
+.event-action-btn.cancel:hover:not(:disabled) {
   background: #fef2f2;
+  box-shadow: 3px 3px 0 #dc2626;
 }
 
 .event-action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 2px 2px 0 #888 !important;
 }
 
 .event-action-btn .btn-spinner {
@@ -1486,6 +1503,40 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   .event-detail-modal {
     max-width: none;
     margin: 0 1rem;
+  }
+  
+  /* Mobile notification dropdown */
+  .notification-dropdown {
+    position: fixed;
+    top: 60px;
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+    max-height: 60vh;
+  }
+  
+  .daily-summary-section {
+    padding: 0.75rem;
+  }
+  
+  .summary-greeting {
+    font-size: 0.85rem;
+  }
+  
+  .summary-focus {
+    font-size: 0.75rem;
+  }
+  
+  .notification-item {
+    padding: 0.75rem;
+  }
+  
+  .notification-title {
+    font-size: 0.8rem;
+  }
+  
+  .notification-message {
+    font-size: 0.75rem;
   }
 }
 

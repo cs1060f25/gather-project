@@ -147,7 +147,7 @@ export const Dashboard: React.FC = () => {
   // Editing state
   const [editingMode, setEditingMode] = useState(false);
   const [selectedTimeOptions, setSelectedTimeOptions] = useState<TimeOption[]>([]);
-  const [suggestedEventData] = useState<Partial<CreateEventData> | undefined>();
+  const [suggestedEventData, setSuggestedEventData] = useState<Partial<CreateEventData> | undefined>();
   const [isCreating, setIsCreating] = useState(false);
 
   // Event detail modal state
@@ -905,45 +905,25 @@ export const Dashboard: React.FC = () => {
     try {
       const eventId = extractEventId(selectedEvent.id);
       
-      // Get event details from database
-      const { data: eventData } = await supabase
-        .from('gatherly_events')
-        .select('*')
-        .eq('id', eventId)
-        .single();
-      
-      if (!eventData) throw new Error('Event not found');
-      
-      const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
-      const hostEmail = user?.email || '';
-      const participants = Array.isArray(eventData.participants) ? eventData.participants : [];
-      
-      // Send reminder to each participant
-      await Promise.all(participants.map(async (email: string) => {
-        try {
-          await fetch('/api/send-reminder', {
+      // Use bulk reminder endpoint with eventId - it looks up invites and sends reminders with proper tokens
+      const response = await fetch('/api/send-reminder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: email,
-              eventTitle: selectedEvent.title,
-              hostName,
-              hostEmail,
-              reminderType: eventData.status === 'confirmed' ? 'confirmed' : 'pending',
-              scheduledDate: eventData.confirmed_option?.day,
-              scheduledTime: eventData.confirmed_option?.time,
-              location: eventData.location
-            }),
+        body: JSON.stringify({ eventId })
       });
-        } catch (err) {
-          console.error(`Error sending reminder to ${email}:`, err);
-        }
-      }));
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send reminders');
+      }
       
       setAlertModal({
         show: true,
         title: 'Reminder Sent',
-        message: 'All invitees have been reminded.',
+        message: result.sent > 0 
+          ? `Sent ${result.sent} reminder${result.sent > 1 ? 's' : ''} to pending invitees.`
+          : 'No pending invitees to remind.',
         type: 'success'
       });
     } catch (error) {
@@ -1003,6 +983,24 @@ export const Dashboard: React.FC = () => {
                 console.error(`Error sending cancellation to ${email}:`, err);
               }
             }));
+          }
+          
+          // If event was confirmed, delete from Google Calendar first
+          if (eventData?.status === 'confirmed' && eventData?.google_event_id) {
+            const providerToken = getGoogleToken();
+            if (providerToken) {
+              try {
+                await fetch(
+                  `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventData.google_event_id}?sendUpdates=all`,
+                  {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${providerToken}` }
+                  }
+                );
+              } catch (gcalErr) {
+                console.error('Error deleting from Google Calendar:', gcalErr);
+              }
+            }
           }
           
           // Update event status in database
@@ -1298,12 +1296,13 @@ export const Dashboard: React.FC = () => {
                               key={i}
                               className="suggested-event-btn"
                               onClick={() => {
-                                // Pre-fill the chat with this event
-                                const chatInput = document.querySelector('.chat-input') as HTMLInputElement;
-                                if (chatInput) {
-                                  chatInput.value = `Schedule "${event.title}" for ${event.suggestedDate} at ${event.suggestedTime}`;
-                                  chatInput.focus();
-                                }
+                                // Populate the create event form with suggested data
+                                setSuggestedEventData({
+                                  title: event.title,
+                                  date: event.suggestedDate,
+                                  time: event.suggestedTime,
+                                  duration: event.duration || 60
+                                });
                                 setShowNotifications(false);
                               }}
                             >

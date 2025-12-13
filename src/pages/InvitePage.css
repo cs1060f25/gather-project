@@ -80,7 +80,9 @@
   position: relative;
   z-index: 1;
   align-self: flex-start;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  margin-right: auto;
 }
 
 .event-title {
@@ -1033,6 +1035,40 @@
   
   .step-nav {
     flex-wrap: wrap;
+  }
+  
+  /* Fix left/right buttons getting cut off on mobile */
+  .step-back-btn-inline {
+    left: -36px;
+    width: 30px;
+    height: 30px;
+  }
+  
+  .step-forward-btn-inline {
+    right: -36px;
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Even smaller screens */
+@media (max-width: 400px) {
+  .step-back-btn-inline {
+    left: -28px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .step-forward-btn-inline {
+    right: -28px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .step-back-btn-inline svg,
+  .step-forward-btn-inline svg {
+    width: 14px;
+    height: 14px;
   }
 }
 
