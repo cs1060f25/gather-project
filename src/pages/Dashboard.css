@@ -926,17 +926,16 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     border-radius: 0;
     box-shadow: none;
     z-index: 999999 !important;
-    animation: slideUp 0.2s ease-out;
+    animation: mobileSlideUp 0.25s ease-out forwards;
+    transform-origin: bottom center;
   }
   
-  @keyframes slideUp {
-    from {
+  @keyframes mobileSlideUp {
+    0% {
       transform: translateY(100%);
-      opacity: 0;
     }
-    to {
+    100% {
       transform: translateY(0);
-      opacity: 1;
     }
   }
   
@@ -1662,6 +1661,8 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     border-radius: 0;
     box-shadow: none;
     z-index: 999999 !important;
+    animation: mobileSlideUp 0.25s ease-out forwards;
+    transform-origin: bottom center;
   }
   
   .notification-overlay {

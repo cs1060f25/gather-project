@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { supabase, getGoogleTokenSync as getGoogleToken, GOOGLE_OAUTH_SCOPES } from '../lib/supabase';
-import { createInvites, sendInviteEmails } from '../lib/invites';
+import { createInvites, sendInviteEmails, deleteNotification as deleteNotificationFromDB, deleteAllNotifications as deleteAllNotificationsFromDB } from '../lib/invites';
 import { WeeklyCalendar, type CalendarEvent, type GoogleCalendar, type TimeOption } from '../components/WeeklyCalendar';
 import { CreateEventPanel, type CreateEventData, type AvailabilityOption } from '../components/CreateEventPanel';
 import { ProfileSidebar } from '../components/ProfileSidebar';
@@ -616,23 +616,11 @@ export const Dashboard: React.FC = () => {
     setNotifications([]);
     setUnreadCount(0);
     
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .match({ user_id: authUser.id });
-      
-      if (error) {
-        console.error('Error clearing notifications:', error);
-        // Revert on error
-        setNotifications(previousNotifications);
-        setUnreadCount(previousUnreadCount);
-      } else {
-        console.log('All notifications cleared successfully');
-      }
-    } catch (err) {
-      console.error('Error clearing notifications:', err);
-      // Revert on error
+    // Use the dedicated function from invites.ts
+    const success = await deleteAllNotificationsFromDB(authUser.id);
+    
+    if (!success) {
+      console.error('Failed to clear notifications, reverting UI');
       setNotifications(previousNotifications);
       setUnreadCount(previousUnreadCount);
     }
@@ -642,12 +630,7 @@ export const Dashboard: React.FC = () => {
   const dismissNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the notification click
     
-    if (!authUser?.id) {
-      console.log('No auth user, cannot dismiss notification');
-      return;
-    }
-    
-    console.log('Dismissing notification:', id, 'for user:', authUser.id);
+    console.log('Dismissing notification:', id);
     
     // Optimistically update UI first
     const notification = notifications.find(n => n.id === id);
@@ -656,27 +639,15 @@ export const Dashboard: React.FC = () => {
       setUnreadCount(prev => Math.max(0, prev - 1));
     }
     
-    try {
-      // Delete from database
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .match({ id: id, user_id: authUser.id });
+    // Use the dedicated function from invites.ts
+    const success = await deleteNotificationFromDB(id);
 
-      if (error) {
-        console.error('Error dismissing notification:', error);
-        // Revert optimistic update on error
-        if (notification) {
-          setNotifications(prev => [...prev, notification]);
-          if (!notification.read) {
-            setUnreadCount(prev => prev + 1);
-          }
-        }
-      } else {
-        console.log('Notification deleted successfully');
+    if (!success && notification) {
+      console.error('Failed to dismiss notification, reverting UI');
+      setNotifications(prev => [...prev, notification]);
+      if (!notification.read) {
+        setUnreadCount(prev => prev + 1);
       }
-    } catch (err) {
-      console.error('Error dismissing notification:', err);
     }
   };
 

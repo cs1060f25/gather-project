@@ -837,10 +837,11 @@
 /* Voice dictation button */
 .cep-voice-btn {
   width: 36px;
-  height: 48px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
   background: transparent;
   color: #666;
   border: none;

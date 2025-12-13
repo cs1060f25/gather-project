@@ -139,6 +139,46 @@ export async function createNotification(
   }
 }
 
+// Delete a single notification
+export async function deleteNotification(notificationId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notificationId);
+    
+    if (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+    console.log('Notification deleted successfully:', notificationId);
+    return true;
+  } catch (err) {
+    console.error('Error deleting notification:', err);
+    return false;
+  }
+}
+
+// Delete all notifications for a user
+export async function deleteAllNotifications(userId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Error deleting all notifications:', error);
+      return false;
+    }
+    console.log('All notifications deleted for user:', userId);
+    return true;
+  } catch (err) {
+    console.error('Error deleting all notifications:', err);
+    return false;
+  }
+}
+
 // Respond to an invite
 export async function respondToInvite(
   token: string,
