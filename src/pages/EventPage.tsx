@@ -90,6 +90,7 @@ export const EventPage: React.FC = () => {
   const [editParticipants, setEditParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [editAddGoogleMeet, setEditAddGoogleMeet] = useState(false);
   
   // Location autocomplete state (same as CreateEventPanel)
   const [locationSuggestions, setLocationSuggestions] = useState<{mainText: string; secondaryText?: string; fullAddress: string}[]>([]);
@@ -334,6 +335,7 @@ export const EventPage: React.FC = () => {
     setEditTitle(event.title);
     setEditLocation(event.location || '');
     setEditDescription(event.description || '');
+    setEditAddGoogleMeet(event.addGoogleMeet || false);
     // Always ensure exactly 3 time options with id and color (like CreateEventPanel - all black)
     const OPTION_COLORS = ['#1A1A1A', '#1A1A1A', '#1A1A1A'];
     const existingOptions: AvailabilityOption[] = event.options.slice(0, 3).map((o, idx) => ({ 
@@ -425,6 +427,7 @@ export const EventPage: React.FC = () => {
           description: editDescription.trim() || null,
           options: updatedOptions,
           participants: editParticipants,
+          add_google_meet: editAddGoogleMeet,
         })
         .eq('id', event.id);
       
@@ -470,6 +473,7 @@ export const EventPage: React.FC = () => {
         description: editDescription.trim() || undefined,
         options: updatedOptions,
         participants: editParticipants,
+        addGoogleMeet: editAddGoogleMeet,
       });
       
       // Update invites list if new invites were created
@@ -1417,26 +1421,64 @@ export const EventPage: React.FC = () => {
                     onChange={e => handleLocationChange(e.target.value)}
                     onFocus={() => editLocation.length >= 2 && setShowLocationSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
-                    placeholder="Enter location or virtual meeting"
+                    placeholder="Office, Zoom, Coffee shop..."
                     disabled={isSaving}
                     autoComplete="off"
                   />
                   {showLocationSuggestions && locationSuggestions.length > 0 && (
                     <div className="location-suggestions">
-                      {locationSuggestions.map((loc, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          className="location-suggestion"
-                          onMouseDown={() => selectLocation(loc)}
-                        >
-                          <span className="location-main">{loc.mainText}</span>
-                          {loc.secondaryText && <span className="location-secondary">{loc.secondaryText}</span>}
-                        </button>
-                      ))}
+                      {locationSuggestions.map((loc, idx) => {
+                        const isVirtual = loc.mainText.includes('Meet') || loc.mainText.includes('Zoom') || 
+                                          loc.mainText.includes('Teams') || loc.mainText.includes('Discord') || 
+                                          loc.mainText.includes('Slack');
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="location-suggestion"
+                            onMouseDown={() => selectLocation(loc)}
+                          >
+                            <span className="location-icon">
+                              {isVirtual ? (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="2" y="6" width="14" height="12" rx="2"/>
+                                  <path d="M16 10l6-4v12l-6-4"/>
+                                </svg>
+                              ) : (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                  <circle cx="12" cy="10" r="3"/>
+                                </svg>
+                              )}
+                            </span>
+                            <span className="location-text">
+                              <span className="location-main">{loc.mainText}</span>
+                              {loc.secondaryText && <span className="location-secondary">{loc.secondaryText}</span>}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
+                
+                {/* Google Meet Toggle - same as CreateEventPanel */}
+                <label className="edit-meet-toggle">
+                  <input
+                    type="checkbox"
+                    checked={editAddGoogleMeet}
+                    onChange={(e) => setEditAddGoogleMeet(e.target.checked)}
+                    disabled={isSaving}
+                  />
+                  <span className="edit-meet-toggle-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M15 10l5-5m0 0v4m0-4h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <rect x="3" y="7" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M15 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                  <span className="edit-meet-toggle-text">Add Google Meet</span>
+                </label>
               </div>
               
               <div className="form-group">
@@ -1464,40 +1506,21 @@ export const EventPage: React.FC = () => {
                 </div>
               )}
               
-              {/* Participants */}
+              {/* Participants - styled exactly like CreateEventPanel */}
               {event.status === 'pending' && (
-                <div className="form-group">
-                  <label>Participants</label>
-                  <div className="edit-participants">
-                    {editParticipants.map((email, idx) => {
-                      const contact = contacts.find(c => c.email.toLowerCase() === email.toLowerCase());
-                      return (
-                        <div key={idx} className="participant-chip">
-                          <span>{contact?.name || email}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveParticipant(email)}
-                            disabled={isSaving}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="add-participant-container">
-                    <div className="add-participant">
-                      <input
-                        type="text"
-                        value={newParticipant}
-                        onChange={e => setNewParticipant(e.target.value)}
-                        placeholder="Search contacts or enter email..."
-                        disabled={isSaving}
+                <div className="form-group edit-people-field">
+                  <label>Who Do You Want to Invite?</label>
+                  <div className="edit-people-input-row">
+                    <input
+                      type="text"
+                      value={newParticipant}
+                      onChange={e => setNewParticipant(e.target.value)}
+                      placeholder="Name or email..."
+                      disabled={isSaving}
                       onKeyDown={e => {
                         if (e.key === 'Enter' && newParticipant.trim()) {
                           e.preventDefault();
                           const email = newParticipant.trim().toLowerCase();
-                          // Check if it matches a contact
                           const matchingContact = contacts.find(c => 
                             c.name.toLowerCase() === email || c.email.toLowerCase() === email
                           );
@@ -1511,6 +1534,7 @@ export const EventPage: React.FC = () => {
                     />
                     <button
                       type="button"
+                      className="edit-add-btn"
                       onClick={() => {
                         if (newParticipant.trim()) {
                           const email = newParticipant.trim().toLowerCase();
@@ -1528,38 +1552,72 @@ export const EventPage: React.FC = () => {
                     >
                       Add
                     </button>
-                    </div>
-                    {/* Contact suggestions dropdown */}
-                    {newParticipant.length >= 1 && (
-                      <div className="contact-suggestions">
-                        {contacts
-                          .filter(c => 
-                            (c.name.toLowerCase().includes(newParticipant.toLowerCase()) ||
-                             c.email.toLowerCase().includes(newParticipant.toLowerCase())) &&
-                            !editParticipants.includes(c.email.toLowerCase()) &&
-                            c.email.toLowerCase() !== user?.email?.toLowerCase()
-                          )
-                          .slice(0, 5)
-                          .map(c => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              className="contact-suggestion"
-                              onClick={() => {
-                                if (!editParticipants.includes(c.email.toLowerCase())) {
-                                  setEditParticipants([...editParticipants, c.email.toLowerCase()]);
-                                }
-                                setNewParticipant('');
-                              }}
-                            >
-                              <span className="contact-name">{c.name}</span>
-                              <span className="contact-email">{c.email}</span>
-                            </button>
-                          ))
-                        }
-                      </div>
-                    )}
                   </div>
+                  
+                  {/* Selected participants - chips like CreateEventPanel */}
+                  {editParticipants.length > 0 && (
+                    <div className="edit-participants-list">
+                      {editParticipants.map((email, idx) => {
+                        const contact = contacts.find(c => c.email.toLowerCase() === email.toLowerCase());
+                        const displayName = contact?.name || email;
+                        return (
+                          <div key={idx} className="edit-participant-chip">
+                            <span>{displayName}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveParticipant(email)}
+                              disabled={isSaving}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Contact suggestions dropdown - styled like CreateEventPanel */}
+                  {newParticipant.length >= 1 && (
+                    <div className="edit-suggestions">
+                      {contacts
+                        .filter(c => 
+                          (c.name.toLowerCase().includes(newParticipant.toLowerCase()) ||
+                           c.email.toLowerCase().includes(newParticipant.toLowerCase())) &&
+                          !editParticipants.includes(c.email.toLowerCase()) &&
+                          c.email.toLowerCase() !== user?.email?.toLowerCase()
+                        )
+                        .slice(0, 5)
+                        .map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="edit-suggestion"
+                            onClick={() => {
+                              if (!editParticipants.includes(c.email.toLowerCase())) {
+                                setEditParticipants([...editParticipants, c.email.toLowerCase()]);
+                              }
+                              setNewParticipant('');
+                            }}
+                          >
+                            <div className="edit-suggestion-avatar">
+                              {c.name[0].toUpperCase()}
+                            </div>
+                            <div className="edit-suggestion-info">
+                              <span className="edit-suggestion-name">{c.name}</span>
+                              <span className="edit-suggestion-email">{c.email}</span>
+                            </div>
+                            {c.isGatherly && (
+                              <span className="edit-gatherly-badge">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                              </span>
+                            )}
+                          </button>
+                        ))
+                      }
+                    </div>
+                  )}
                 </div>
               )}
             </div>
