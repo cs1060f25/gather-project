@@ -324,15 +324,56 @@ Heres where it gets interesting: if you originally signed up with Google SSO but
 
 Security was a design priority from day one.
 
-OAuth tokens from Google are stored in Supabase and never exposed to client-side JavaScript. When the frontend needs calendar data, it uses the token stored in the session, which Supabase manages securely.
+### Google Cloud Security Integrations
 
-API keys for OpenAI and Resend exist only in server-side environment variables. The Vercel Serverless Functions access them, but the browser cannot.
+Gatherly is registered as a Google Cloud application (verification in progress) with several security features enabled:
 
-Invite tokens are cryptographically random UUIDs. Knowing an invite token lets you respond to that specific invitation but grants no other access. Tokens cannot be guessed or enumerated.
+**OAuth 2.0 with PKCE.** We use Proof Key for Code Exchange for the OAuth flow, preventing authorization code interception attacks. The code verifier is generated client-side and never transmitted, ensuring that stolen authorization codes are useless without the original verifier.
 
-Row Level Security policies in Supabase ensure that database queries return only rows the authenticated user owns. Even if someone crafted a malicious query, the database would refuse to return other users data.
+**Restricted Scopes.** We request only the minimum scopes needed:
+- `calendar.readonly` - Read calendar events
+- `calendar.events` - Create/modify events
+- `contacts.readonly` - Access contacts for suggestions
+- `userinfo.email` and `userinfo.profile` - Basic profile info
 
-All traffic uses HTTPS. Cookies are HttpOnly and Secure. CORS headers restrict which domains can call our API endpoints.
+We explicitly do not request sensitive scopes like `gmail.readonly` or `drive` access.
+
+**RISC (Cross-Account Protection).** Gatherly is enrolled in Googles Risky Account Protection program. When Google detects suspicious activity on a users account (password change, account hijack attempt, sessions revoked), Google sends us a security event via webhook. We respond by:
+- Invalidating the users Gatherly session
+- Requiring re-authentication on next visit
+- Logging the security event for audit
+
+This protects users even if their Google account is compromised outside of Gatherly.
+
+**Token Binding.** Access tokens are bound to the client application. A token issued to Gatherly cannot be used by other applications, even if intercepted.
+
+**Consent Screen Verification.** Our OAuth consent screen is currently in the verification process with Google. Once approved, users will see our verified publisher name and approved scope descriptions, building trust during the authorization flow. During development, the app operates in testing mode with a limited user pool.
+
+**API Quotas and Monitoring.** We monitor API usage in Google Cloud Console. Unusual spikes in API calls trigger alerts, helping us detect potential abuse or compromised credentials.
+
+### Token Management
+
+OAuth tokens from Google are stored in Supabase and never exposed to client-side JavaScript. The token lifecycle:
+
+1. **Acquisition.** User completes OAuth flow. Supabase receives tokens via secure server-side callback.
+2. **Storage.** Tokens are encrypted at rest in Supabase. The anon key cannot decrypt them.
+3. **Usage.** When the frontend needs calendar data, it calls Supabase Auth to get a fresh access token. The token is used for immediate API calls, never stored in localStorage or cookies.
+4. **Refresh.** Access tokens expire after 1 hour. Supabase automatically exchanges refresh tokens with Google. Users never see re-auth prompts unless they revoke access.
+5. **Revocation.** When a user disconnects their Google account or deletes their Gatherly account, we revoke tokens with Google and delete all stored credentials.
+
+### Application Security
+
+**API Keys.** OpenAI and Resend keys exist only in server-side environment variables. The Vercel Serverless Functions access them, but the browser cannot. VITE_ prefixed variables are the only ones bundled into the client.
+
+**Invite Tokens.** Cryptographically random UUIDs (128 bits of entropy). Knowing an invite token lets you respond to that specific invitation but grants no other access. Tokens cannot be guessed or enumerated. Each token is single-use for the response action.
+
+**Row Level Security.** Supabase RLS policies ensure that database queries return only rows the authenticated user owns. Even if someone crafted a malicious query, the database would refuse to return other users data. Policies are enforced at the PostgreSQL level, not in application code.
+
+**Transport Security.** All traffic uses HTTPS with TLS 1.3. HSTS headers enforce secure connections. Cookies are HttpOnly (no JavaScript access) and Secure (HTTPS only). SameSite=Lax prevents CSRF attacks.
+
+**CORS.** API endpoints only accept requests from our verified origins. Preflight requests validate the Origin header before processing.
+
+**Content Security Policy.** We set CSP headers to prevent XSS attacks. Only scripts from our domain and trusted CDNs can execute.
 
 ---
 
