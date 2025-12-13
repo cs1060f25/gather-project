@@ -438,19 +438,207 @@ Push to the main branch to trigger automatic deployment on Vercel. Configure the
 
 ---
 
+## Technical Deep Dive
+
+### Google Calendar Integration
+
+Gatherly integrates with Google Calendar through the Calendar API v3. Heres how the data flow works:
+
+**Initial Sync.** When a user authenticates with Google OAuth, we request the following scopes: `calendar.readonly`, `calendar.events`, and `contacts.readonly`. The OAuth flow returns an access token and refresh token. Supabase stores these tokens encrypted in the user session.
+
+**Fetching Events.** On dashboard load, Gatherly fetches events from all calendars the user has access to. We query the Google Calendar API with a time window of 30 days before and 90 days after the current date. This provides enough context for scheduling without overwhelming the API with historical data.
+
+```
+GET https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events
+  ?timeMin={30 days ago}
+  &timeMax={90 days from now}
+  &singleEvents=true
+  &orderBy=startTime
+```
+
+**Refresh Rate.** Calendar data refreshes on three triggers:
+1. Page load or navigation to dashboard
+2. After creating, confirming, or canceling a Gatherly event
+3. Manual refresh via the sync button
+
+We intentionally avoid continuous polling. Google Calendar API has rate limits (typically 10 queries per second per user), and polling would drain that budget quickly. Instead, we trust that users will refresh when needed and that Gatherly events sync bidirectionally.
+
+**Token Refresh.** Google access tokens expire after 1 hour. Supabase Auth handles token refresh automatically. When an API call returns a 401, the client requests a fresh token from Supabase, which exchanges the refresh token with Google behind the scenes. This happens transparently without user intervention.
+
+**Writing Events.** When a Gatherly event is confirmed, we create a Google Calendar event using:
+
+```
+POST https://www.googleapis.com/calendar/v3/calendars/primary/events
+  ?conferenceDataVersion=1 (if Google Meet requested)
+  &sendUpdates=all
+```
+
+The `sendUpdates=all` parameter tells Google to send its own calendar invitations to attendees, providing a native calendar experience alongside Gatherly notifications.
+
+### Persistence Architecture
+
+Gatherly uses a three-tier persistence strategy:
+
+**Tier 1: React State.** Ephemeral UI state lives in React useState and useReducer hooks. Form inputs, modal visibility, loading states, and temporary selections stay in memory. This state is lost on page refresh, which is intentional for security-sensitive data like partial form entries.
+
+**Tier 2: Local Storage.** User preferences persist in browser localStorage:
+- `gatherly_calendar_selections` - Which calendars are toggled on/off
+- `gatherly_recent_people` - Recently scheduled contacts (up to 10)
+- `gatherly_panel_width` - Create event panel resize position
+- `gatherly_dark_mode` - Theme preference
+
+Local storage survives page refreshes and browser restarts but is device-specific. A user on a different device starts fresh.
+
+**Tier 3: Supabase (PostgreSQL).** Durable data lives in the database:
+- User profiles (synced from auth)
+- Gatherly events (all scheduling data)
+- Invites (with response tokens)
+- Notifications (with read status)
+
+Supabase provides Row Level Security (RLS) at the database level. Every query automatically filters by `auth.uid()`, preventing users from accessing each others data even if the frontend code has bugs.
+
+### Real-Time Notifications
+
+Notifications use Supabase Realtime, which is built on PostgreSQL LISTEN/NOTIFY and WebSockets.
+
+**Subscription Setup.** On dashboard mount, we subscribe to the notifications table:
+
+```typescript
+const channel = supabase
+  .channel('notifications-channel')
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'notifications',
+    filter: `user_id=eq.${authUser.id}`
+  }, (payload) => {
+    // Add notification to UI state
+  })
+  .subscribe();
+```
+
+**How It Works.** PostgreSQL triggers fire on INSERT to the notifications table. Supabase Realtime picks up these events and broadcasts them over WebSocket to connected clients. The filter ensures users only receive their own notifications.
+
+**Latency.** Typical notification latency is 50-200ms from database insert to UI update, depending on network conditions.
+
+### State Synchronization
+
+Gatherly maintains consistency between local state and database through optimistic updates:
+
+1. User initiates action (e.g., dismiss notification)
+2. UI updates immediately (optimistic)
+3. Database request fires asynchronously
+4. On success: state remains as-is
+5. On failure: state reverts to previous value
+
+This pattern makes the UI feel instant while ensuring data integrity. Console logs track success/failure for debugging.
+
+### Caching Strategy
+
+We minimize redundant API calls through selective caching:
+
+- **Calendar Events.** Cached in React state for the session. Re-fetched on explicit sync or after mutations.
+- **User Profile.** Fetched once on auth, stored in context, never re-fetched unless user logs out.
+- **Contacts.** Fetched once per session, merged from Google Contacts API and local history.
+- **Daily Summary.** Cached in sessionStorage with date key. Re-fetched only on new day or explicit request.
+
+No client-side cache invalidation timers. Users control when data refreshes.
+
+---
+
 ## Database Schema
 
 The core tables in Supabase are:
 
-**profiles** stores user information synced from authentication, including full name and email.
+### profiles
+```sql
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  email TEXT NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+Synced from Supabase Auth on signup. Trigger updates `updated_at` on changes.
 
-**gatherly_events** stores events created through Gatherly, including title, description, location, proposed time options, participant list, status, and the confirmed time once finalized.
+### gatherly_events
+```sql
+CREATE TABLE gatherly_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  title TEXT NOT NULL,
+  description TEXT,
+  location TEXT,
+  options JSONB NOT NULL,        -- Array of {day, time, duration, color}
+  participants TEXT[] NOT NULL,   -- Array of email addresses
+  status TEXT DEFAULT 'pending',  -- pending | confirmed | cancelled
+  confirmed_option JSONB,         -- The selected time option
+  google_event_id TEXT,           -- ID of synced Google Calendar event
+  add_google_meet BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+The `options` JSONB field stores up to 3 proposed time slots. Each option includes day (YYYY-MM-DD), time (HH:MM), duration (minutes), and color (hex).
 
-**invites** stores individual invitations with the invitee email, event reference, unique response token, and their selected availability.
+### invites
+```sql
+CREATE TABLE invites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL REFERENCES gatherly_events(id),
+  invitee_email TEXT NOT NULL,
+  event_title TEXT NOT NULL,
+  event_location TEXT,
+  event_description TEXT,
+  host_name TEXT NOT NULL,
+  host_email TEXT NOT NULL,
+  token UUID UNIQUE DEFAULT gen_random_uuid(),  -- Response link token
+  status TEXT DEFAULT 'pending',  -- pending | accepted | declined
+  selected_options INTEGER[],     -- Indices of accepted time options
+  responded_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+Each invite has a unique token for the response URL. No authentication required to respond, just the token.
 
-**notifications** stores the notification queue for real-time updates, including notification type, message, read status, and associated event reference.
+### notifications
+```sql
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  type TEXT NOT NULL,            -- invite_received | invitee_response | event_scheduled | event_cancelled
+  title TEXT NOT NULL,
+  message TEXT,
+  event_id UUID,                 -- Optional reference for navigation
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+Realtime-enabled table. INSERT triggers push notifications to connected clients.
 
-All tables have Row Level Security policies. Users can only read and write their own data.
+### Row Level Security
+
+All tables have RLS enabled with policies like:
+
+```sql
+-- Users can only view their own data
+CREATE POLICY "Users can view own data"
+  ON table_name FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can only modify their own data
+CREATE POLICY "Users can modify own data"
+  ON table_name FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Users can delete their own data
+CREATE POLICY "Users can delete own data"
+  ON table_name FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+The `invites` table has a special policy allowing unauthenticated access via token for the response page.
 
 ---
 

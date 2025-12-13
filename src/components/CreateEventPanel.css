@@ -10,7 +10,7 @@
   font-family: 'Space Grotesk', sans-serif;
   overflow: hidden;
   position: relative;
-  min-width: 280px;
+  min-width: 220px;
   max-width: min(600px, 100vw);
   box-sizing: border-box;
 }
@@ -687,16 +687,16 @@
 }
 
 .cep-option-select-wrapper.cep-duration-wrapper {
-  min-width: 75px;
-  max-width: 85px;
+  min-width: 50px;
+  flex: 1;
 }
 
 .cep-option-select-wrapper:nth-child(3) {
-  min-width: 90px;
+  min-width: 50px;
 }
 
 .cep-option-select-wrapper:nth-child(3) select {
-  min-width: 70px;
+  min-width: 40px;
 }
 
 /* Submit Button */
@@ -1371,7 +1371,7 @@
 }
 
 .cep-duration-btn {
-  min-width: 70px;
+  min-width: 50px;
 }
 
 /* Picker Overlay */
