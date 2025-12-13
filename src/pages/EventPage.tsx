@@ -343,6 +343,40 @@ export const EventPage: React.FC = () => {
       // Wait for all emails to be sent
       await Promise.all(emailPromises);
       
+      // If event was confirmed, try to delete from Google Calendar
+      if (event.status === 'confirmed') {
+        const providerToken = await getGoogleToken();
+        if (providerToken) {
+          try {
+            // First get the Google event ID from the database
+            const { data: eventData } = await supabase
+              .from('gatherly_events')
+              .select('google_event_id')
+              .eq('id', event.id)
+              .single();
+            
+            if (eventData?.google_event_id) {
+              // Delete from Google Calendar
+              const deleteResponse = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventData.google_event_id}?sendUpdates=all`,
+                {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${providerToken}` }
+                }
+              );
+              
+              if (deleteResponse.ok || deleteResponse.status === 204) {
+                console.log('Google Calendar event deleted successfully');
+              } else {
+                console.error('Failed to delete from Google Calendar:', deleteResponse.status);
+              }
+            }
+          } catch (gcalErr) {
+            console.error('Error deleting from Google Calendar:', gcalErr);
+          }
+        }
+      }
+      
       // Update status to cancelled in Supabase (instead of deleting)
       const { error } = await supabase
         .from('gatherly_events')
@@ -506,12 +540,13 @@ export const EventPage: React.FC = () => {
               }
             }
             
-            // Update the Gatherly event status to 'confirmed' (keep it for invite link blocking)
+            // Update the Gatherly event status to 'confirmed' and save Google Calendar event ID
             await supabase
               .from('gatherly_events')
               .update({ 
                 status: 'confirmed', 
-                confirmed_option: confirmedOption 
+                confirmed_option: confirmedOption,
+                google_event_id: createdEvent.id
               })
               .eq('id', event.id);
             
