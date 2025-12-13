@@ -65,13 +65,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       <!-- Header -->
       <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1a1a1a; padding-bottom: 20px;">
-        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; margin: 0; color: #1a1a1a;">📅 Gatherly</h1>
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; margin: 0; color: #1a1a1a;">Gatherly</h1>
       </div>
       
       <!-- Cancellation Notice -->
       <div style="text-align: center; margin-bottom: 25px;">
-        <div style="display: inline-block; width: 64px; height: 64px; background: #fee2e2; border-radius: 50%; margin-bottom: 15px; line-height: 64px;">
-          <span style="font-size: 32px;">❌</span>
+        <div style="display: inline-block; width: 64px; height: 64px; background: #fee2e2; border-radius: 50%; margin-bottom: 15px; line-height: 64px; font-size: 24px; color: #dc2626; font-weight: bold;">
+          X
         </div>
         <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; margin: 0 0 10px 0; color: #dc2626;">Event Cancelled</h2>
         <p style="color: #666; margin: 0;">The following event has been cancelled by the organizer.</p>

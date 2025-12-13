@@ -266,14 +266,86 @@ ${locationContext}
 ${busySlotsContext}
 
 ## YOUR TASK
-Parse the user's message and extract/infer ALL of these fields:
+Parse the user's message and extract/infer ALL of these fields intelligently.
 
-### REQUIRED FIELDS (always provide):
-1. **title**: A clean, concise event name (e.g., "Coffee with Sarah", "Team Standup", "Dinner at Shake Shack")
-2. **isSchedulingRequest**: true if this is about scheduling, false otherwise
-3. **suggestedDate/Time 1, 2, 3**: ALWAYS provide 3 different time options spread across different days
+## REASONING FRAMEWORK - Think through each field:
 
-### FIELD EXTRACTION RULES:
+**Before outputting, ask yourself these questions for each field:**
+
+### TITLE - "What is this event actually about?"
+- Look for the ACTIVITY: meeting, coffee, lunch, dinner, study, call, workout, etc.
+- Look for the PURPOSE: "with John", "for project X", "team sync"
+- COMBINE them: "Coffee with John", "Project X Meeting", "Team Sync"
+- EXCLUDE: dates, times, locations (those go in other fields)
+- WHY: The title should be what shows up on a calendar - clear and descriptive
+
+### DATES - "When does the user want this to happen?"
+- Did they say a SPECIFIC day? → "tomorrow", "Friday", "Dec 20" = that exact day
+- Did they say a RANGE? → "next week", "this weekend" = within that range
+- Did they say NOTHING about when? → Pick reasonable upcoming days
+- WHY: We offer 3 options because scheduling is hard - the user's first choice might conflict
+
+### TIMES - "What time of day makes sense for this activity?"
+- Did they specify a time? → Use exactly that
+- Is the ACTIVITY time-sensitive?
+  - "Breakfast" → morning (8-10am) - nobody eats breakfast at 3pm
+  - "Lunch" → midday (11:30am-1:30pm) - lunch is always around noon
+  - "Dinner" → evening (6-9pm) - dinner is an evening meal
+  - "Sunrise" → early morning (6-7:30am) - sunrise is early
+  - "Happy hour" → late afternoon (4-6pm) - that's when happy hour is
+  - "Coffee" → flexible (10am-4pm) - can be morning or afternoon
+- Is it a WORK thing? → Business hours (9am-5pm)
+- WHY: The time should match what the activity naturally implies
+
+### DURATION - "How long does this type of activity usually take?"
+- "Quick sync" → 15-30 min (quick = short)
+- "Coffee chat" → 30-45 min (casual, not a long commitment)
+- "Lunch" → 45-60 min (need time to order, eat, chat)
+- "Dinner" → 90-120 min (dinner is leisurely)
+- "Study session" → 2-3 hours (studying takes time)
+- "Meeting" → 60 min (standard meeting length)
+- WHY: Duration affects whether the time slot works with the user's schedule
+
+### LOCATION - "Where would this activity typically happen?"
+- "Zoom/video/call" → Virtual, use "Google Meet"
+- Specific place mentioned → Use that place, expand if partial name
+- Restaurant/cafe mentioned → Look up or use the name
+- Nothing mentioned → "TBD" (let user fill in)
+- WHY: Location determines if it's virtual (needs Google Meet toggle) or physical
+
+### GOOGLE MEET - "Is this a virtual meeting?"
+- Keywords: zoom, meet, video, call, virtual, online, remote → YES
+- "Call with X" → Probably YES (unless it's a phone call)
+- Physical location mentioned → NO
+- Activity requires being somewhere (dinner, lunch, coffee at a place) → NO
+- WHY: This auto-adds a video link to the calendar invite
+
+### PARTICIPANTS - "Who is the user meeting with?"
+Extract EVERY person mentioned. Look for:
+- "with John" → Add "John"
+- "with John and Sarah" → Add ["John", "Sarah"]
+- "with John, Sarah, and Mike" → Add ["John", "Sarah", "Mike"]
+- "@sarah" → Add "Sarah"
+- "me and John" → Add "John" (don't add the user themselves)
+- "meeting with the team" → No specific participants
+- Direct emails: "with john@gmail.com" → Add "john@gmail.com"
+
+**MATCHING TO CONTACTS:**
+- If "John" is in known contacts → Return "John" (we'll match to email)
+- If "john@gmail.com" is typed → Return "john@gmail.com" directly
+- If name not in contacts → Still return the name (frontend will prompt for email)
+
+**IMPORTANT:** Extract ALL names mentioned, even if not in contacts list.
+The frontend will handle prompting for emails for unknown names.
+
+WHY: These people will receive calendar invites. We need all of them.
+
+## REQUIRED FIELDS (always provide):
+1. **title**: A clean, concise event name
+2. **isSchedulingRequest**: true if this is about scheduling
+3. **suggestedDate/Time 1, 2, 3**: ALWAYS provide 3 options
+
+## FIELD EXTRACTION RULES:
 
 **TITLE:**
 - Extract the core event type + context (e.g., "Lunch meeting" → "Lunch Meeting", "coffee tmr 2pm" → "Coffee")
@@ -282,40 +354,59 @@ Parse the user's message and extract/infer ALL of these fields:
 - Max 50 characters
 
 **PARTICIPANTS:**
-- Match names to known contacts (fuzzy match)
-- "Coffee with John" → look for "John" in contacts
-- "@sarah" → look for "sarah" in contacts
-- Return the contact NAME (we'll match to email later)
+Extract ALL people mentioned in the message:
+- "with John" → ["John"]
+- "with John and Sarah" → ["John", "Sarah"]  
+- "meet Sarah, Mike, and Lisa" → ["Sarah", "Mike", "Lisa"]
+- "@john @sarah" → ["john", "sarah"]
+- "with john@example.com" → ["john@example.com"] (keep emails as-is)
+- "dinner with my friend Alex" → ["Alex"]
 
-**DATES (suggestedDate, suggestedDate2, suggestedDate3):**
-Format: YYYY-MM-DD
+**FUZZY MATCHING:** Try to match names to known contacts list.
+- If known contacts include "John Smith" and user says "John" → return "John Smith"
+- If no match found → still return the name (frontend prompts for email)
 
-- "tomorrow" → ${formatLocalDate(new Date(today.getTime() + 86400000))}
-- "today" → ${formatLocalDate(today)}
-- "this weekend" → upcoming Saturday & Sunday
-- "next week" → Monday of next week
-- "Friday" → the next Friday
-- "in 2 days" → calculate from today
-- DEFAULT: Spread across 3 different days (e.g., tomorrow, day after, 3 days from now)
+**ALWAYS extract names even if not in contacts - the frontend handles unknown names**
 
-**TIMES (suggestedTime, suggestedTime2, suggestedTime3):**
-Format: HH:MM (24-hour)
+**DATES & TIMES - CRITICAL LOGIC:**
 
-INFER FROM EVENT TYPE if not specified:
+**RULE 1: SPECIFIC DAY mentioned → ALL 3 options on THAT day, vary the TIME**
+- "tomorrow" → ALL 3 dates = tomorrow, but different times (e.g., 09:00, 12:00, 15:00)
+- "Friday" → ALL 3 dates = Friday, different times
+- "December 20th" → ALL 3 dates = Dec 20, different times
+- "today" → ALL 3 dates = today, different times
+
+**RULE 2: DATE RANGE mentioned → spread across days in that range**
+- "this weekend" → Sat + Sun options
+- "next week" → Mon, Wed, Fri of next week
+- "sometime next month" → 3 different days next month
+
+**RULE 3: NO DATE mentioned → spread across 3 different upcoming days**
+- Just "meeting" → tomorrow, day after, 3 days from now
+
+**DATE FORMAT:** YYYY-MM-DD
+- Tomorrow = ${formatLocalDate(new Date(today.getTime() + 86400000))}
+- Today = ${formatLocalDate(today)}
+
+**TIME FORMAT:** HH:MM (24-hour)
+
+**TIME INFERENCE from event type (use when no time specified):**
+- Sunrise/Early morning → 06:30, 07:00, 07:30
 - Breakfast → 08:00, 08:30, 09:00
 - Brunch → 10:30, 11:00, 11:30
 - Coffee/Tea → 10:00, 14:00, 15:00
 - Lunch → 12:00, 12:30, 13:00
 - Happy Hour → 17:00, 17:30, 18:00
 - Dinner → 18:30, 19:00, 19:30
-- Study/Work Session → 10:00, 14:00, 16:00
+- Sunset/Evening → 17:30, 18:00, 18:30
+- Study/Work → 10:00, 14:00, 16:00
 - Meeting (generic) → 10:00, 14:00, 16:00
 - Party/Social → 19:00, 20:00, 21:00
-- Call/Sync → 09:00, 11:00, 14:00
 
-Explicit times override inference:
+**EXPLICIT TIME overrides inference:**
 - "2pm" → 14:00
 - "3:30pm" → 15:30
+- "at sunrise" → ~06:30-07:00
 - "morning" → 09:00
 - "afternoon" → 14:00
 - "evening" → 18:00
@@ -424,9 +515,56 @@ Return ONLY valid JSON:
 
 IMPORTANT:
 - ALWAYS provide all 3 date/time suggestions
-- ALWAYS spread them across DIFFERENT DAYS by default
+- If user specifies a SPECIFIC DAY → same day, different times
+- If user specifies a RANGE or nothing → different days
 - Duration is ALWAYS in MINUTES (60 = 1 hour)
-- Match event name context to appropriate times`;
+- Match event name context to appropriate times
+
+## FEW-SHOT EXAMPLES
+
+**Example 1: Specific day mentioned**
+Input: "sunrise tomorrow"
+Output: {
+  "title": "Sunrise",
+  "suggestedDate": "2024-12-15", "suggestedTime": "06:30",
+  "suggestedDate2": "2024-12-15", "suggestedTime2": "07:00",
+  "suggestedDate3": "2024-12-15", "suggestedTime3": "07:30",
+  "duration": 60, "location": "TBD"
+}
+(All 3 on SAME day because user said "tomorrow")
+
+**Example 2: No specific day**
+Input: "coffee with John"
+Output: {
+  "title": "Coffee with John",
+  "suggestedDate": "2024-12-15", "suggestedTime": "10:00",
+  "suggestedDate2": "2024-12-16", "suggestedTime2": "14:00",
+  "suggestedDate3": "2024-12-17", "suggestedTime3": "15:00",
+  "duration": 45, "participants": ["John"]
+}
+(3 DIFFERENT days because no specific day mentioned)
+
+**Example 3: Range mentioned**
+Input: "team meeting next week"
+Output: {
+  "title": "Team Meeting",
+  "suggestedDate": "2024-12-16", "suggestedTime": "10:00",
+  "suggestedDate2": "2024-12-18", "suggestedTime2": "14:00",
+  "suggestedDate3": "2024-12-20", "suggestedTime3": "10:00",
+  "duration": 60
+}
+(Spread across Mon, Wed, Fri of next week)
+
+**Example 4: Specific day AND time**
+Input: "dinner Friday at 7pm"
+Output: {
+  "title": "Dinner",
+  "suggestedDate": "2024-12-20", "suggestedTime": "19:00",
+  "suggestedDate2": "2024-12-20", "suggestedTime2": "19:30",
+  "suggestedDate3": "2024-12-20", "suggestedTime3": "20:00",
+  "duration": 90
+}
+(All on Friday, times near 7pm since that's what user wants)`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

@@ -101,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       from: fromEmail,
       to: [to],
       replyTo: hostEmail,
-      subject: `✅ ${eventTitle} is confirmed!`,
+      subject: `${eventTitle} is confirmed!`,
       headers: {
         'X-Entity-Ref-ID': uniqueId,
         'Message-ID': `<${uniqueId}@gatherly.now>`,
@@ -134,7 +134,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       <!-- Confirmation Badge -->
       <div style="text-align: center; margin-bottom: 25px;">
         <div style="display: inline-block; width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; margin-bottom: 15px; line-height: 64px;">
-          <span style="font-size: 32px;">✅</span>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-top: 16px;">
+            <path d="M20 6L9 17l-5-5" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
         <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 0 0 10px 0; color: #1a1a1a;">It's Official!</h2>
         <p style="color: #666; margin: 0; font-size: 15px;"><strong>${hostName}</strong> has scheduled your event.</p>

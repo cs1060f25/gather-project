@@ -575,6 +575,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
   const [emailPromptFor, setEmailPromptFor] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingUnknownNames, setPendingUnknownNames] = useState<string[]>([]); // Queue for multiple unknown names
 
   // Save recent people when participants change on successful submit
   const saveRecentPeople = (emails: string[]) => {
@@ -612,9 +613,25 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     return emailRegex.test(email);
   };
 
+  // Process the next name in the pending queue (must be defined before handleAddParticipant)
+  const processNextPendingName = () => {
+    if (pendingUnknownNames.length > 0) {
+      const [nextName, ...remaining] = pendingUnknownNames;
+      setPendingUnknownNames(remaining);
+      // Small delay to let current operation complete
+      setTimeout(() => {
+        setParticipantInput(nextName);
+      }, 100);
+    }
+  };
+
   const handleAddParticipant = (emailOrName: string) => {
     const trimmed = emailOrName.trim();
-    if (!trimmed || participants.includes(trimmed)) return;
+    if (!trimmed || participants.includes(trimmed)) {
+      // If empty or duplicate, check if there are pending names to process
+      processNextPendingName();
+      return;
+    }
 
     // Check if it matches a contact
     const contact = contacts.find(c => 
@@ -631,6 +648,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       setParticipantInput('');
       setShowSuggestions(false);
       setIsEditing(true);
+      // Process next pending name if any
+      processNextPendingName();
     } else if (isValidEmail(trimmed)) {
       // It's a valid email, add directly
       if (!participants.includes(trimmed)) {
@@ -639,6 +658,8 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       setParticipantInput('');
       setShowSuggestions(false);
       setIsEditing(true);
+      // Process next pending name if any
+      processNextPendingName();
     } else {
       // It's a name without email - prompt for email
       setEmailPromptFor(trimmed);
@@ -654,9 +675,20 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     if (!participants.includes(pendingEmail)) {
       setParticipants([...participants, pendingEmail]);
     }
+    
     setEmailPromptFor(null);
     setPendingEmail('');
     setIsEditing(true);
+    
+    // Process next pending name if any
+    processNextPendingName();
+  };
+  
+  const handleSkipEmailPrompt = () => {
+    // Skip current name, move to next
+    setEmailPromptFor(null);
+    setPendingEmail('');
+    processNextPendingName();
   };
 
   const handleRemoveParticipant = (email: string) => {
@@ -803,6 +835,10 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     const message = chatInput;
     setChatInput('');
     
+    // Clear any pending unknown names from previous queries
+    setPendingUnknownNames([]);
+    setEmailPromptFor(null);
+    
     try {
       // Import and use OpenAI parsing - include current form state in context
       const { parseSchedulingMessage, getSuggestedTimes } = await import('../lib/openai');
@@ -936,10 +972,17 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             setParticipants(prev => [...new Set([...prev, ...validEmails])]);
           }
           
-          // Prompt for email for the first unknown name (one at a time)
+          // For unknown names, put the first one in the input field
+          // This triggers the normal flow where user sees the name and gets prompted for email
           if (unknownNames.length > 0) {
-            setEmailPromptFor(unknownNames[0]);
-            setPendingEmail('');
+            // Put first unknown name in the input - user will see it and can add/prompt
+            setParticipantInput(unknownNames[0]);
+            setShowSuggestions(false);
+            
+            // If there are more unknown names, store them to process after
+            if (unknownNames.length > 1) {
+              setPendingUnknownNames(unknownNames.slice(1));
+            }
           }
         }
         
@@ -1253,10 +1296,15 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
             </div>
           )}
 
-          {/* Email prompt modal */}
+          {/* Email prompt for unknown names */}
           {emailPromptFor && (
             <div className="cep-email-prompt">
-              <p>Enter email for <strong>{emailPromptFor}</strong>:</p>
+              <p>
+                Enter email for <strong>{emailPromptFor}</strong>:
+                {pendingUnknownNames.length > 0 && (
+                  <span className="cep-email-prompt-queue"> (+{pendingUnknownNames.length} more to add)</span>
+                )}
+              </p>
               <div className="cep-email-prompt-row">
                 <input
                   type="email"
@@ -1269,12 +1317,12 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
                       e.preventDefault();
                       handleEmailPromptSubmit();
                     } else if (e.key === 'Escape') {
-                      setEmailPromptFor(null);
+                      handleSkipEmailPrompt();
                     }
                   }}
                 />
                 <button type="button" onClick={handleEmailPromptSubmit}>Add</button>
-                <button type="button" onClick={() => setEmailPromptFor(null)} className="cep-cancel-email">Cancel</button>
+                <button type="button" onClick={handleSkipEmailPrompt} className="cep-skip-email">Skip</button>
               </div>
             </div>
           )}

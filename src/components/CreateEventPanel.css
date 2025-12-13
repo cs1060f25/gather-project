@@ -523,6 +523,23 @@
   background: #F0F0F0;
 }
 
+.cep-email-prompt button.cep-skip-email {
+  background: #FFF;
+  color: #666;
+}
+
+.cep-email-prompt button.cep-skip-email:hover {
+  background: #F5F5F5;
+  color: #1A1A1A;
+}
+
+.cep-email-prompt-queue {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: 500;
+  margin-left: 0.25rem;
+}
+
 .dark-mode .cep-email-prompt {
   background: #2A2A2A;
   border-color: #444;
@@ -546,6 +563,20 @@
 .dark-mode .cep-email-prompt button.cep-cancel-email {
   background: #333;
   color: #F0F0F0;
+}
+
+.dark-mode .cep-email-prompt button.cep-skip-email {
+  background: #333;
+  color: #AAA;
+}
+
+.dark-mode .cep-email-prompt button.cep-skip-email:hover {
+  background: #444;
+  color: #F0F0F0;
+}
+
+.dark-mode .cep-email-prompt-queue {
+  color: #888;
 }
 
 /* Mobile adjustments for email prompt */
