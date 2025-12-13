@@ -1010,34 +1010,46 @@ export const EventsPage: React.FC = () => {
               )}
               {/* Show delete option for Gatherly-scheduled events */}
               {selectedEvent.isGatherlyScheduled && selectedEvent.calendarId && (
-                <button 
+                <button
                   className="btn-delete-gcal"
-                  onClick={async () => {
-                    if (!confirm(`Delete "${selectedEvent.title}" from Google Calendar?`)) return;
-                    try {
-                      const token = getGoogleToken();
-                      if (!token) {
-                        alert('Google Calendar not connected');
-                        return;
-                      }
-                      const calId = selectedEvent.calendarId || 'primary';
-                      const response = await fetch(
-                        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${selectedEvent.id}?sendUpdates=all`,
-                        {
-                          method: 'DELETE',
-                          headers: { Authorization: `Bearer ${token}` }
+                  onClick={() => {
+                    const eventToDelete = selectedEvent;
+                    setConfirmModal({
+                      show: true,
+                      title: 'Delete from Calendar',
+                      message: `Delete "${eventToDelete.title}" from Google Calendar? This will remove it for all attendees.`,
+                      confirmText: 'Delete',
+                      cancelText: 'Keep',
+                      isDestructive: true,
+                      onConfirm: async () => {
+                        setConfirmModal(null);
+                        try {
+                          const token = getGoogleToken();
+                          if (!token) {
+                            setAlertModal({ show: true, title: 'Error', message: 'Google Calendar not connected', type: 'error' });
+                            return;
+                          }
+                          const calId = eventToDelete.calendarId || 'primary';
+                          const response = await fetch(
+                            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${eventToDelete.id}?sendUpdates=all`,
+                            {
+                              method: 'DELETE',
+                              headers: { Authorization: `Bearer ${token}` }
+                            }
+                          );
+                          if (response.ok || response.status === 204) {
+                            setSelectedEvent(null);
+                            setAlertModal({ show: true, title: 'Deleted', message: 'Event removed from Google Calendar', type: 'success' });
+                            loadEvents();
+                          } else {
+                            setAlertModal({ show: true, title: 'Error', message: 'Failed to delete event', type: 'error' });
+                          }
+                        } catch (err) {
+                          console.error('Delete error:', err);
+                          setAlertModal({ show: true, title: 'Error', message: 'Failed to delete event', type: 'error' });
                         }
-                      );
-                      if (response.ok || response.status === 204) {
-                        setSelectedEvent(null);
-                        loadEvents(); // Refresh the list
-                      } else {
-                        alert('Failed to delete event');
                       }
-                    } catch (err) {
-                      console.error('Delete error:', err);
-                      alert('Failed to delete event');
-                    }
+                    });
                   }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

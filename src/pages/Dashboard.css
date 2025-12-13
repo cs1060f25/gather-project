@@ -527,6 +527,7 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   .calendar-section {
     flex: 1;
     min-height: 50vh;
+    width: 100%;
   }
 
   .create-event-section {
@@ -534,6 +535,7 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     max-width: none;
     min-width: 0;
     max-height: 50vh;
+    width: 100%;
   }
 }
 

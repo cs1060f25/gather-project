@@ -833,8 +833,12 @@
     height: 12px;
   }
 
-  .upcoming-section .section-title {
+  .section-header-with-nav {
     padding: 0 1rem 0.75rem;
+  }
+  
+  .upcoming-section .section-title {
+    padding: 0;
   }
 
   .event-card-upcoming {
