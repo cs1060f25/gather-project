@@ -26,6 +26,96 @@
 
 ---
 
+## Running the Test Suite
+
+**Quick Start: Run all tests with a single command:**
+
+```bash
+# Install dependencies (first time only)
+npm install
+npx playwright install chromium
+
+# Run all tests (unit + integration)
+npm test
+```
+
+### Test Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run complete test suite (unit + integration) |
+| `npm run test:unit` | Run unit tests only (Jest) |
+| `npm run test:integration` | Run integration tests only (Playwright) |
+| `npm run test:integration:headed` | Run integration tests with visible browser |
+| `npm run test:integration:ui` | Open Playwright UI for debugging |
+
+### Unit Tests (5+ functions tested)
+
+Located in `tests/unit/`, these test individual functions with deterministic inputs and outputs:
+
+1. **Date Formatting** (`formatLocalDate`, `timeToMinutes`, `minutesToTime`, `formatTime12h`)
+   - Converts dates to YYYY-MM-DD format
+   - Converts between time strings and minutes
+
+2. **Email Validation** (`isValidEmail`)
+   - Validates email format with regex
+   - Handles edge cases and whitespace
+
+3. **Time Parsing** (`parseTimeReference`)
+   - Parses "3pm", "morning", "noon" into HH:MM format
+   - Returns null for unrecognized input
+
+4. **Date Parsing** (`parseDateReference`)
+   - Parses "tomorrow", "next week", day names
+   - Handles relative date references
+
+5. **Scheduling Detection** (`isSchedulingRequest`)
+   - Detects scheduling keywords in natural language
+   - Powers the AI parsing fallback
+
+6. **Time Suggestions** (`getSuggestedTimes`)
+   - Finds available meeting slots given calendar events
+   - Respects work hours and meeting duration
+
+7. **Invite Statistics** (`getInviteStats`)
+   - Calculates accepted/declined/pending counts
+   - Used for event status display
+
+8. **Duration Parsing** (`parseDuration`)
+   - Parses "1 hour", "30 min", "1.5 hours" to minutes
+
+### Integration Tests (2+ system tests)
+
+Located in `tests/integration/`, these test the full system using Playwright:
+
+**1. Landing Page & Navigation Tests** (`landing-page.spec.ts`)
+- Loads the landing page and verifies branding
+- Tests responsive design on mobile viewports
+- Verifies navigation to Terms/Privacy pages
+- Tests authentication UI flow
+- Checks for console errors
+- Verifies accessibility (headings, alt text, focus)
+
+**2. Scheduling Flow & API Tests** (`scheduling-flow.spec.ts`)
+- Tests invite page structure
+- Validates API endpoint responses
+- Tests protected route redirects
+- Tests sign up and password reset flows
+- Verifies error handling for 404 pages
+
+### Test Video
+
+A demonstration video of running the test suite is available at:
+**`test-demo.mov`** (upload to project folder)
+
+To record your own test run:
+```bash
+# macOS: Use QuickTime or Loom to record screen while running:
+npm test
+```
+
+---
+
 ## The Problem We Solve
 
 Scheduling is broken. Every week, millions of hours are wasted on the same tedious dance: "When works for you?" followed by endless email chains, When2Meet polls that nobody fills out, and calendar tabs open side-by-side trying to find a sliver of overlapping free time.
