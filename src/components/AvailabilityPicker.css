@@ -1,7 +1,7 @@
-/* ===== Availability Picker Component ===== */
+/* ===== Availability Picker Component - matches CreateEventPanel exactly ===== */
 
 .availability-picker {
-  background-color: #F8F8F8 !important;
+  background: #F8F8F8 !important;
   padding: 1rem;
   border-top: 2px solid #E5E5E5;
   border-bottom: 2px solid #E5E5E5;
@@ -35,60 +35,77 @@
   gap: 0.75rem;
 }
 
+/* Option row - matches cep-option */
 .availability-picker-option {
   display: grid;
-  grid-template-columns: auto 1fr 1fr auto;
+  grid-template-columns: auto 1fr 1fr 1fr;
   gap: 0.4rem;
   align-items: center;
   padding: 0.5rem 0.6rem;
-  background-color: #FFFFFF !important;
-  border: 2px solid #E5E5E5;
+  background: #FFF !important;
+  border: 2px solid #1A1A1A;
+  box-shadow: 2px 2px 0 #1A1A1A;
   transition: all 0.15s ease;
 }
 
 .availability-picker-option.filled {
   border-color: #22c55e;
+  box-shadow: 2px 2px 0 #22c55e;
 }
 
+/* Badge - matches cep-option-badge */
 .availability-picker-badge {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background-color: #1A1A1A !important;
+  background: #1A1A1A !important;
+  color: #FFF !important;
   font-size: 0.75rem;
   font-weight: 700;
-  color: white !important;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
+.availability-picker-option.filled .availability-picker-badge {
+  background: #22c55e !important;
+}
+
+/* Picker buttons - matches cep-picker-btn exactly */
 .availability-picker-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid #22c55e;
-  background-color: #22c55e !important;
-  color: #FFFFFF !important;
-  font-size: 0.8rem;
-  font-weight: 600;
+  gap: 4px;
+  padding: 8px 10px;
+  background: #FFF !important;
+  border: 2px solid #DDD !important;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #888 !important;
   cursor: pointer;
   transition: all 0.15s ease;
   min-width: 0;
   white-space: nowrap;
-  font-family: 'Space Grotesk', sans-serif;
+  overflow: hidden;
 }
 
 .availability-picker-btn:hover:not(:disabled) {
-  background-color: #16a34a !important;
-  border-color: #16a34a;
+  border-color: #22c55e !important;
+  color: #22c55e !important;
 }
 
 .availability-picker-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* When button has a value - matches cep-picker-btn.has-value */
+.availability-picker-btn.has-value {
+  border-color: #1A1A1A !important;
+  color: #1A1A1A !important;
+  background: #F8F8F8 !important;
 }
 
 .availability-picker-btn svg {
@@ -97,8 +114,13 @@
   height: 14px;
 }
 
+.availability-picker-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .availability-picker-duration {
-  min-width: 60px;
+  min-width: 50px;
 }
 
 /* ===== Picker Overlay ===== */
@@ -419,7 +441,7 @@
   
   .availability-picker-btn {
     font-size: 0.7rem;
-    padding: 0.4rem 0.5rem;
+    padding: 6px 8px;
   }
   
   .availability-calendar-picker {
