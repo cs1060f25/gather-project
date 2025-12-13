@@ -257,9 +257,6 @@ export const EventPage: React.FC = () => {
   const handleRemoveParticipant = async (email: string) => {
     // Remove from edit state
     setEditParticipants(prev => prev.filter(p => p.toLowerCase() !== email.toLowerCase()));
-    
-    // Note: The actual invite deletion happens in handleSaveEdit when changes are saved
-    // This tracks removed participants for proper cleanup
   };
 
   // Handle saving event edits
@@ -272,14 +269,35 @@ export const EventPage: React.FC = () => {
       const newParticipants = editParticipants.filter(p => !event.participants.includes(p));
       const removedParticipants = event.participants.filter(p => !editParticipants.includes(p));
       
-      // Delete invites for removed participants
+      // Delete invites for removed participants and send cancellation emails
       if (removedParticipants.length > 0) {
+        const hostName = user?.full_name || user?.email?.split('@')[0] || 'The organizer';
+        const hostEmail = user?.email || '';
+        
         for (const email of removedParticipants) {
+          // Delete the invite
           await supabase
             .from('invites')
             .delete()
             .eq('event_id', event.id)
             .eq('invitee_email', email.toLowerCase());
+          
+          // Send cancellation email to removed participant
+          try {
+            await fetch('/api/send-cancel-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: email,
+                eventTitle: event.title,
+                hostName,
+                hostEmail,
+              }),
+            });
+            console.log(`Cancellation email sent to removed participant: ${email}`);
+          } catch (err) {
+            console.error(`Error sending cancellation to ${email}:`, err);
+          }
         }
         
         // Also update the responses in the event to remove the removed participants
@@ -556,7 +574,7 @@ export const EventPage: React.FC = () => {
             location?: string;
             start: { dateTime: string; timeZone: string };
             end: { dateTime: string; timeZone: string };
-            attendees: { email: string; organizer?: boolean; displayName?: string; responseStatus?: string }[];
+            attendees: { email: string }[];
             conferenceData?: {
               createRequest: {
                 requestId: string;
@@ -576,19 +594,12 @@ export const EventPage: React.FC = () => {
               dateTime: endDate.toISOString(),
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
             },
-            // Include organizer in attendees list with proper flags
-            attendees: [
-              // Add organizer first (they're already the organizer via the API, but this helps with display)
-              ...(organizerEmail ? [{ 
-                email: organizerEmail, 
-                displayName: organizerName,
-                responseStatus: 'accepted' // Organizer auto-accepts
-              }] : []),
-              // Then add participants
-              ...event.participants
-                .filter(email => email.toLowerCase() !== organizerEmail.toLowerCase()) // Don't duplicate organizer
-                .map(email => ({ email }))
-            ],
+            // Only add participants as attendees - NOT the organizer
+            // The authenticated user is automatically the organizer via the API
+            // Adding organizer to attendees causes "unknown sender" warnings
+            attendees: event.participants
+              .filter(email => email.toLowerCase() !== organizerEmail.toLowerCase()) // Exclude organizer
+              .map(email => ({ email })),
             guestsCanModify: false,
             guestsCanInviteOthers: false
           };

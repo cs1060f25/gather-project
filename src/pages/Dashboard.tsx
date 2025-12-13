@@ -968,7 +968,7 @@ export const Dashboard: React.FC = () => {
       
       if (!response.ok) {
         throw new Error(result.error || 'Failed to send reminders');
-      }
+        }
       
       setAlertModal({
         show: true,
@@ -1218,6 +1218,20 @@ export const Dashboard: React.FC = () => {
     // Filter Google Calendar events to remove duplicates of confirmed Gatherly events
     // This ensures the Gatherly event displays OVER the personal calendar event
     const filteredGoogleEvents = events.filter(e => {
+      // If this is a Gatherly-scheduled event (created via Gatherly), always filter it out
+      // when there's a corresponding confirmed Gatherly event
+      if (e.isGatherlyScheduled) {
+        // Check if there's a matching confirmed Gatherly event by title
+        const matchingGatherly = gatherlyEvents.find(ge => 
+          ge.status === 'confirmed' && 
+          ge.title.toLowerCase().trim() === e.title.toLowerCase().trim()
+        );
+        if (matchingGatherly) {
+          console.log(`[Gatherly] Filtering Gatherly-scheduled Google event: ${e.title}`);
+          return false;
+        }
+      }
+      
       // Only filter events that could be duplicates (have date, time, title)
       if (!e.date || !e.time || !e.title) return true;
       
@@ -1327,11 +1341,11 @@ export const Dashboard: React.FC = () => {
                   </button>
                   <h3>Notifications</h3>
                   <div className="notification-actions">
-                    {unreadCount > 0 && (
-                      <button 
-                        className="mark-all-read"
-                        onClick={markAllNotificationsAsRead}
-                      >
+                  {unreadCount > 0 && (
+                    <button 
+                      className="mark-all-read"
+                      onClick={markAllNotificationsAsRead}
+                    >
                         Mark read
                       </button>
                     )}
@@ -1341,9 +1355,9 @@ export const Dashboard: React.FC = () => {
                         onClick={clearAllNotifications}
                       >
                         Clear all
-                      </button>
-                    )}
-                  </div>
+                    </button>
+                  )}
+                </div>
                 </div>
                 
                 {/* Daily Summary Section */}
@@ -1488,7 +1502,7 @@ export const Dashboard: React.FC = () => {
                                 <path d="M13 6V12L17 14" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
                                 <circle cx="6" cy="16" r="5" fill="none" stroke="#22c55e" strokeWidth="2"/>
                                 <path d="M6 14V18M4 16H8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"/>
-                              </svg>
+                            </svg>
                             </div>
                           )}
                           {notification.type === 'response_received' && (
@@ -1500,8 +1514,8 @@ export const Dashboard: React.FC = () => {
                           {notification.type === 'event_scheduled' && (
                             <div className="gatherly-notif-icon confirmed">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-                                <path d="M20 6L9 17l-5-5"/>
-                              </svg>
+                              <path d="M20 6L9 17l-5-5"/>
+                            </svg>
                             </div>
                           )}
                           {notification.type === 'event_cancelled' && (

@@ -1247,6 +1247,69 @@
   }
 }
 
+/* iPad-specific optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .create-event-panel {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .cep-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .cep-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .cep-form {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  
+  .cep-field label {
+    font-size: 0.7rem;
+    margin-bottom: 0.35rem;
+  }
+  
+  .cep-field input[type="text"],
+  .cep-field textarea {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+  }
+  
+  .cep-field textarea {
+    min-height: 50px;
+  }
+  
+  .cep-chat {
+    padding: 0.75rem 1rem;
+  }
+  
+  .cep-chat-input {
+    height: 48px;
+    font-size: 0.9rem;
+  }
+  
+  /* Resize handle hidden on iPad portrait */
+  .cep-resize-handle {
+    display: none;
+  }
+}
+
+/* iPad landscape - side panel mode */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .create-event-panel {
+    max-width: 340px;
+    width: 340px;
+  }
+  
+  .cep-resize-handle {
+    display: block;
+  }
+}
+
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
   .create-event-panel {

@@ -86,7 +86,7 @@ const features = [
   {
     icon: IconSparkles,
     title: 'Invite Anyone',
-    description: 'Participants don\'t need an account. They just click a link and share their times.',
+    description: 'Participants don\'t need an account. They just click a link and respond to when they are free.',
     accent: 'butter'
   }
 ];

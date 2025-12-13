@@ -135,7 +135,7 @@ export const TermsPage: React.FC = () => {
         <div className="legal-links">
           <Link to="/privacy">Privacy Policy</Link>
           <span>|</span>
-          <Link to="/">Back to Gatherly</Link>
+          <Link to="/" onClick={() => window.scrollTo(0, 0)}>Back to Gatherly</Link>
         </div>
       </footer>
     </div>

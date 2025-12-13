@@ -516,8 +516,8 @@ export const InvitePage: React.FC = () => {
                             </svg>
                           </button>
                         )}
-                        {/* Forward button inside card */}
-                        {currentStep < timeOptions.length - 1 && timeResponses[currentStep] && (
+                        {/* Forward button inside card - always show when more options exist */}
+                        {currentStep < timeOptions.length - 1 && (
                           <button 
                             className="step-forward-btn-inline"
                             onClick={() => setCurrentStep(prev => prev + 1)}

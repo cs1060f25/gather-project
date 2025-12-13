@@ -441,6 +441,16 @@ export const EventsPage: React.FC = () => {
     const filteredGoogleEvents = googleEvents.filter(e => {
       // Apply calendar visibility filter
       if (!isCalendarVisible(e.calendarId, false, undefined)) return false;
+      
+      // If this is a Gatherly-scheduled event, filter it out when there's a matching Gatherly event
+      if (e.isGatherlyScheduled) {
+        const matchingGatherly = gatherlyEvents.find(ge => 
+          ge.status === 'confirmed' && 
+          ge.title.toLowerCase().trim() === e.title.toLowerCase().trim()
+        );
+        if (matchingGatherly) return false;
+      }
+      
       // Remove duplicates of confirmed Gatherly events
       if (!e.date || !e.time || !e.title) return true;
       const key = `${e.date}|${e.time}|${e.title.toLowerCase().trim()}`;

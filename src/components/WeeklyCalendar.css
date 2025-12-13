@@ -1072,6 +1072,49 @@
 }
 
 /* ===== RESPONSIVE ===== */
+
+/* iPad optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .weekly-calendar {
+    --wc-slot-height: 42px;
+    --wc-header-height: 50px;
+    --wc-time-column-width: 50px;
+  }
+  
+  .wc-top-bar {
+    padding: 8px 12px;
+  }
+  
+  .wc-month-label {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+  }
+  
+  .wc-today-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+  }
+  
+  .wc-day-name {
+    font-size: 0.65rem;
+  }
+  
+  .wc-day-number {
+    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .wc-time-slot {
+    font-size: 0.6rem;
+  }
+  
+  .wc-event {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+}
+
 @media (max-width: 768px) {
   .weekly-calendar {
     --wc-slot-height: 35px;

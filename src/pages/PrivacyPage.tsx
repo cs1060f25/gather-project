@@ -189,7 +189,7 @@ export const PrivacyPage: React.FC = () => {
         <div className="legal-links">
           <Link to="/terms">Terms of Service</Link>
           <span>|</span>
-          <Link to="/">Back to Gatherly</Link>
+          <Link to="/" onClick={() => window.scrollTo(0, 0)}>Back to Gatherly</Link>
         </div>
       </footer>
     </div>

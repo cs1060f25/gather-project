@@ -719,6 +719,11 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   opacity: 0;
 }
 
+/* Hide green border when notification dropdown is open */
+body:has(.notification-dropdown) .calendar-section.editing-mode::before {
+  opacity: 0;
+}
+
 .create-event-section {
   flex: 0 0 auto;
   display: flex;
@@ -813,7 +818,7 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
   color: #999;
 }
 
-/* Responsive - Tablet */
+/* Responsive - Tablet (iPad landscape and larger tablets) */
 @media (max-width: 1024px) {
   .dashboard-main {
     flex-direction: column;
@@ -822,7 +827,7 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
 
   .calendar-section {
     flex: 1;
-    min-height: 50vh;
+    min-height: 55vh;
     width: 100%;
     box-sizing: border-box;
   }
@@ -831,10 +836,80 @@ body:has(.cep-picker-overlay) .calendar-section.editing-mode::before {
     flex: 0 0 auto;
     max-width: 100%;
     min-width: 0;
-    max-height: 50vh;
+    max-height: 45vh;
     width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
+  }
+}
+
+/* iPad-specific optimizations (portrait mode: 768-834px) */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .dashboard-main {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .calendar-section {
+    flex: 1;
+    min-height: 60vh;
+    max-height: 65vh;
+  }
+  
+  .create-event-section {
+    flex: 0 0 auto;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
+  
+  .create-event-panel {
+    padding: 1rem;
+  }
+  
+  .cep-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .cep-form {
+    gap: 0.75rem;
+  }
+  
+  .cep-chat {
+    padding: 0.75rem;
+  }
+  
+  .cep-chat-input {
+    height: 44px;
+    font-size: 0.9rem;
+  }
+}
+
+/* iPad landscape mode - side by side layout */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .dashboard-main {
+    flex-direction: row;
+    gap: 0;
+  }
+  
+  .calendar-section {
+    flex: 1;
+    min-height: auto;
+    max-height: none;
+    height: 100%;
+    min-width: 0;
+  }
+  
+  .create-event-section {
+    flex: 0 0 340px;
+    max-height: none;
+    height: 100%;
+    max-width: 340px;
+    border-left: 3px solid #1A1A1A;
+    overflow-y: auto;
+  }
+  
+  .dark-mode .create-event-section {
+    border-left-color: #FFF;
   }
 }
 
