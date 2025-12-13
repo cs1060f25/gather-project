@@ -305,6 +305,7 @@
   font-weight: 700;
   font-size: 0.9rem;
   font-family: 'DM Mono', monospace;
+  margin-right: 40px; /* Offset for the dots to visually center */
 }
 
 .visual-body {

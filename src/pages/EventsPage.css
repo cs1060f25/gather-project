@@ -41,6 +41,8 @@
   font-size: 1.25rem;
   letter-spacing: -0.01em;
   padding: 6px 10px;
+  padding-left: 0;
+  margin-left: -4px;
   border-radius: 0;
   transition: all 0.12s ease;
 }

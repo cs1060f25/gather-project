@@ -79,9 +79,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onTimeSlotClick,
   loading = false
 }) => {
-  const [today] = useState(new Date());
+  // Use a function to always get fresh "today" date (handles midnight rollover)
+  const getToday = () => new Date();
   const [weekStart, setWeekStart] = useState(() => {
-    const d = new Date(today);
+    const d = getToday();
     d.setDate(d.getDate() - d.getDay()); // Go to Sunday
     return d;
   });
@@ -90,8 +91,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [pickerView, setPickerView] = useState<'months' | 'years'>('months');
   // Track the display month/year separately from weekStart (which may be in previous month)
-  const [displayMonth, setDisplayMonth] = useState(today.getMonth());
-  const [displayYear, setDisplayYear] = useState(today.getFullYear());
+  const [displayMonth, setDisplayMonth] = useState(() => getToday().getMonth());
+  const [displayYear, setDisplayYear] = useState(() => getToday().getFullYear());
   // Hover preview state
   const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -168,11 +169,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   }, [weekStart]);
 
   const goToday = () => {
-    const d = new Date(today);
+    const now = getToday();
+    const d = new Date(now);
     d.setDate(d.getDate() - d.getDay());
     setWeekStart(d);
-    setDisplayMonth(today.getMonth());
-    setDisplayYear(today.getFullYear());
+    setDisplayMonth(now.getMonth());
+    setDisplayYear(now.getFullYear());
+    // Also update picker year to match current year
+    setPickerYear(now.getFullYear());
   };
 
   const goPrev = () => {
@@ -537,7 +541,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   onMouseLeave={() => setHoveredMonth(null)}
                 >
                   {MONTHS.map((month, idx) => {
-                    const isCurrentMonth = idx === today.getMonth() && pickerYear === today.getFullYear();
+                    const now = getToday();
+                    const isCurrentMonth = idx === now.getMonth() && pickerYear === now.getFullYear();
                     const isSelectedMonth = idx === displayMonth && pickerYear === displayYear;
                     const isHovered = hoveredMonth === idx;
                     return (
@@ -577,10 +582,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               
               {/* Quick actions */}
               <div className="wc-picker-footer">
-                <button 
+                <button
                   className="wc-picker-today"
                   onClick={() => {
-                    goToMonth(today.getFullYear(), today.getMonth());
+                    goToday();
+                    setPickerView('months');
+                    setShowDatePicker(false);
                   }}
                 >
                   Today
@@ -663,7 +670,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         <div className="wc-days-container">
           {weekDays.map((date, i) => {
             const dateISO = fmtDateISO(date);
-            const isToday = dateISO === fmtDateISO(today);
+            const isToday = dateISO === fmtDateISO(getToday());
             const dayEvents = getEventsForDay(date);
             const dayTimeOptions = getTimeOptionsForDay(date);
             const allDayEvents = getAllDayEventsForDay(date);

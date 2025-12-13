@@ -400,7 +400,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
 
   const handleResizeMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
-
+    
     // Panel is on the right side, handle is on left edge
     // Dragging left (negative delta) = expand width
     // Dragging right (positive delta) = shrink width
@@ -408,7 +408,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
     // Limit max width to 600px OR viewport width minus some padding for the calendar
     const maxWidth = Math.min(600, window.innerWidth - 50);
     const newWidth = Math.max(280, Math.min(maxWidth, resizeStartWidth.current - deltaX));
-
+    
     setPanelWidth(newWidth);
     localStorage.setItem('gatherly_panel_width', String(newWidth));
   }, [isResizing]);
@@ -428,7 +428,7 @@ export const CreateEventPanel: React.FC<CreateEventPanelProps> = ({
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     }
-
+    
     return () => {
       document.removeEventListener('mousemove', handleResizeMove);
       document.removeEventListener('mouseup', handleResizeEnd);
