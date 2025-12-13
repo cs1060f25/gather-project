@@ -169,20 +169,21 @@ export async function respondToInvite(
     const invite = data as Invite;
     
     // Create notification for the event host
-    if (currentInvite?.host_email) {
-      // Find the host's user ID from profiles table
-      const { data: hostProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', currentInvite.host_email)
+    // First try to get the organizer from the gatherly_events table (more reliable)
+    if (invite.event_id) {
+      const { data: eventData } = await supabase
+        .from('gatherly_events')
+        .select('user_id')
+        .eq('id', invite.event_id)
         .single();
       
-      if (hostProfile?.id) {
+      if (eventData?.user_id) {
         const statusText = status === 'accepted' ? 'accepted' : status === 'declined' ? 'declined' : 'responded with maybe to';
+        const inviteeName = invite.invitee_email.split('@')[0];
         await createNotification(
-          hostProfile.id,
+          eventData.user_id,
           'invitee_response',
-          `${invite.invitee_email} ${statusText} your invite`,
+          `${inviteeName} ${statusText} your invite`,
           `Response for "${invite.event_title}"`,
           invite.event_id
         );

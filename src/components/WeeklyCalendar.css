@@ -747,6 +747,51 @@
   right: 1px;
 }
 
+/* Response indicators for pending events */
+.wc-response-indicators {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  z-index: 1;
+}
+
+.wc-response-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+
+.wc-response-dot.yes {
+  background: #22c55e;
+}
+
+.wc-response-dot.no {
+  background: #ef4444;
+}
+
+.wc-response-more {
+  font-size: 0.5rem;
+  color: #1A1A1A;
+  font-weight: 600;
+  background: rgba(255,255,255,0.8);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.wc-event.short-event .wc-response-indicators {
+  bottom: 1px;
+  right: 1px;
+}
+
+.wc-event.short-event .wc-response-dot {
+  width: 4px;
+  height: 4px;
+}
+
 /* Gatherly scheduled events - Google Calendar events created via Gatherly */
 .wc-event.gatherly-scheduled {
   border-left: 3px solid #22c55e;

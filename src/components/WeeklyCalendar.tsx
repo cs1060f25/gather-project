@@ -23,6 +23,7 @@ export interface CalendarEvent {
   color?: string; // Calendar color for the event
   optionNumber?: number; // 1, 2, or 3 for pending Gatherly event options
   htmlLink?: string; // Direct link to view event in Google Calendar
+  responses?: { email: string; selectedOptions: number[]; respondedAt?: string }[]; // Participant responses for pending events
 }
 
 export interface GoogleCalendar {
@@ -756,6 +757,27 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                         {/* Option number badge for pending Gatherly events */}
                         {event.isGatherlyEvent && event.status === 'pending' && event.optionNumber && (
                           <span className="wc-event-option-badge">{event.optionNumber}</span>
+                        )}
+                        {/* Response indicators for pending events */}
+                        {event.isGatherlyEvent && event.status === 'pending' && event.responses && event.responses.length > 0 && (
+                          <div className="wc-response-indicators" title={event.responses.map(r => {
+                            const optIdx = event.optionNumber ? event.optionNumber - 1 : 0;
+                            const selected = r.selectedOptions?.includes(optIdx);
+                            return `${r.email.split('@')[0]}: ${selected ? '✓' : '✗'}`;
+                          }).join('\n')}>
+                            {event.responses.slice(0, 4).map((r, idx) => {
+                              const optIdx = event.optionNumber ? event.optionNumber - 1 : 0;
+                              const selected = r.selectedOptions?.includes(optIdx);
+                              return (
+                                <span 
+                                  key={idx} 
+                                  className={`wc-response-dot ${selected ? 'yes' : 'no'}`}
+                                  title={`${r.email}: ${selected ? 'Available' : 'Not available'}`}
+                                />
+                              );
+                            })}
+                            {event.responses.length > 4 && <span className="wc-response-more">+{event.responses.length - 4}</span>}
+                          </div>
                         )}
                         {/* Gatherly badge for confirmed events scheduled via Gatherly (Google Calendar events with marker) */}
                         {event.isGatherlyScheduled && (

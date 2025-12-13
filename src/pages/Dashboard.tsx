@@ -1144,7 +1144,8 @@ export const Dashboard: React.FC = () => {
         isGatherlyEvent: true,
         status: ge.status,
             suggestedTimes: ge.options.map(o => ({ date: o.day, time: o.time, color: o.color })),
-            optionNumber: idx + 1 // 1, 2, or 3 for pending event options
+            optionNumber: idx + 1, // 1, 2, or 3 for pending event options
+            responses: ge.responses // Include participant responses
         };
         gatherlyCalEvents.push(calEvent);
       }
